@@ -1,10 +1,13 @@
 <?php
-
+/**
+ * BadRequestMethodException
+ * @package Neuron\Mvc\Controllers
+ * @subpackage Exceptions
+ */
 namespace Neuron\Mvc\Controllers;
 
 /**
  * Class BadRequestMethodException
- * @package Neuron\Mvc\Controllers
  *
  * Thrown when a bad request method is used when adding a new route.
  */

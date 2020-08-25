@@ -1,5 +1,8 @@
 <?php
-
+/**
+ * MVC Application Class
+ * @package Mvc
+ */
 namespace Neuron\Mvc;
 
 use Neuron\Core\Application\Base;
@@ -13,12 +16,15 @@ use Neuron\Routing\Router;
 
 /**
  * Class Application
- * @package Mvc
  */
 class Application extends Base
 {
 	private Router $_Router;
 
+	/**
+	 * Application constructor.
+	 * @param string $Version
+	 */
 	public function __construct( string $Version )
 	{
 		parent::__construct( $Version );
@@ -129,6 +135,5 @@ class Application extends Base
 
 		return $Controller->$Method();
 	}
-
 }
 
