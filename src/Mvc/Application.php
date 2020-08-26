@@ -34,7 +34,7 @@ class Application extends Base
 			"/404",
 			function( $Parameters )
 			{
-				$this->getEventEmitter()->emit( new Http404() );
+				$this->getEventEmitter()->emit( new Http404( $Parameters[ "route" ] ) );
 
 				return self::executeController(
 					[

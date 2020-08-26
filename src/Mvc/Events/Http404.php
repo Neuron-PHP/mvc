@@ -12,4 +12,11 @@ use Neuron\Events\IEvent;
  * Happens before the rendering of the page.
  */
 class Http404 implements IEvent
-{}
+{
+	public string $Route;
+
+	public function __construct( string $Route )
+	{
+		$this->Route = $Route;
+	}
+}
