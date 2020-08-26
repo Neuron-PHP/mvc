@@ -2,12 +2,14 @@
 
 namespace Mvc;
 
+use Neuron\Events\IEvent;
+use Neuron\Events\IListener;
 use Neuron\Mvc\Application;
 use Neuron\Mvc\Controllers\BadRequestMethodException;
 use Neuron\Mvc\Controllers\IController;
 use Neuron\Mvc\Controllers\NotFoundException;
+use Neuron\Mvc\Events\Http404;
 use Neuron\Patterns\Registry;
-use Neuron\Routing\RequestMethod;
 use PHPUnit\Framework\TestCase;
 
 class TestController implements IController
@@ -16,9 +18,18 @@ class TestController implements IController
 	{}
 }
 
+class Http404ListenerTest implements IListener
+{
+	public string $State;
+
+	public function event( $Event )
+	{
+		$this->State = get_class( $Event );
+	}
+}
+
 class ApplicationTest extends TestCase
 {
-
 	public function testGetVersion()
 	{
 		$Version = "1.0.0";
@@ -73,6 +84,32 @@ class ApplicationTest extends TestCase
 		}
 
 		$this->assertTrue( $Success );
+	}
 
+	public function test404()
+	{
+		$App = new Application( "" );
+
+		$Http = new Http404ListenerTest();
+
+		$App->getEvent()->registerListeners(
+			[
+				Http404::class => [
+					$Http
+				]
+			]
+		);
+
+		$App->run(
+			[
+				"type"  => "GET",
+				"route" => "/test404"
+			]
+		);
+
+		$this->assertEquals(
+			Http404::class,
+			$Http->State
+		);
 	}
 }

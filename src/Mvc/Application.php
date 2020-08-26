@@ -1,35 +1,56 @@
 <?php
-/**
- * MVC Application Class
- * @package Mvc
- */
 namespace Neuron\Mvc;
 
 use Neuron\Core\Application\Base;
+use Neuron\Core\Facades\Event;
+use Neuron\Data\ArrayHelper;
 use Neuron\Mvc\Controllers\BadRequestMethodException;
 use Neuron\Mvc\Controllers\Factory;
 use Neuron\Mvc\Controllers\MissingMethodException;
 use Neuron\Mvc\Controllers\NotFoundException;
+use Neuron\Mvc\Events\Http404;
 use Neuron\Patterns\Registry;
 use Neuron\Routing\RequestMethod;
 use Neuron\Routing\Router;
 
-/**
- * Class Application
- */
 class Application extends Base
 {
 	private Router $_Router;
+	private Event  $_Event;
 
 	/**
 	 * Application constructor.
 	 * @param string $Version
+	 * @throws \Exception
 	 */
 	public function __construct( string $Version )
 	{
 		parent::__construct( $Version );
 
 		$this->_Router = new Router();
+		$this->_Event  = new Event();
+
+		$Route = $this->_Router->get(
+			"/404",
+			function( $Parameters )
+			{
+				$this->getEvent()->emit( new Http404() );
+				return self::executeController(
+					[
+						"Controller" => "HttpCodes@_404",
+						"NameSpace"  => "Neuron\Mvc\Controllers"
+					]
+				);
+			}
+		);
+	}
+
+	/**
+	 * @return Event
+	 */
+	public function getEvent(): Event
+	{
+		return $this->_Event;
 	}
 
 	/**
@@ -124,7 +145,15 @@ class Application extends Base
 		$Controller = $Parts[ 0 ];
 		$Method     = $Parts[ 1 ];
 
-		$NameSpace = Registry::getInstance()->get( "Controllers.NameSpace" );
+		if( ArrayHelper::hasKey( $Parameters, "NameSpace" ) )
+		{
+			$NameSpace = $Parameters[ "NameSpace" ];
+		}
+		else
+		{
+			$NameSpace = Registry::getInstance()
+										->get( "Controllers.NameSpace" );
+		}
 
 		$Controller = Factory::create( $Controller, $NameSpace );
 
