@@ -2,7 +2,7 @@
 namespace Neuron\Mvc;
 
 use Neuron\Core\Application\Base;
-use Neuron\Core\Facades\Event;
+use Neuron\Core\Facades\EventEmitter;
 use Neuron\Data\ArrayHelper;
 use Neuron\Mvc\Controllers\BadRequestMethodException;
 use Neuron\Mvc\Controllers\Factory;
@@ -15,8 +15,8 @@ use Neuron\Routing\Router;
 
 class Application extends Base
 {
-	private Router $_Router;
-	private Event  $_Event;
+	private Router        $_Router;
+	private EventEmitter  $_Event;
 
 	/**
 	 * Application constructor.
@@ -28,13 +28,14 @@ class Application extends Base
 		parent::__construct( $Version );
 
 		$this->_Router = new Router();
-		$this->_Event  = new Event();
+		$this->_Event  = new EventEmitter();
 
 		$Route = $this->_Router->get(
 			"/404",
 			function( $Parameters )
 			{
-				$this->getEvent()->emit( new Http404() );
+				$this->getEventEmitter()->emit( new Http404() );
+
 				return self::executeController(
 					[
 						"Controller" => "HttpCodes@_404",
@@ -46,9 +47,9 @@ class Application extends Base
 	}
 
 	/**
-	 * @return Event
+	 * @return EventEmitter
 	 */
-	public function getEvent(): Event
+	public function getEventEmitter(): EventEmitter
 	{
 		return $this->_Event;
 	}
@@ -69,7 +70,7 @@ class Application extends Base
 					$Route,
 					function( $Parameters )
 					{
-						return self::executeController( $Parameters );
+						return $this->executeController( $Parameters );
 					}
 				);
 
@@ -80,7 +81,7 @@ class Application extends Base
 					$Route,
 					function( $Parameters )
 					{
-						return self::executeController( $Parameters );
+						return $this->executeController( $Parameters );
 					}
 				);
 				break;
@@ -90,7 +91,7 @@ class Application extends Base
 					$Route,
 					function( $Parameters )
 					{
-						return self::executeController( $Parameters );
+						return $this->executeController( $Parameters );
 					}
 				);
 				break;
@@ -100,7 +101,7 @@ class Application extends Base
 					$Route,
 					function( $Parameters )
 					{
-						return self::executeController( $Parameters );
+						return $this->executeController( $Parameters );
 					}
 				);
 				break;
@@ -130,7 +131,7 @@ class Application extends Base
 	}
 
 	/**
-	 * This static method is called by the route lambdas and handles
+	 * This method is called by the route lambdas and handles
 	 * instantiating the required controller and calling the correct method.
 	 *
 	 * @param $Parameters
@@ -138,7 +139,7 @@ class Application extends Base
 	 * @throws MissingMethodException
 	 * @throws NotFoundException
 	 */
-	public static function executeController( $Parameters )
+	public function executeController( $Parameters )
 	{
 		$Parts = explode( '@', $Parameters[ "Controller" ] );
 
@@ -155,7 +156,7 @@ class Application extends Base
 										->get( "Controllers.NameSpace" );
 		}
 
-		$Controller = Factory::create( $Controller, $NameSpace );
+		$Controller = Factory::create( $this, $Controller, $NameSpace );
 
 		if( !method_exists( $Controller, $Method ) )
 		{

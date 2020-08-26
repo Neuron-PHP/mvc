@@ -2,6 +2,8 @@
 
 namespace Neuron\Mvc\Controllers;
 
+use Neuron\Mvc\Application;
+
 /**
  * Class Factory
  * @package Neuron\Mvc\Controllers
@@ -11,12 +13,13 @@ namespace Neuron\Mvc\Controllers;
 class Factory
 {
 	/**
+	 * @param Application $App
 	 * @param string $Name
 	 * @param string $NameSpace = "\App\Controller"
 	 * @return IController
 	 * @throws NotFoundException
 	 */
-	static function create( string $Name, $NameSpace = "\App\Controller" ) : IController
+	static function create( Application $App, string $Name, $NameSpace = "\App\Controller" ) : IController
 	{
 		$Class = "$NameSpace\\$Name";
 
@@ -25,6 +28,6 @@ class Factory
 			throw new NotFoundException( "Controllers $Name not found.");
 		}
 
-		return new $Class;
+		return new $Class( $App->getRouter() );
 	}
 }

@@ -92,7 +92,7 @@ class ApplicationTest extends TestCase
 
 		$Http = new Http404ListenerTest();
 
-		$App->getEvent()->registerListeners(
+		$App->getEventEmitter()->registerListeners(
 			[
 				Http404::class => [
 					$Http
