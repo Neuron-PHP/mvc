@@ -130,7 +130,7 @@ class Application extends Base
 	 */
 	protected function onRun()
 	{
-		$this->_Router->run( $this->getParameters() );
+		echo $this->_Router->run( $this->getParameters() );
 	}
 
 	/**
