@@ -1,3 +1,3 @@
 <h2>404</h2>
-Not found...
+The page <?= $route ?> does not exist.
 <?php
