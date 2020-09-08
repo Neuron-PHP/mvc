@@ -4,8 +4,8 @@ namespace Neuron\Mvc\Controllers;
 
 class HttpCodes extends Base
 {
-	public function _404()
+	public function _404( array $Parameters )
 	{
-		// @todo render 404 view.
+		return $this->renderHtml( $Parameters );
 	}
 }

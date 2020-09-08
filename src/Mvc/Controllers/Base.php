@@ -3,6 +3,10 @@
 namespace Neuron\Mvc\Controllers;
 
 use Neuron\Mvc\Application;
+use Neuron\Mvc\Views\Html;
+use Neuron\Mvc\Views\Json;
+use Neuron\Mvc\Views\View;
+use Neuron\Mvc\Views\Xml;
 use Neuron\Routing\RequestMethod;
 use Neuron\Routing\Router;
 
@@ -13,6 +17,32 @@ class Base implements IController
 	public function __construct( Router $Router )
 	{
 		$this->setRouter( $Router );
+	}
+
+	public function renderHtml( array $Data = [], string $Page = "index", string $Layout = "default" ) : string
+	{
+
+
+		$View = ( new Html() )
+			->setController( (new \ReflectionClass( static::class ))->getShortName() )
+			->setLayout( $Layout )
+			->setPage( $Page );
+
+		return $View->render( $Data );
+	}
+
+	public function renderJson( array $Data = [] ): string
+	{
+		$View = new Json();
+
+		return $View->render( $Data );
+	}
+
+	public function renderXml( array $Data = [] ): string
+	{
+		$View = new Xml();
+
+		return $View->render( $Data );
 	}
 
 	/**

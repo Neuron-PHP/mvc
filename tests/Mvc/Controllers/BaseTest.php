@@ -81,6 +81,5 @@ class BaseTest extends TestCase
 		$this->assertTrue(
 			$App->getRouter()->getRoute( RequestMethod::GET, "/controller/delete/1" ) != null
 		);
-
 	}
 }

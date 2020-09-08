@@ -37,10 +37,13 @@ class Application extends Base
 				$this->getEventEmitter()->emit( new Http404( $Parameters[ "route" ] ) );
 
 				return self::executeController(
-					[
-						"Controller" => "HttpCodes@_404",
-						"NameSpace"  => "Neuron\Mvc\Controllers"
-					]
+					array_merge(
+						$Parameters,
+						[
+							"Controller" => "HttpCodes@_404",
+							"NameSpace"  => "Neuron\Mvc\Controllers"
+						]
+					)
 				);
 			}
 		);
@@ -163,7 +166,7 @@ class Application extends Base
 			throw new MissingMethodException( "Method '$Method'' not found." );
 		}
 
-		return $Controller->$Method();
+		return $Controller->$Method( $Parameters );
 	}
 }
 

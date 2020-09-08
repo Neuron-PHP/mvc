@@ -10,12 +10,32 @@ use Neuron\Mvc\Controllers\IController;
 use Neuron\Mvc\Controllers\NotFoundException;
 use Neuron\Mvc\Events\Http404;
 use Neuron\Patterns\Registry;
+use Neuron\Routing\Router;
 use PHPUnit\Framework\TestCase;
 
 class TestController implements IController
 {
 	public function testMethod()
 	{}
+
+	public function __construct( Router $Router )
+	{
+	}
+
+	public function renderHtml( array $Data = [], string $Page = "index", string $Layout = "default" ) : string
+	{
+		// TODO: Implement renderHtml() method.
+	}
+
+	public function renderJson( array $Data = [] ): string
+	{
+		// TODO: Implement renderJson() method.
+	}
+
+	public function renderXml( array $Data = [] ): string
+	{
+		// TODO: Implement renderXml() method.
+	}
 }
 
 class Http404ListenerTest implements IListener
@@ -73,8 +93,8 @@ class ApplicationTest extends TestCase
 
 			$App->run(
 				[
-					"type" => "GET",
-					"route"   => "/test"
+					"type"  => "GET",
+					"route" => "/test"
 				]
 			);
 		}
