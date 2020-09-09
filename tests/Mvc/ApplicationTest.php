@@ -24,17 +24,14 @@ class TestController implements IController
 
 	public function renderHtml( array $Data = [], string $Page = "index", string $Layout = "default" ) : string
 	{
-		// TODO: Implement renderHtml() method.
 	}
 
 	public function renderJson( array $Data = [] ): string
 	{
-		// TODO: Implement renderJson() method.
 	}
 
 	public function renderXml( array $Data = [] ): string
 	{
-		// TODO: Implement renderXml() method.
 	}
 }
 
@@ -50,6 +47,42 @@ class Http404ListenerTest implements IListener
 
 class ApplicationTest extends TestCase
 {
+	public function testHtml()
+	{
+		$App = new Application( "" );
+
+		$Http = new Http404ListenerTest();
+
+		$App->getEventEmitter()->registerListeners(
+			[
+				Http404::class => [
+					$Http
+				]
+			]
+		);
+
+		ob_start();
+
+		$App->run(
+			[
+				"type"  => "GET",
+				"route" => "/test404"
+			]
+		);
+
+		$Output = ob_get_clean();
+
+		$this->assertContains(
+			"<html>",
+			$Output
+		);
+
+		$this->assertContains(
+			"does not exist",
+			$Output
+		);
+	}
+
 	public function testGetVersion()
 	{
 		$Version = "1.0.0";
