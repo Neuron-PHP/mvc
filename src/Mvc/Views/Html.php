@@ -90,7 +90,7 @@ class Html implements IView
 
 		if( !$Path )
 		{
-			$Path = "resources/views";
+			$Path = "../resources/views";
 		}
 
 		$View = "$Path/{$this->getController()}/{$this->getPage()}.php";
