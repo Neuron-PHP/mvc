@@ -1,3 +1,6 @@
+## 0.5.2
+* Fixed default namespace to App\Controllers
+
 ## 0.5.1 
 * Forced release for composer.
 

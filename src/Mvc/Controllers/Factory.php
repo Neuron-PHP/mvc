@@ -15,11 +15,11 @@ class Factory
 	/**
 	 * @param Application $App
 	 * @param string $Name
-	 * @param string $NameSpace = "\App\Controller"
+	 * @param string $NameSpace = "\App\Controllers"
 	 * @return IController
 	 * @throws NotFoundException
 	 */
-	static function create( Application $App, string $Name, $NameSpace = "\App\Controller" ) : IController
+	static function create( Application $App, string $Name, $NameSpace = "\App\Controllers" ) : IController
 	{
 		$Class = "$NameSpace\\$Name";
 
