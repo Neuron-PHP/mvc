@@ -47,6 +47,15 @@ class Http404ListenerTest implements IListener
 
 class ApplicationTest extends TestCase
 {
+	protected function setUp()
+	{
+		parent::setUp();
+
+		Registry::getInstance()
+							 ->set( "Views.Path", "./resources/views" );
+
+	}
+
 	public function testHtml()
 	{
 		$App = new Application( "" );

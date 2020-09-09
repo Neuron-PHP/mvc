@@ -1,5 +1,9 @@
+## 0.5.4
+* Updated the default view path.
+
 ## 0.5.3
 * Fixed an issue with the default controller namespace.
+
 ## 0.5.2
 * Fixed default namespace to App\Controllers
 
