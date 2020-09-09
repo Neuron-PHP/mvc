@@ -58,7 +58,6 @@ class ApplicationTest extends TestCase
 
 	public function testHtml()
 	{
-		echo "path:".getcwd() ;
 		$App = new Application( "" );
 
 		$Http = new Http404ListenerTest();
