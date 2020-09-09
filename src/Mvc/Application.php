@@ -151,15 +151,13 @@ class Application extends Base
 
 		if( ArrayHelper::hasKey( $Parameters, "NameSpace" ) )
 		{
-			$NameSpace = $Parameters[ "NameSpace" ];
+			$Controller = Factory::create( $this, $Controller, $Parameters[ "NameSpace" ] );
 		}
 		else
 		{
-			$NameSpace = Registry::getInstance()
-										->get( "Controllers.NameSpace" );
+			$Controller = Factory::create( $this, $Controller );
 		}
 
-		$Controller = Factory::create( $this, $Controller, $NameSpace );
 
 		if( !method_exists( $Controller, $Method ) )
 		{
