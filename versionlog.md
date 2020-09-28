@@ -1,3 +1,5 @@
+## 0.5.6
+
 ## 0.5.5 2020-09-28
 * Updated events component.
 
