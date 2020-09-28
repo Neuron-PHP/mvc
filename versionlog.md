@@ -1,3 +1,6 @@
+## 0.5.5 2020-09-28
+* Updated events component.
+
 ## 0.5.4
 * Updated the default view path.
 
