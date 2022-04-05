@@ -7,9 +7,6 @@ namespace Neuron\Mvc\Views;
 use Neuron\Patterns\Registry;
 
 /**
- * Class Html
- * @package Neuron\Mvc\Views
- *
  * Generate html output by combining
  * a layout with a view and data.
  */

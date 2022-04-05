@@ -2,6 +2,7 @@
 
 namespace Mvc;
 
+use Neuron\Core\CrossCutting\Event;
 use Neuron\Events\IEvent;
 use Neuron\Events\IListener;
 use Neuron\Mvc\Application;
@@ -47,7 +48,7 @@ class Http404ListenerTest implements IListener
 
 class ApplicationTest extends TestCase
 {
-	protected function setUp()
+	protected function setUp() : void
 	{
 		parent::setUp();
 
@@ -60,12 +61,12 @@ class ApplicationTest extends TestCase
 	{
 		$App = new Application( "" );
 
-		$Http = new Http404ListenerTest();
+		$App->initEvents();
 
-		$App->getEventEmitter()->registerListeners(
+		Event::registerListeners(
 			[
 				Http404::class => [
-					$Http
+					Http404ListenerTest::class
 				]
 			]
 		);
@@ -81,12 +82,12 @@ class ApplicationTest extends TestCase
 
 		$Output = ob_get_clean();
 
-		$this->assertContains(
+		$this->assertStringContainsString(
 			"<html>",
 			$Output
 		);
 
-		$this->assertContains(
+		$this->assertStringContainsString(
 			"does not exist",
 			$Output
 		);
@@ -152,9 +153,11 @@ class ApplicationTest extends TestCase
 	{
 		$App = new Application( "" );
 
+		$App->initEvents();
+
 		$Http = new Http404ListenerTest();
 
-		$App->getEventEmitter()->registerListeners(
+		Event::registerListeners(
 			[
 				Http404::class => [
 					$Http
