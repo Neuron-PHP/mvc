@@ -2,6 +2,7 @@
 namespace Neuron\Mvc;
 
 use Neuron\Core\Application\Base;
+use Neuron\Core\CrossCutting\Event;
 use Neuron\Core\Facades\EventEmitter;
 use Neuron\Data\ArrayHelper;
 use Neuron\Mvc\Controllers\BadRequestMethodException;
@@ -34,7 +35,7 @@ class Application extends Base
 			"/404",
 			function( $Parameters )
 			{
-				$this->getEventEmitter()->emit( new Http404( $Parameters[ "route" ] ) );
+				Event::emit( new Http404( $Parameters[ "route" ] ) );
 
 				return self::executeController(
 					array_merge(

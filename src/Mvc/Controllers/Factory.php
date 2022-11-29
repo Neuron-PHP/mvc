@@ -5,9 +5,6 @@ namespace Neuron\Mvc\Controllers;
 use Neuron\Mvc\Application;
 
 /**
- * Class Factory
- * @package Neuron\Mvc\Controllers
- *
  * Used to instantiate a new controller object.
  */
 class Factory
