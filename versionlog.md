@@ -1,3 +1,6 @@
+## 0.6.2
+* Added a title to the 404 page.
+
 ## 0.6.1 2024-11-25
 * Removed legacy event code from application.
 

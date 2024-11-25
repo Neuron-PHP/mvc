@@ -6,6 +6,14 @@ class HttpCodes extends Base
 {
 	public function _404( array $Parameters )
 	{
-		return $this->renderHtml( $Parameters, '404' );
+		return $this->renderHtml(
+			array_merge(
+				$Parameters,
+				[
+					"Title" => "Resource Not Found",
+				]
+			),
+			'404'
+		);
 	}
 }

@@ -88,6 +88,11 @@ class ApplicationTest extends TestCase
 		);
 
 		$this->assertStringContainsString(
+			"Resource Not Found",
+			$Output
+		);
+
+		$this->assertStringContainsString(
 			"does not exist",
 			$Output
 		);
