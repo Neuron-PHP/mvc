@@ -1,3 +1,6 @@
+## 0.6.1 2024-11-25
+* Removed legacy event code from application.
+
 ## 0.5.6 2022-04-04
 * Scheduled release
 
