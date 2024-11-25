@@ -1,3 +1,5 @@
+## 0.6.3
+
 ## 0.6.2
 * Added a title to the 404 page.
 
