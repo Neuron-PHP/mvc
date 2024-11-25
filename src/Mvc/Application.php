@@ -17,7 +17,6 @@ use Neuron\Routing\Router;
 class Application extends Base
 {
 	private Router        $_Router;
-	private EventEmitter  $_Event;
 
 	/**
 	 * Application constructor.
@@ -29,7 +28,6 @@ class Application extends Base
 		parent::__construct( $Version );
 
 		$this->_Router = new Router();
-		$this->_Event  = new EventEmitter();
 
 		$Route = $this->_Router->get(
 			"/404",
@@ -48,14 +46,6 @@ class Application extends Base
 				);
 			}
 		);
-	}
-
-	/**
-	 * @return EventEmitter
-	 */
-	public function getEventEmitter(): EventEmitter
-	{
-		return $this->_Event;
 	}
 
 	/**
