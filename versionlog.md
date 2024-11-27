@@ -1,3 +1,7 @@
+## 0.6.3
+* addRoute is now fluent.
+* Updated the application base to support native configuration files.
+
 ## 0.6.2
 * Added a title to the 404 page.
 

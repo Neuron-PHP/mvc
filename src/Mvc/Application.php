@@ -3,8 +3,8 @@ namespace Neuron\Mvc;
 
 use Neuron\Core\Application\Base;
 use Neuron\Core\CrossCutting\Event;
-use Neuron\Core\Facades\EventEmitter;
 use Neuron\Data\ArrayHelper;
+use Neuron\Data\Setting\Source\ISettingSource;
 use Neuron\Mvc\Controllers\BadRequestMethodException;
 use Neuron\Mvc\Controllers\Factory;
 use Neuron\Mvc\Controllers\MissingMethodException;
@@ -16,16 +16,16 @@ use Neuron\Routing\Router;
 
 class Application extends Base
 {
-	private Router        $_Router;
+	private Router $_Router;
 
 	/**
 	 * Application constructor.
 	 * @param string $Version
 	 * @throws \Exception
 	 */
-	public function __construct( string $Version )
+	public function __construct( string $Version, ?ISettingSource $Source = null )
 	{
-		parent::__construct( $Version );
+		parent::__construct( $Version, $Source );
 
 		$this->_Router = new Router();
 
@@ -52,10 +52,11 @@ class Application extends Base
 	 * @param string $Method
 	 * @param string $Route
 	 * @param string $ControllerMethod
+	 * @return Application
 	 *
 	 * @throws BadRequestMethodException
 	 */
-	public function addRoute( string $Method, string $Route, string $ControllerMethod )
+	public function addRoute( string $Method, string $Route, string $ControllerMethod ) : Application
 	{
 		switch( RequestMethod::getType( $Method ) )
 		{
@@ -105,6 +106,8 @@ class Application extends Base
 		}
 
 		$Route->Payload = [ "Controller" => $ControllerMethod ];
+
+		return $this;
 	}
 
 	public function getRouter() : Router
@@ -112,8 +115,17 @@ class Application extends Base
 		return $this->_Router;
 	}
 
+	protected function onStart(): bool
+	{
+		$ViewPath = $this->getSetting( 'path', 'views' );
+		if( $ViewPath )
+			Registry::getInstance()->set( "Views.Path", $ViewPath );
+
+		return parent::onStart();
+	}
+
 	/**
-	 * @return mixed|void
+	 * @return void
 	 * @throws \Exception
 	 * @throws MissingMethodException
 	 * @throws BadRequestMethodException
@@ -133,7 +145,7 @@ class Application extends Base
 	 * @throws MissingMethodException
 	 * @throws NotFoundException
 	 */
-	public function executeController( $Parameters )
+	public function executeController( $Parameters ): mixed
 	{
 		$Parts = explode( '@', $Parameters[ "Controller" ] );
 
@@ -148,7 +160,6 @@ class Application extends Base
 		{
 			$Controller = Factory::create( $this, $Controller );
 		}
-
 
 		if( !method_exists( $Controller, $Method ) )
 		{
