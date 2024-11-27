@@ -1,3 +1,5 @@
+## 0.6.4
+
 ## 0.6.3
 * addRoute is now fluent.
 * Updated the application base to support native configuration files.
