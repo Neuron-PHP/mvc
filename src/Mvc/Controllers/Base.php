@@ -21,8 +21,6 @@ class Base implements IController
 
 	public function renderHtml( array $Data = [], string $Page = "index", string $Layout = "default" ) : string
 	{
-
-
 		$View = ( new Html() )
 			->setController( (new \ReflectionClass( static::class ))->getShortName() )
 			->setLayout( $Layout )

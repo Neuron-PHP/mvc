@@ -3,6 +3,7 @@
 namespace Mvc;
 
 use Neuron\Core\CrossCutting\Event;
+use Neuron\Data\Setting\Source\Ini;
 use Neuron\Events\IEvent;
 use Neuron\Events\IListener;
 use Neuron\Mvc\Application;
@@ -54,7 +55,29 @@ class ApplicationTest extends TestCase
 
 		Registry::getInstance()
 							 ->set( "Views.Path", "./resources/views" );
+	}
 
+	public function testConfig()
+	{
+		$Ini = new Ini( './examples/application.ini' );
+		$App = new Application( "1.0.0", $Ini );
+
+		$App->run(
+			[
+				"type"  => "GET",
+				"route" => "/test"
+			]
+		);
+
+		$this->assertEquals(
+			"1.0.0",
+			$App->getVersion()
+		);
+
+		$this->assertEquals(
+			"examples/views",
+			Registry::getInstance()->get( "Views.Path" )
+		);
 	}
 
 	public function testHtml()
