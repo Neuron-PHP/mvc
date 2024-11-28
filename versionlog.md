@@ -1,4 +1,5 @@
-## 0.6.4
+## 0.6.4 2024-11-27
+* Updated composer and the core package.
 
 ## 0.6.3
 * addRoute is now fluent.
