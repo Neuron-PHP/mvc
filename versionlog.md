@@ -1,3 +1,5 @@
+## 0.6.5
+
 ## 0.6.4 2024-11-27
 * Updated composer and the core package.
 
