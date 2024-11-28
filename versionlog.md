@@ -1,3 +1,5 @@
+## 0.6.6
+
 ## 0.6.5 2024-11-27
 * Updated the routing component.
 
