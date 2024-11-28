@@ -1,3 +1,6 @@
+## 0.6.5 2024-11-27
+* Updated the routing component.
+
 ## 0.6.4 2024-11-27
 * Updated composer and the core package.
 
