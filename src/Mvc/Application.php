@@ -131,7 +131,7 @@ class Application extends Base
 	 * @throws BadRequestMethodException
 	 * @throws NotFoundException
 	 */
-	protected function onRun()
+	protected function onRun() : void
 	{
 		echo $this->_Router->run( $this->getParameters() );
 	}
