@@ -1,6 +1,7 @@
 <?php
 namespace Neuron\Mvc;
 
+use Exception;
 use Neuron\Core\Application\Base;
 use Neuron\Core\CrossCutting\Event;
 use Neuron\Data\ArrayHelper;
@@ -14,6 +15,11 @@ use Neuron\Patterns\Registry;
 use Neuron\Routing\RequestMethod;
 use Neuron\Routing\Router;
 
+/**
+ * Class Application
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
+ */
 class Application extends Base
 {
 	private Router $_Router;
@@ -21,7 +27,8 @@ class Application extends Base
 	/**
 	 * Application constructor.
 	 * @param string $Version
-	 * @throws \Exception
+	 * @param ISettingSource|null $Source
+	 * @throws Exception
 	 */
 	public function __construct( string $Version, ?ISettingSource $Source = null )
 	{
@@ -29,7 +36,7 @@ class Application extends Base
 
 		$this->_Router = new Router();
 
-		$Route = $this->_Router->get(
+		$this->_Router->get(
 			"/404",
 			function( $Parameters )
 			{
@@ -39,7 +46,7 @@ class Application extends Base
 					array_merge(
 						$Parameters,
 						[
-							"Controller" => "HttpCodes@_404",
+							"Controller" => "HttpCodes@code404",
 							"NameSpace"  => "Neuron\Mvc\Controllers"
 						]
 					)
@@ -110,11 +117,18 @@ class Application extends Base
 		return $this;
 	}
 
+	/**
+	 * @return Router
+	 */
 	public function getRouter() : Router
 	{
 		return $this->_Router;
 	}
 
+	/**
+	 * @return bool
+	 * @throws Exception
+	 */
 	protected function onStart(): bool
 	{
 		$ViewPath = $this->getSetting( 'path', 'views' );
@@ -126,7 +140,7 @@ class Application extends Base
 
 	/**
 	 * @return void
-	 * @throws \Exception
+	 * @throws Exception
 	 * @throws MissingMethodException
 	 * @throws BadRequestMethodException
 	 * @throws NotFoundException
@@ -151,15 +165,14 @@ class Application extends Base
 
 		$Controller = $Parts[ 0 ];
 		$Method     = $Parts[ 1 ];
+		$NameSpace  = "App\Controllers";
 
 		if( ArrayHelper::hasKey( $Parameters, "NameSpace" ) )
 		{
-			$Controller = Factory::create( $this, $Controller, $Parameters[ "NameSpace" ] );
+			$NameSpace = $Parameters[ "NameSpace" ];
 		}
-		else
-		{
-			$Controller = Factory::create( $this, $Controller );
-		}
+
+		$Controller = Factory::create( $this, $Controller, $NameSpace );
 
 		if( !method_exists( $Controller, $Method ) )
 		{

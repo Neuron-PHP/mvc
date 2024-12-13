@@ -4,7 +4,7 @@ namespace Neuron\Mvc\Controllers;
 
 class HttpCodes extends Base
 {
-	public function _404( array $Parameters )
+	public function code404( array $Parameters ) : string
 	{
 		return $this->renderHtml(
 			array_merge(

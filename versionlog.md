@@ -1,3 +1,6 @@
+## 0.6.6 2024-12-13
+* Some minor cleanup for phpmd.
+
 ## 0.6.5 2024-11-27
 * Updated the routing component.
 
