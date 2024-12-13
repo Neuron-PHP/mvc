@@ -1,4 +1,6 @@
-## 0.6.7
+## 0.6.7 2024-12-13
+* Fixed an issue with pages using require_once to render.
+* Updated the tests.
 
 ## 0.6.6 2024-12-13
 * Some minor cleanup for phpmd.
