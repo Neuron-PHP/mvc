@@ -1,3 +1,5 @@
+## 0.6.8
+
 ## 0.6.7 2024-12-13
 * Fixed an issue with pages using require_once to render.
 * Updated the tests.
