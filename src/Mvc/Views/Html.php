@@ -107,7 +107,7 @@ class Html implements IView
 		}
 
 		ob_start();
-		require_once( $Layout );
+		require( $Layout );
 		$Page = ob_get_contents();
 		ob_end_clean();
 

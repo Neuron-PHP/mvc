@@ -49,20 +49,19 @@ class Http404ListenerTest implements IListener
 
 class ApplicationTest extends TestCase
 {
+	public Application $App;
+
 	protected function setUp() : void
 	{
 		parent::setUp();
 
-		Registry::getInstance()
-							 ->set( "Views.Path", "./resources/views" );
+		$Ini = new Ini( './examples/application.ini' );
+		$this->App = new Application( "1.0.0", $Ini );
 	}
 
 	public function testConfig()
 	{
-		$Ini = new Ini( './examples/application.ini' );
-		$App = new Application( "1.0.0", $Ini );
-
-		$App->run(
+		$this->App->run(
 			[
 				"type"  => "GET",
 				"route" => "/test"
@@ -71,7 +70,7 @@ class ApplicationTest extends TestCase
 
 		$this->assertEquals(
 			"1.0.0",
-			$App->getVersion()
+			$this->App->getVersion()
 		);
 
 		$this->assertEquals(
@@ -82,21 +81,9 @@ class ApplicationTest extends TestCase
 
 	public function testHtml()
 	{
-		$App = new Application( "" );
-
-		$App->initEvents();
-
-		Event::registerListeners(
-			[
-				Http404::class => [
-					Http404ListenerTest::class
-				]
-			]
-		);
-
 		ob_start();
 
-		$App->run(
+		$this->App->run(
 			[
 				"type"  => "GET",
 				"route" => "/test404"
@@ -125,23 +112,19 @@ class ApplicationTest extends TestCase
 	{
 		$Version = "1.0.0";
 
-		$App = new Application( $Version );
-
 		$this->assertEquals(
 			$Version,
-			$App->getVersion()
+			$this->App->getVersion()
 		);
 	}
 
 	public function testAddRouteFails()
 	{
-		$App = new Application( "" );
-
 		$Success = true;
 
 		try
 		{
-			$App->addRoute( 'poop', '/test', 'Test' );
+			$this->App->addRoute( 'poop', '/test', 'Test' );
 		}
 		catch( BadRequestMethodException $Exception )
 		{
@@ -151,18 +134,16 @@ class ApplicationTest extends TestCase
 		$this->assertFalse( $Success );
 	}
 
-	public function testDispatchFails()
+	public function testMissingController()
 	{
-		$App = new Application( "" );
-
 		$Success = true;
 
 		Registry::getInstance()->set( "Controllers.NameSpace", "Mvc" );
 		try
 		{
-			$App->addRoute( 'GET', '/test', 'TestController@testMethod' );
+			$this->App->addRoute( 'GET', '/test', 'TestController@testMethod' );
 
-			$App->run(
+			$this->App->run(
 				[
 					"type"  => "GET",
 					"route" => "/test"
@@ -177,11 +158,9 @@ class ApplicationTest extends TestCase
 		$this->assertTrue( $Success );
 	}
 
-	public function test404()
+	public function test404Event()
 	{
-		$App = new Application( "" );
-
-		$App->initEvents();
+		$this->App->initEvents();
 
 		$Http = new Http404ListenerTest();
 
@@ -193,7 +172,7 @@ class ApplicationTest extends TestCase
 			]
 		);
 
-		$App->run(
+		$this->App->run(
 			[
 				"type"  => "GET",
 				"route" => "/test404"
