@@ -1,4 +1,5 @@
-## 0.6.12
+## 0.6.12 2024-12-15
+* Implemented base_path
 
 ## 0.6.11 2024-12-15
 * Fixed the root path for routes.
