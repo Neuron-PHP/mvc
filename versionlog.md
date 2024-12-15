@@ -1,4 +1,5 @@
-## 0.6.11
+## 0.6.11 2024-12-15
+* Fixed the root path for routes.
 
 ## 0.6.10 2024-12-15
 * Added HttpResponseStatus class.
