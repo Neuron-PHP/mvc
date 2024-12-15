@@ -1,0 +1,11 @@
+routes:
+  login:
+    route: /login
+    method: POST
+    controller: App\Controllers\AuthController@login
+    request: login
+  test:
+    route: /test
+    method: POST
+    controller: Mvc\TestController@test
+    request: test

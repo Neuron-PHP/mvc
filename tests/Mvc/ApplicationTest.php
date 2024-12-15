@@ -6,19 +6,97 @@ use Neuron\Core\CrossCutting\Event;
 use Neuron\Data\Setting\Source\Ini;
 use Neuron\Events\IEvent;
 use Neuron\Events\IListener;
+use Neuron\Log\Log;
 use Neuron\Mvc\Application;
 use Neuron\Mvc\Controllers\BadRequestMethodException;
 use Neuron\Mvc\Controllers\IController;
 use Neuron\Mvc\Controllers\NotFoundException;
 use Neuron\Mvc\Events\Http404;
+use Neuron\Mvc\Requests\Request;
 use Neuron\Patterns\Registry;
 use Neuron\Routing\Router;
 use PHPUnit\Framework\TestCase;
 
+class MockPhpInputStream
+{
+	private static $data;
+	private $position;
+
+	public function __construct()
+	{
+		$this->position = 0;
+	}
+
+	public static function setData($data)
+	{
+		self::$data = $data;
+	}
+
+	public function stream_open($path, $mode, $options, &$opened_path)
+	{
+		return true;
+	}
+
+	public function stream_read($count)
+	{
+		$result = substr(self::$data, $this->position, $count);
+		$this->position += strlen($result);
+		return $result;
+	}
+
+	public function stream_write($data)
+	{
+		if( self::$data === null )
+		{
+			self::$data = "";
+		}
+
+		$left = substr(self::$data, 0, $this->position);
+		$right = substr(self::$data, $this->position + strlen($data));
+		self::$data = $left . $data . $right;
+		$this->position += strlen($data);
+		return strlen($data);
+	}
+
+	public function stream_eof()
+	{
+		return $this->position >= strlen(self::$data);
+	}
+
+	public function stream_stat()
+	{
+		return [];
+	}
+
+	public function stream_seek($offset, $whence)
+	{
+		if ($whence === SEEK_SET) {
+			$this->position = $offset;
+			return true;
+		}
+		return false;
+	}
+}
+
+function setInputStream($data)
+{
+	stream_wrapper_unregister("php");
+	\Mvc\Requests\MockPhpInputStream::setData( $data);
+	stream_wrapper_register("php", "Mvc\MockPhpInputStream");
+	file_put_contents("php://input", $data);
+}
+
+$ControlledPassed = false;
+
 class TestController implements IController
 {
-	public function testMethod()
-	{}
+	public function test( array $Parameters, ?Request $Request )
+	{
+		Log::debug( "TestController::test" );
+
+		global $ControlledPassed;
+		$ControlledPassed = count( $Request->getErrors() ) === 0;
+	}
 
 	public function __construct( Router $Router )
 	{
@@ -184,4 +262,75 @@ class ApplicationTest extends TestCase
 			$Http->State
 		);
 	}
+
+	public function testRequestSuccess()
+	{
+		$this->assertNotNull( $this->App->getRequest( 'login' ) );
+	}
+
+	public function testRequestFail()
+	{
+		try
+		{
+			$this->assertNull( $this->App->getRequest( 'not-there' ) );
+			$this->assertTrue( false );
+		}
+		catch( \Exception $Exception )
+		{
+			$this->assertTrue( true );
+		}
+	}
+
+	public function testControllerRequestSuccess()
+	{
+		global $ControlledPassed;
+		$ControlledPassed = false;
+
+		$Json = '
+		{
+			"param1": "test",
+			"param2": "testtest",
+			"param3": {
+				"subparam1": "test",
+				"subparam2": "test"
+			}
+		}';
+
+		setInputStream( $Json );
+
+		$this->App->run(
+			[
+				"type"  => "POST",
+				"route" => "/test"
+			]
+		);
+
+		global $ControlledPassed;
+		$this->assertTrue( $ControlledPassed );
+	}
+
+	public function testControllerRequestFailed()
+	{
+		global $ControlledPassed;
+		$ControlledPassed = false;
+
+		$Json = '
+		{
+			"param1": "test",
+			"param2": "testtest"
+		}';
+
+		setInputStream( $Json );
+
+		$this->App->run(
+			[
+				"type"  => "POST",
+				"route" => "/test"
+			]
+		);
+
+		global $ControlledPassed;
+		$this->assertFalse( $ControlledPassed );
+	}
+
 }

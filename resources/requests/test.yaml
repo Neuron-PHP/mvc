@@ -1,0 +1,29 @@
+request:
+  method: POST
+  headers:
+    - Content-Type: application/json
+  properties:
+    param1:
+      required: true
+      type: string
+      minLength: 3
+      maxLength: 20
+    param2:
+      required: true
+      type: string
+      minLength: 3
+      maxLength: 20
+    param3:
+        required: true
+        type: object
+        properties:
+            subparam1:
+                required: true
+                type: string
+                minLength: 3
+                maxLength: 20
+            subparam2:
+                required: true
+                type: string
+                minLength: 3
+                maxLength: 20

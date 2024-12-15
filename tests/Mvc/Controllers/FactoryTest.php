@@ -39,7 +39,7 @@ class FactoryTest extends TestCase
 	{
 		$App = new Application( "1" );
 
-		$Controller = Factory::create( $App, 'TestController', "Mvc\Controllers" );
+		$Controller = Factory::create( $App, "Mvc\Controllers\TestController" );
 
 		$this->assertTrue(
 			$Controller instanceof TestController
