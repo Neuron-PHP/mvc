@@ -17,17 +17,17 @@ class TestController implements IController
 	{
 	}
 
-	public function renderHtml( array $Data = [], string $Page = "index", string $Layout = "default" ) : string
+	public function renderHtml( int $ResponseCode, array $Data = [], string $Page = "index", string $Layout = "default" ) : string
 	{
 		// TODO: Implement renderHtml() method.
 	}
 
-	public function renderJson( array $Data = [] ): string
+	public function renderJson( int $ResponseCode, array $Data = [] ): string
 	{
 		// TODO: Implement renderJson() method.
 	}
 
-	public function renderXml( array $Data = [] ): string
+	public function renderXml( int $ResponseCode, array $Data = [] ): string
 	{
 		// TODO: Implement renderXml() method.
 	}

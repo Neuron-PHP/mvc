@@ -19,8 +19,10 @@ class Base implements IController
 		$this->setRouter( $Router );
 	}
 
-	public function renderHtml( array $Data = [], string $Page = "index", string $Layout = "default" ) : string
+	public function renderHtml( int $ResponseCode, array $Data = [], string $Page = "index", string $Layout = "default" ) : string
 	{
+		http_response_code( $ResponseCode );
+
 		$View = ( new Html() )
 			->setController( (new \ReflectionClass( static::class ))->getShortName() )
 			->setLayout( $Layout )
@@ -29,15 +31,19 @@ class Base implements IController
 		return $View->render( $Data );
 	}
 
-	public function renderJson( array $Data = [] ): string
+	public function renderJson( int $ResponseCode, array $Data = [] ): string
 	{
+		http_response_code( $ResponseCode );
+
 		$View = new Json();
 
 		return $View->render( $Data );
 	}
 
-	public function renderXml( array $Data = [] ): string
+	public function renderXml( int $ResponseCode, array $Data = [] ): string
 	{
+		http_response_code( $ResponseCode );
+
 		$View = new Xml();
 
 		return $View->render( $Data );
