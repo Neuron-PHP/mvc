@@ -1,3 +1,5 @@
+## 0.6.9
+
 ## 0.6.8 2024-12-15
 * Implemented the new routes.yml file.
 * Implemented yaml based requests with validation.
