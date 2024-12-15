@@ -1,7 +1,7 @@
 request:
   method: POST
   headers:
-    - Content-Type: application/json
+    Content-Type: application/json
   properties:
     param1:
       required: true

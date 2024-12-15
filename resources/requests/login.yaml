@@ -1,8 +1,7 @@
 request:
   method: POST
   headers:
-    - Content-Type: application/json
-    - Content-Type: application/xml
+    Content-Type: application/json
   properties:
     username:
       required: true

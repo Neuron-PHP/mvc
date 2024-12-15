@@ -13,7 +13,7 @@ class Request
 {
 	private string $_Name;
 	private int   $_RequestMethod;
-	private array $_Headers;
+	private array $_Headers = [];
 	private array $_Parameters;
 	private array $_Errors = [];
 
@@ -30,6 +30,7 @@ class Request
 	}
 
 	/**
+	 * Returns an array representation of the JSON payload from php://input
 	 * @return array
 	 */
 	public function getJsonPayload(): array
@@ -46,6 +47,7 @@ class Request
 	}
 
 	/**
+	 * Get the type of request. See RequestMethod class for possible values.
 	 * @return int
 	 */
 	public function getRequestMethod(): int
@@ -151,6 +153,22 @@ class Request
 	}
 
 	/**
+	 * @return array
+	 */
+	public function getHttpHeaders(): array
+	{
+		$headers = [];
+		foreach( $_SERVER as $name => $value )
+		{
+			if( substr( $name, 0, 5 ) == 'HTTP_' )
+			{
+				$headers[str_replace(' ', '-', ucwords(strtolower(str_replace('_', ' ', substr($name, 5)))))] = $value;
+			}
+		}
+		return $headers;
+	}
+
+	/**
 	 * @param array $Payload
 	 * @throws ValidationException
 	 */
@@ -158,42 +176,76 @@ class Request
 	{
 		$this->_Errors = [];
 
+		$RequiredHeaders = $this->_Headers;
+
+		$Headers = $this->getHttpHeaders();
+
+		foreach( $RequiredHeaders as $RequiredName => $RequiredValue )
+		{
+			if( !array_key_exists( $RequiredName, $Headers ) )
+			{
+				$Msg = 'Missing header: ' . $RequiredName;
+				Log::warning( $Msg );
+
+				$this->_Errors[] = $Msg;
+				continue;
+			}
+
+			if( $Headers[ $RequiredName ] !== $RequiredValue )
+			{
+				$Msg = "Invalid header value: $RequiredName, expected: $RequiredValue, got: " . $Headers[ $RequiredName ];
+				Log::warning( $Msg );
+
+				$this->_Errors[] = $Msg;
+			}
+		}
+
 		foreach( $this->_Parameters as $Parameter )
 		{
-			if( isset( $Payload[ $Parameter->getName() ] ) )
+			if( !isset( $Payload[ $Parameter->getName() ] )  )
 			{
-				if( $Parameter->getType() === 'object' )
+				$this->validateParameter( $Parameter );
+				continue;
+			}
+
+			if( $Parameter->getType() === 'object' )
+			{
+				try
 				{
-					try
-					{
-						$Parameter->getValue()->processPayload( $Payload[ $Parameter->getName() ] );
-					}
-					catch( ValidationException $Exception )
-					{
-						Log::warning( $Exception->getMessage() );
-						$this->_Errors = array_merge( $this->_Errors, $Exception->getErrors() );
-					}
+					$Parameter->getValue()->processPayload( $Payload[ $Parameter->getName() ] );
+					continue;
 				}
-				else
+				catch( ValidationException $Exception )
 				{
-					$Parameter->setValue( $Payload[ $Parameter->getName() ] );
+					Log::warning( $Exception->getMessage() );
+					$this->_Errors = array_merge( $this->_Errors, $Exception->getErrors() );
 				}
 			}
 
-			try
-			{
-				$Parameter->validate();
-			}
-			catch( \Exception $Exception )
-			{
-				Log::warning( $Exception->getMessage() );
-				$this->_Errors[] = $Exception->getMessage();
-			}
+			$Parameter->setValue( $Payload[ $Parameter->getName() ] );
+
+			$this->validateParameter( $Parameter );
 		}
 
 		if( !empty( $this->_Errors ) )
 		{
 			throw new ValidationException( $this->_Name, $this->_Errors );
+		}
+	}
+
+	/**
+	 * @param mixed $Parameter
+	 */
+	protected function validateParameter( mixed $Parameter ): void
+	{
+		try
+		{
+			$Parameter->validate();
+		}
+		catch( ValidationException $Exception )
+		{
+			Log::warning( $Exception->getMessage() );
+			$this->_Errors[] = $Exception->getMessage();
 		}
 	}
 }

@@ -86,6 +86,15 @@ function setInputStream($data)
 	file_put_contents("php://input", $data);
 }
 
+function setHeaders( array $headers )
+{
+	foreach( $headers as $key => $value )
+	{
+		$name = 'HTTP_' . strtoupper( str_replace('-', '_', $key ) );
+		$_SERVER[$name] = $value;
+	}
+}
+
 $ControlledPassed = false;
 
 class TestController implements IController
@@ -281,8 +290,46 @@ class ApplicationTest extends TestCase
 		}
 	}
 
+	public function testControllerRequestFailed()
+	{
+		setHeaders(
+			[
+				'Content-Type'		=> 'application/xml',
+				'Authorization'	=> 'Bearer some-token'
+			]
+		);
+
+		global $ControlledPassed;
+		$ControlledPassed = false;
+
+		$Json = '
+		{
+			"param1": "test",
+			"param2": "testtest"
+		}';
+
+		setInputStream( $Json );
+
+		$this->App->run(
+			[
+				"type"  => "POST",
+				"route" => "/test"
+			]
+		);
+
+		global $ControlledPassed;
+		$this->assertFalse( $ControlledPassed );
+	}
+
 	public function testControllerRequestSuccess()
 	{
+		setHeaders(
+			[
+				'Content-Type' => 'application/json',
+				'Authorization' => 'Bearer some-token'
+			]
+		);
+
 		global $ControlledPassed;
 		$ControlledPassed = false;
 
@@ -308,29 +355,4 @@ class ApplicationTest extends TestCase
 		global $ControlledPassed;
 		$this->assertTrue( $ControlledPassed );
 	}
-
-	public function testControllerRequestFailed()
-	{
-		global $ControlledPassed;
-		$ControlledPassed = false;
-
-		$Json = '
-		{
-			"param1": "test",
-			"param2": "testtest"
-		}';
-
-		setInputStream( $Json );
-
-		$this->App->run(
-			[
-				"type"  => "POST",
-				"route" => "/test"
-			]
-		);
-
-		global $ControlledPassed;
-		$this->assertFalse( $ControlledPassed );
-	}
-
 }
