@@ -232,7 +232,7 @@ class Application extends Base
 			}
 		);
 
-		$Data = Yaml::parseFile(__DIR__ . '/../../config/routes.yaml' );
+		$Data = Yaml::parseFile('config/routes.yaml' );
 
 		foreach( $Data[ 'routes' ] as $Route )
 		{
