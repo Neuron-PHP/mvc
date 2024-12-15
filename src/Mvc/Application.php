@@ -37,6 +37,10 @@ class Application extends Base
 	{
 		parent::__construct( $Version, $Source );
 
+		$this->setBasePath(
+			$this->getSetting( 'base_path', 'system' ) ?? '.'
+		);
+
 		$this->loadRequests();
 		$this->loadRoutes();
 	}
@@ -47,14 +51,14 @@ class Application extends Base
 	 */
 	protected function loadRequests(): void
 	{
-		$initializersPath = __DIR__ . '/../../resources/requests';
+		$RequestPath = $this->getBasePath().'/resources/requests';
 
 		if( $this->getRegistryObject( 'Requests.Path' ) )
 		{
-			$initializersPath = $this->getRegistryObject( 'Requests.Path' );
+			$RequestPath = $this->getRegistryObject( 'Requests.Path' );
 		}
 
-		foreach( glob($initializersPath . '/*.yaml') as $filename )
+		foreach( glob($RequestPath . '/*.yaml') as $filename )
 		{
 			$Name = pathinfo( $filename )['filename'];
 
@@ -232,7 +236,7 @@ class Application extends Base
 			}
 		);
 
-		$Data = Yaml::parseFile('config/routes.yaml' );
+		$Data = Yaml::parseFile($this->getBasePath().'/config/routes.yaml' );
 
 		foreach( $Data[ 'routes' ] as $Route )
 		{
