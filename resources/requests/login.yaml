@@ -1,0 +1,47 @@
+request:
+  method: POST
+  headers:
+    Content-Type: application/json
+  properties:
+    username:
+      required: true
+      type: string
+      minLength: 3
+      maxLength: 20
+    password:
+      required: true
+      type: string
+      minLength: 8
+      maxLength: 50
+    age:
+      type: integer
+      minimum: 18
+      maximum: 40
+    birthdate:
+      type: string
+      format: date
+      pattern: '/^\d{4}-\d{2}-\d{2}$/'  # YYYY-MM-DD format
+    address:
+      required: true
+      type: object
+      properties:
+        street:
+          required: true
+          type: string
+          minLength: 3
+          maxLength: 10
+        city:
+          required: true
+          type: string
+          minLength: 3
+          maxLength: 20
+        state:
+          required: true
+          type: string
+          minLength: 2
+          maxLength: 2
+        zip:
+          required: true
+          type: string
+          minLength: 3
+          maxLength: 20

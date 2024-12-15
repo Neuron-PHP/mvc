@@ -8,5 +8,4 @@ node_modules
 public_html/
 build/
 .phpunit.result.cache
-/examples/application.ini
 /examples/test.log
