@@ -1,3 +1,5 @@
+## 0.6.11
+
 ## 0.6.10 2024-12-15
 * Added HttpResponseStatus class.
 
