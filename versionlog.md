@@ -1,3 +1,5 @@
+## 0.6.10
+
 ## 0.6.9 2024-12-15
 * Added http response codes to the render methods.
 
