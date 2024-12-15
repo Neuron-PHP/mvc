@@ -1,6 +1,7 @@
-## 0.6.8
+## 0.6.8 2024-12-15
 * Implemented the new routes.yml file.
 * Implemented yaml based requests with validation.
+* Added request required header validation.
 
 ## 0.6.7 2024-12-13
 * Fixed an issue with pages using require_once to render.
