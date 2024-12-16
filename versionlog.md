@@ -1,3 +1,5 @@
+## 0.6.14
+
 ## 0.6.13
 * Removed the requirement for every route to have a request.
 
