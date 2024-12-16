@@ -4,34 +4,8 @@ namespace Mvc\Controllers;
 
 use Neuron\Mvc\Application;
 use Neuron\Mvc\Controllers\Factory;
-use Neuron\Mvc\Controllers\IController;
-use Neuron\Routing\Router;
 use PHPUnit\Framework\TestCase;
-
-class TestController implements IController
-{
-	public function testMethod()
-	{}
-
-	public function __construct( Router $Router )
-	{
-	}
-
-	public function renderHtml( int $ResponseCode, array $Data = [], string $Page = "index", string $Layout = "default" ) : string
-	{
-		// TODO: Implement renderHtml() method.
-	}
-
-	public function renderJson( int $ResponseCode, array $Data = [] ): string
-	{
-		// TODO: Implement renderJson() method.
-	}
-
-	public function renderXml( int $ResponseCode, array $Data = [] ): string
-	{
-		// TODO: Implement renderXml() method.
-	}
-}
+use Mvc\TestController;
 
 class FactoryTest extends TestCase
 {
@@ -39,7 +13,7 @@ class FactoryTest extends TestCase
 	{
 		$App = new Application( "1" );
 
-		$Controller = Factory::create( $App, "Mvc\Controllers\TestController" );
+		$Controller = Factory::create( $App, "Mvc\TestController" );
 
 		$this->assertTrue(
 			$Controller instanceof TestController

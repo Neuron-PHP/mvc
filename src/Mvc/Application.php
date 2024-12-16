@@ -240,11 +240,13 @@ class Application extends Base
 
 		foreach( $Data[ 'routes' ] as $Route )
 		{
+			$Request = $Route[ 'request' ] ?? '';
+
 			$this->addRoute(
 				$Route[ 'method' ],
 				$Route[ 'route' ],
 				$Route[ 'controller' ],
-				$Route[ 'request' ]
+				$Request
 			);
 		}
 	}

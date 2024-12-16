@@ -9,3 +9,7 @@ routes:
     method: POST
     controller: Mvc\TestController@test
     request: test
+  no_request:
+    route: /no_request
+    method: GET
+    controller: Mvc\TestController@no_request

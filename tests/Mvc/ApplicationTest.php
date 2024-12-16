@@ -4,57 +4,14 @@ namespace Mvc;
 
 use Neuron\Core\CrossCutting\Event;
 use Neuron\Data\Setting\Source\Ini;
-use Neuron\Events\IEvent;
-use Neuron\Events\IListener;
-use Neuron\Log\Log;
 use Neuron\Mvc\Application;
 use Neuron\Mvc\Controllers\BadRequestMethodException;
-use Neuron\Mvc\Controllers\IController;
 use Neuron\Mvc\Controllers\NotFoundException;
 use Neuron\Mvc\Events\Http404;
-use Neuron\Mvc\Requests\Request;
 use Neuron\Patterns\Registry;
-use Neuron\Routing\Router;
 use PHPUnit\Framework\TestCase;
 
-$ControlledPassed = false;
-
-class TestController implements IController
-{
-	public function test( array $Parameters, ?Request $Request )
-	{
-		Log::debug( "TestController::test" );
-
-		global $ControlledPassed;
-		$ControlledPassed = count( $Request->getErrors() ) === 0;
-	}
-
-	public function __construct( Router $Router )
-	{
-	}
-
-	public function renderHtml( int $ResponseCode, array $Data = [], string $Page = "index", string $Layout = "default" ) : string
-	{
-	}
-
-	public function renderJson( int $ResponseCode, array $Data = [] ): string
-	{
-	}
-
-	public function renderXml( int $ResponseCode, array $Data = [] ): string
-	{
-	}
-}
-
-class Http404ListenerTest implements IListener
-{
-	public string $State;
-
-	public function event( $Event )
-	{
-		$this->State = get_class( $Event );
-	}
-}
+$ControllerState = false;
 
 class ApplicationTest extends TestCase
 {
@@ -171,7 +128,7 @@ class ApplicationTest extends TestCase
 	{
 		$this->App->initEvents();
 
-		$Http = new Http404ListenerTest();
+		$Http = new Http404Listener();
 
 		Event::registerListeners(
 			[
@@ -221,8 +178,8 @@ class ApplicationTest extends TestCase
 			]
 		);
 
-		global $ControlledPassed;
-		$ControlledPassed = false;
+		global $ControllerState;
+		$ControllerState = false;
 
 		$Json = '
 		{
@@ -239,8 +196,8 @@ class ApplicationTest extends TestCase
 			]
 		);
 
-		global $ControlledPassed;
-		$this->assertFalse( $ControlledPassed );
+		global $ControllerState;
+		$this->assertFalse( $ControllerState );
 	}
 
 	public function testControllerRequestSuccess()
@@ -252,8 +209,8 @@ class ApplicationTest extends TestCase
 			]
 		);
 
-		global $ControlledPassed;
-		$ControlledPassed = false;
+		global $ControllerState;
+		$ControllerState = false;
 
 		$Json = '
 		{
@@ -274,7 +231,22 @@ class ApplicationTest extends TestCase
 			]
 		);
 
-		global $ControlledPassed;
-		$this->assertTrue( $ControlledPassed );
+		global $ControllerState;
+		$this->assertTrue( $ControllerState );
+	}
+
+	public function testControllerNoRequest()
+	{
+		global $ControllerState;
+		$ControllerState = false;
+
+		$this->App->run(
+			[
+				"type"  => "GET",
+				"route" => "/no_request"
+			]
+		);
+
+		$this->assertTrue( $ControllerState );
 	}
 }
