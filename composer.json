@@ -24,5 +24,10 @@
         "psr-4": {
             "Neuron\\": "src/"
         }
+    },
+    "autoload-dev": {
+      "psr-4": {
+        "Mvc\\": "tests/Mvc"
+      }
     }
 }
