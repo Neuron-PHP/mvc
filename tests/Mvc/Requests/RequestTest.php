@@ -14,7 +14,7 @@ class RequestTest extends TestCase
 	public function testRequest()
 	{
 		$Request = new Request( 'login' );
-		$Request->loadFile( 'resources/requests/login.yaml' );
+		$Request->loadFile( 'examples/config/requests/login.yaml' );
 
 		$this->assertTrue(
 			$Request->getRequestMethod() === RequestMethod::POST
@@ -56,7 +56,7 @@ class RequestTest extends TestCase
 	public function testProcessPayloadSuccess()
 	{
 		$Request = new Request();
-		$Request->loadFile( 'resources/requests/login.yaml' );
+		$Request->loadFile( 'examples/config/requests/login.yaml' );
 
 		$Payload = [
 			'username' => 'test',
@@ -98,7 +98,7 @@ class RequestTest extends TestCase
 	public function testProcessPayloadFail()
 	{
 		$Request = new Request();
-		$Request->loadFile( 'resources/requests/login.yaml' );
+		$Request->loadFile( 'examples/config/requests/login.yaml' );
 
 		$Payload = [
 			'username' => 'test',
@@ -139,7 +139,7 @@ class RequestTest extends TestCase
 	public function testRequestPayload()
 	{
 		$Request = new Request();
-		$Request->loadFile( 'resources/requests/login.yaml' );
+		$Request->loadFile( 'examples/config/requests/login.yaml' );
 
 		$Json = '
 		{
