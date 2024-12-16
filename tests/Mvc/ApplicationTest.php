@@ -17,14 +17,20 @@ class ApplicationTest extends TestCase
 {
 	public Application $App;
 
+	/**
+	 * @throws \Exception
+	 */
 	protected function setUp() : void
 	{
 		parent::setUp();
 
-		$Ini = new Ini( './examples/application.ini' );
+		$Ini = new Ini( './examples/config/application.ini' );
 		$this->App = new Application( "1.0.0", $Ini );
 	}
 
+	/**
+	 * @throws \Exception
+	 */
 	public function testConfig()
 	{
 		$this->App->run(
@@ -45,6 +51,9 @@ class ApplicationTest extends TestCase
 		);
 	}
 
+	/**
+	 * @throws \Exception
+	 */
 	public function testHtml()
 	{
 		ob_start();

@@ -1,3 +1,7 @@
+## 0.6.14 2024-12-16
+* Updated the core package to include event listener configuration via yaml.
+* Updated the file locations.
+
 ## 0.6.13
 * Removed the requirement for every route to have a request.
 

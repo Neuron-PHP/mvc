@@ -15,6 +15,7 @@ use Neuron\Mvc\Requests\Request;
 use Neuron\Patterns\Registry;
 use Neuron\Routing\RequestMethod;
 use Neuron\Routing\Router;
+use Symfony\Component\Yaml\Exception\ParseException;
 use Symfony\Component\Yaml\Yaml;
 
 /**
@@ -24,6 +25,7 @@ use Symfony\Component\Yaml\Yaml;
  */
 class Application extends Base
 {
+	private string $_RoutesPath;
 	private Router $_Router;
 	private array $_Requests = [];
 
@@ -37,12 +39,38 @@ class Application extends Base
 	{
 		parent::__construct( $Version, $Source );
 
+		$this->_RoutesPath = '';
+
 		$this->setBasePath(
 			$this->getSetting( 'base_path', 'system' ) ?? '.'
 		);
 
+		$RoutesPath = $this->getSetting( 'routes_path', 'paths' );
+		if( $RoutesPath )
+		{
+			$this->setRoutesPath( $RoutesPath );
+		}
+
 		$this->loadRequests();
 		$this->loadRoutes();
+	}
+
+	/**
+	 * @return string
+	 */
+	public function getRoutesPath(): string
+	{
+		return $this->_RoutesPath;
+	}
+
+	/**
+	 * @param string $RoutesPath
+	 * @return Application
+	 */
+	public function setRoutesPath( string $RoutesPath ): Application
+	{
+		$this->_RoutesPath = $RoutesPath;
+		return $this;
 	}
 
 	/**
@@ -51,7 +79,7 @@ class Application extends Base
 	 */
 	protected function loadRequests(): void
 	{
-		$RequestPath = $this->getBasePath().'/resources/requests';
+		$RequestPath = $this->getBasePath().'/config/requests';
 
 		if( $this->getRegistryObject( 'Requests.Path' ) )
 		{
@@ -236,7 +264,28 @@ class Application extends Base
 			}
 		);
 
-		$Data = Yaml::parseFile($this->getBasePath().'/config/routes.yaml' );
+		$File = $this->getBasePath().'/config';
+
+		if( $this->getRoutesPath() )
+		{
+			$File = $this->getRoutesPath();
+		}
+
+		if( !file_exists( $File . '/routes.yaml' ) )
+		{
+			Log::debug( "routes.yaml not found." );
+			return;
+		}
+
+		try
+		{
+			$Data = Yaml::parseFile( $File . '/routes.yaml' );
+		}
+		catch( ParseException $exception )
+		{
+			Log::error( "Failed to load routes: ".$exception->getMessage() );
+			return;
+		}
 
 		foreach( $Data[ 'routes' ] as $Route )
 		{
