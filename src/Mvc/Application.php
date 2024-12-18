@@ -176,8 +176,10 @@ class Application extends Base
 	protected function onStart(): bool
 	{
 		$ViewPath = $this->getSetting( 'path', 'views' );
+		$BasePath = $this->getBasePath();
+
 		if( $ViewPath )
-			Registry::getInstance()->set( "Views.Path", $ViewPath );
+			Registry::getInstance()->set( "Views.Path", $BasePath.'/'.$ViewPath );
 
 		return parent::onStart();
 	}

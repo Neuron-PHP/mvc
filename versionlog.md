@@ -1,3 +1,6 @@
+## 0.6.17 2024-12-17
+* Fixed view path.
+
 ## 0.6.16 2024-12-17
 * Added base_path to the registry.
 
