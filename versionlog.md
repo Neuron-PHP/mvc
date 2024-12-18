@@ -1,4 +1,5 @@
-## 0.6.16
+## 0.6.16 2024-12-17
+* Added base_path to the registry.
 
 ## 0.6.15 2024-12-17
 * Updated core.
