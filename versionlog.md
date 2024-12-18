@@ -1,3 +1,5 @@
+## 0.6.19
+
 ## 0.6.18 2024-12-17
 * Code compliance updates.
 * Updated the getHttpHeaders method to better handle CLI vs Server.
