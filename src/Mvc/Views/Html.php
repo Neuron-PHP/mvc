@@ -87,7 +87,8 @@ class Html implements IView
 
 		if( !$Path )
 		{
-			$Path = "../resources/views";
+			$BasePath = Registry::getInstance()->get( "Base.Path" );
+			$Path = "$BasePath/resources/views";
 		}
 
 		$View = "$Path/{$this->getController()}/{$this->getPage()}.php";

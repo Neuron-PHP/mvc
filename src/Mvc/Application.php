@@ -41,9 +41,9 @@ class Application extends Base
 
 		$this->_RoutesPath = '';
 
-		$this->setBasePath(
-			$this->getSetting( 'base_path', 'system' ) ?? '.'
-		);
+		$BasePath = $this->getSetting( 'base_path', 'system' ) ?? '.';
+		$this->setBasePath( $BasePath );
+		Registry::getInstance()->set( 'BasePath', $BasePath );
 
 		$RoutesPath = $this->getSetting( 'routes_path', 'paths' );
 		if( $RoutesPath )
