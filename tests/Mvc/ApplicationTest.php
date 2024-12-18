@@ -170,7 +170,7 @@ class ApplicationTest extends TestCase
 		try
 		{
 			$this->assertNull( $this->App->getRequest( 'not-there' ) );
-			$this->assertTrue( false );
+			$this->fail();
 		}
 		catch( \Exception $Exception )
 		{

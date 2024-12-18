@@ -157,14 +157,21 @@ class Request
 	 */
 	public function getHttpHeaders(): array
 	{
+		if( function_exists('getallheaders') )
+		{
+			return getallheaders();
+		}
+
 		$headers = [];
 		foreach( $_SERVER as $name => $value )
 		{
-			if( substr( $name, 0, 5 ) == 'HTTP_' )
+			if( substr( $name, 0, 5 ) == 'HTTP_')
 			{
-				$headers[str_replace(' ', '-', ucwords(strtolower(str_replace('_', ' ', substr($name, 5)))))] = $value;
+				$headerName = str_replace('_', '-', substr( $name, 5 ) );
+				$headers[ ucwords( strtolower( $headerName ), '-' ) ] = $value;
 			}
 		}
+
 		return $headers;
 	}
 

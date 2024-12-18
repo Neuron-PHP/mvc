@@ -2,6 +2,8 @@
 
 namespace Neuron\Mvc\Views;
 
-class NotFoundException extends \Neuron\Core\ExceptionBase
+use Neuron\Core\ExceptionBase;
+
+class NotFoundException extends ExceptionBase
 {
 }

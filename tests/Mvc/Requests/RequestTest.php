@@ -13,7 +13,7 @@ class RequestTest extends TestCase
 {
 	public function testRequest()
 	{
-		$Request = new Request( 'login' );
+		$Request = new Request();
 		$Request->loadFile( 'examples/config/requests/login.yaml' );
 
 		$this->assertTrue(

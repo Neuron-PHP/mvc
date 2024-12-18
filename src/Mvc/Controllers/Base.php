@@ -5,9 +5,7 @@ namespace Neuron\Mvc\Controllers;
 use Neuron\Mvc\Application;
 use Neuron\Mvc\Views\Html;
 use Neuron\Mvc\Views\Json;
-use Neuron\Mvc\Views\View;
 use Neuron\Mvc\Views\Xml;
-use Neuron\Routing\RequestMethod;
 use Neuron\Routing\Router;
 
 class Base implements IController

@@ -1,6 +1,6 @@
 <html>
 	<head></head>
-	<title><?= isset( $Title ) ? $Title : '' ?></title>
+	<title><?= $Title ?? '' ?></title>
 	<body>
 		<h1>Test Layout</h1>
 		<?php
