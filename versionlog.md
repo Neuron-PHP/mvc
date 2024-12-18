@@ -1,3 +1,6 @@
+## 0.6.15 2024-12-17
+* Updated core.
+
 ## 0.6.14 2024-12-16
 * Updated the core package to include event listener configuration via yaml.
 * Updated the file locations.

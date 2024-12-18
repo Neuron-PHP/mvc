@@ -248,21 +248,7 @@ class Application extends Base
 	{
 		$this->_Router = new Router();
 
-		$this->_Router->get( "/404",
-			function( $Parameters )
-			{
-				Event::emit( new Http404( $Parameters[ "route" ] ) );
-
-				return self::executeController(
-					array_merge(
-						$Parameters,
-						[
-							"Controller" => "Neuron\Mvc\Controllers\HttpCodes@code404",
-						]
-					)
-				);
-			}
-		);
+		$this->configure404Route();
 
 		$File = $this->getBasePath().'/config';
 
@@ -318,6 +304,29 @@ class Application extends Base
 		}
 
 		return $this->_Requests[ $Name ];
+	}
+
+	/**
+	 * @return void
+	 * @throws Exception
+	 */
+	protected function configure404Route(): void
+	{
+		$this->_Router->get( "/404",
+			function( $Parameters )
+			{
+				Event::emit( new Http404( $Parameters[ "route" ] ) );
+
+				return self::executeController(
+					array_merge(
+						$Parameters,
+						[
+							"Controller" => "Neuron\Mvc\Controllers\HttpCodes@code404",
+						]
+					)
+				);
+			}
+		);
 	}
 }
 
