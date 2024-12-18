@@ -2,7 +2,9 @@
 
 namespace Neuron\Mvc\Requests;
 
-class ValidationException extends \Exception
+use Exception;
+
+class ValidationException extends Exception
 {
 	private array $_Errors;
 

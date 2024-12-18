@@ -242,7 +242,7 @@ class Parameter
 			return true;
 		}
 
-		$this->_Errors[] = $this->_Name.':'.$this->_Type.' Invalid type '.$this->getType( $this->_Value );
+		$this->_Errors[] = $this->_Name.':'.$this->_Type.' Invalid type '.$this->getType();
 
 		return false;
 	}

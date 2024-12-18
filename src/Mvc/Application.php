@@ -200,11 +200,11 @@ class Application extends Base
 	 * This method is called by the route lambdas and handles
 	 * instantiating the required controller and calling the correct method.
 	 *
-	 * @param $Parameters
+	 * @param array $Parameters
+	 * @param string $RequestName
 	 * @return mixed
 	 * @throws MissingMethodException
 	 * @throws NotFoundException
-	 * @throws Exception
 	 */
 	public function executeController( array $Parameters, string $RequestName = '' ): mixed
 	{
