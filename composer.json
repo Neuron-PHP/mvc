@@ -21,6 +21,9 @@
         "phpmd/phpmd": "^2.15"
     },
     "autoload": {
+        "files": [
+            "src/Bootstrap.php"
+        ],
         "psr-4": {
             "Neuron\\": "src/"
         }

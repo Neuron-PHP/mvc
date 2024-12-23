@@ -1,10 +1,10 @@
 <?php
 namespace Neuron\Mvc;
 
+use Neuron\Data\Setting\Source\ISettingSource;
 use Exception;
 use Neuron\Core\Application\Base;
 use Neuron\Core\CrossCutting\Event;
-use Neuron\Data\Setting\Source\ISettingSource;
 use Neuron\Log\Log;
 use Neuron\Mvc\Controllers\BadRequestMethodException;
 use Neuron\Mvc\Controllers\Factory;

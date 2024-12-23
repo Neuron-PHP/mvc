@@ -24,7 +24,7 @@ class ApplicationTest extends TestCase
 	{
 		parent::setUp();
 
-		$Ini = new Ini( './examples/config/application.ini' );
+		$Ini = new Ini( './examples/config/config.ini' );
 		$this->App = new Application( "1.0.0", $Ini );
 	}
 
