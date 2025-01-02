@@ -171,4 +171,26 @@ class RequestTest extends TestCase
 		$this->assertEmpty( $Errors );
 	}
 
+	public function testNoProperties()
+	{
+		$Request = new Request();
+		$Request->loadFile( 'examples/config/requests/logout.yaml' );
+
+		$Json = '{}';
+
+		setInputStream( $Json );
+
+		$Errors = [];
+
+		try
+		{
+			$Request->processPayload( $Request->getJsonPayload() );
+		}
+		catch( ValidationException $Exception )
+		{
+			$Errors = $Exception->getErrors();
+		}
+
+		$this->assertEmpty( $Errors );
+	}
 }

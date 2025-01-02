@@ -104,6 +104,11 @@ class Request
 		$this->_Name = $Name;
 		$this->_Parameters = [];
 
+		if( !isset( $Request[ 'properties' ] ) )
+		{
+			return;
+		}
+
 		foreach( $Request[ 'properties' ] as $Name => $Parameter )
 		{
 			$P = new Parameter();

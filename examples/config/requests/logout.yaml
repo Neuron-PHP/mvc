@@ -1,0 +1,5 @@
+request:
+    method: DELETE
+    url: /logout
+    headers:
+      Content-Type: application/json
