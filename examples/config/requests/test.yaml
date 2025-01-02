@@ -3,27 +3,72 @@ request:
   headers:
     Content-Type: application/json
   properties:
-    param1:
+    array:
       required: true
-      type: string
-      minLength: 3
-      maxLength: 20
-    param2:
+      type: array
+    boolean:
       required: true
-      type: string
-      minLength: 3
-      maxLength: 20
-    param3:
+      type: boolean
+    date:
+      required: true
+      type: date
+    date_time:
+      required: true
+      type: date_time
+    ein:
+      required: true
+      type: ein
+    email:
+      required: true
+      type: email
+    float:
+      required: true
+      type: float
+    integer:
+      required: true
+      type: integer
+      minValue: 1
+      maxValue: 100
+    ip_address:
+      required: true
+      type: ip_address
+    name:
+      required: true
+      type: name
+    numeric:
         required: true
-        type: object
-        properties:
-            subparam1:
-                required: true
-                type: string
-                minLength: 3
-                maxLength: 20
-            subparam2:
-                required: true
-                type: string
-                minLength: 3
-                maxLength: 20
+        type: numeric
+    object:
+      required: true
+      type: object
+      properties:
+        subparam1:
+          required: true
+          type: string
+          minLength: 3
+          maxLength: 20
+        subparam2:
+          required: true
+          type: string
+          minLength: 3
+          maxLength: 20
+    string:
+      required: true
+      type: string
+      minLength: 3
+      maxLength: 20
+    time:
+      required: true
+      type: time
+    upc:
+      required: true
+      type: upc
+    url:
+      required: true
+      type: url
+    us_phone:
+      required: true
+      type: us_phone_number
+    intl_phone:
+      required: true
+      type: intl_phone_number

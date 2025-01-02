@@ -223,12 +223,31 @@ class ApplicationTest extends TestCase
 
 		$Json = '
 		{
-			"param1": "test",
-			"param2": "testtest",
-			"param3": {
+			"array": 
+			[
+				"test", 
+				"test"
+			],
+			"boolean": true,
+			"date": "2020-01-01",
+			"date_time": "2020-01-01 12:00:00",
+			"ein": "12-3456789",
+			"email": "test@test.com",
+			"float": 1.23,
+			"integer": 123,
+			"ip_address": "192.168.1.1",
+			"name": "Testy McTestface",
+			"numeric": 123,
+			"object": {
 				"subparam1": "test",
 				"subparam2": "test"
-			}
+			},
+			"string": "test",
+			"time": "12:00:00 PM",
+			"upc": "123456789012",
+			"url": "http://www.test.com",
+			"us_phone": "555-555-5555",
+			"intl_phone": "+49 89 636 48098"
 		}';
 
 		setInputStream( $Json );
