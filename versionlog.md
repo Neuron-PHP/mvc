@@ -1,3 +1,5 @@
+## 0.6.22
+
 ## 0.6.21
 * Added the ability to have a request with no properties.
 
