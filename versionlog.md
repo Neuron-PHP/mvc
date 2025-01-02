@@ -1,3 +1,6 @@
+## 0.6.21
+* Added the ability to have a request with no properties.
+
 ## 0.6.20 2025-01-02
 Added the following request property type validation options:
 * array
