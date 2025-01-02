@@ -1,19 +1,38 @@
 <?php
 namespace Neuron\Mvc\Requests;
 use Neuron\Log\Log;
+use Neuron\Validation\ArrayData;
+use Neuron\Validation\Boolean;
+use Neuron\Validation\Currency;
+use Neuron\Validation\Date;
+use Neuron\Validation\DateTime;
+use Neuron\Validation\Ein;
+use Neuron\Validation\Email;
+use Neuron\Validation\FloatingPoint;
+use Neuron\Validation\Integer;
+use Neuron\Validation\IPAddress;
+use Neuron\Validation\Name;
+use Neuron\Validation\Numeric;
+use Neuron\Validation\ObjectData;
+use Neuron\Validation\PhoneNumber;
+use Neuron\Validation\StringData;
+use Neuron\Validation\Time;
+use Neuron\Validation\Upc;
+use Neuron\Validation\Url;
 
 class Parameter
 {
-	private array $_Errors;
+	private array  $_Errors;
 	private string $_Name;
-	private bool $_Required;
+	private bool   $_Required;
 	private string $_Type;
-	private int $_MinLength;
-	private int $_MaxLength;
-	private int $_MinValue;
-	private int $_MaxValue;
+	private int    $_MinLength;
+	private int    $_MaxLength;
+	private int    $_MinValue;
+	private int    $_MaxValue;
 	private string $_Pattern;
-	private mixed $_Value = '';
+	private mixed  $_Value = '';
+	private array  $_Validators;
 
 
 	public function __construct()
@@ -27,6 +46,31 @@ class Parameter
 		$this->_MinValue	= 0;
 		$this->_MaxValue	= 0;
 		$this->_Pattern	= '';
+
+		$IntlPhoneNumber = new PhoneNumber();
+		$IntlPhoneNumber->setType( PhoneNumber::INTERNATIONAL );
+		
+		$this->_Validators = [
+			'array'					=> new ArrayData(),
+			'boolean'				=> new Boolean(),
+			'currency'				=> new Currency(),
+			'date'					=> new Date(),
+			'date_time'				=> new DateTime(),
+			'ein'						=> new Ein(),
+			'email'					=> new Email(),
+			'float'					=> new FloatingPoint(),
+			'integer'				=> new Integer(),
+			'ip_address'			=> new IPAddress(),
+			'name'					=> new Name(),
+			'numeric'				=> new Numeric(),
+			'object'					=> new ObjectData(),
+			'string'					=> new StringData(),
+			'time'					=> new Time(),
+			'upc'						=> new Upc(),
+			'url'						=> new Url(),
+			'us_phone_number'		=> new PhoneNumber(),
+			'intl_phone_number' 	=> $IntlPhoneNumber
+		];
 	}
 
 	/**
@@ -227,24 +271,24 @@ class Parameter
 
 	private function validateType(): bool
 	{
-		if( $this->_Type === 'string' && is_string( $this->_Value ) )
+		$Validator = $this->_Validators[ $this->_Type ];
+
+		if( !$Validator )
 		{
-			return true;
+			$this->_Errors[] = $this->_Name.':'.$this->_Type.' Invalid type specified '.$this->getType();
+			return false;
 		}
 
-		if( $this->_Type === 'integer' && is_int( $this->_Value ) )
+		if( !$Validator->isValid( $this->_Value ) )
 		{
-			return true;
+			$Value = is_string( $this->_Value ) ? $this->_Value : gettype( $this->_Value );
+			$Message = $this->_Name.':'.$this->_Type.' Invalid value '.$Value;
+			$this->_Errors[] = $Message;
+			//fprintf( STDERR, "%s\n", $Message );
+			return false;
 		}
 
-		if( $this->_Type === 'object' && is_object( $this->_Value ) )
-		{
-			return true;
-		}
-
-		$this->_Errors[] = $this->_Name.':'.$this->_Type.' Invalid type '.$this->getType();
-
-		return false;
+		return true;
 	}
 
 	private function validateLength(): bool

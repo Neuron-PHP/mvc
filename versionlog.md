@@ -1,3 +1,25 @@
+## 0.6.20 2025-01-02
+Added the following request property type validation options:
+* array
+* boolean
+* currency
+* date
+* date_time
+* ein
+* email
+* float
+* integer
+* ip_address
+* name
+* numeric
+* object
+* string
+* time
+* upc
+* url
+* us_phone_number
+* intl_phone_number
+
 ## 0.6.19 2024-12-23
 * Added the boot and dispatch bootstap functions.
 
