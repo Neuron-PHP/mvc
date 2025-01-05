@@ -1,4 +1,5 @@
-## 0.6.22
+## 0.6.22 2025-01-05
+* Moved base path to core.
 
 ## 0.6.21
 * Added the ability to have a request with no properties.
