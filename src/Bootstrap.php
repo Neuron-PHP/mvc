@@ -3,6 +3,7 @@ use Neuron\Data\Filter\Get;
 use Neuron\Data\Filter\Server;
 use Neuron\Data\Object\Version;
 use Neuron\Data\Setting\Source\Ini;
+use Neuron\Data\Setting\Source\Yaml;
 use Neuron\Mvc\Application;
 use Neuron\Patterns\Registry;
 
@@ -16,7 +17,7 @@ use Neuron\Patterns\Registry;
 function Boot( string $ConfigPath ) : Application
 {
 	/** @var Neuron\Data\Setting\Source\ISettingSource $Settings */
-	$Settings = new Ini( "$ConfigPath/config.ini" );
+	$Settings = new Yaml( "$ConfigPath/config.yaml" );
 
 	Registry::getInstance()
 			  ->set( 'Settings', $Settings );

@@ -1,3 +1,6 @@
+## 0.6.23
+* Switched the config file from ini to yaml.
+
 ## 0.6.22 2025-01-05
 * Moved base path to core.
 

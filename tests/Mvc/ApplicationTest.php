@@ -4,6 +4,7 @@ namespace Mvc;
 
 use Neuron\Core\CrossCutting\Event;
 use Neuron\Data\Setting\Source\Ini;
+use Neuron\Data\Setting\Source\Yaml;
 use Neuron\Mvc\Application;
 use Neuron\Mvc\Controllers\BadRequestMethodException;
 use Neuron\Mvc\Controllers\NotFoundException;
@@ -24,7 +25,7 @@ class ApplicationTest extends TestCase
 	{
 		parent::setUp();
 
-		$Ini = new Ini( './examples/config/config.ini' );
+		$Ini = new Yaml( './examples/config/config.yaml' );
 		$this->App = new Application( "1.0.0", $Ini );
 	}
 
