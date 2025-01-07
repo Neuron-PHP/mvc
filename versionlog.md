@@ -1,3 +1,5 @@
+## 0.6.24
+
 ## 0.6.23
 * Switched the config file from ini to yaml.
 
