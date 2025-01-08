@@ -5,6 +5,7 @@
 namespace Neuron\Mvc\Views;
 
 use League\CommonMark\Environment\Environment;
+use League\CommonMark\Exception\CommonMarkException;
 use League\CommonMark\Extension\CommonMark\CommonMarkCoreExtension;
 use League\CommonMark\Extension\Footnote\FootnoteExtension;
 use League\CommonMark\MarkdownConverter;
@@ -20,6 +21,7 @@ class Markdown extends Base implements IView
 	 * @param array $Data
 	 * @return string markdown output
 	 * @throws NotFoundException
+	 * @throws CommonMarkException
 	 *
 	 * Outputs the html data from the layout and view.
 	 */
@@ -34,7 +36,7 @@ class Markdown extends Base implements IView
 			$Path = "$BasePath/resources/views";
 		}
 
-		$View = "$Path/{$this->getController()}/{$this->getPage()}.php";
+		$View = "$Path/{$this->getController()}/{$this->getPage()}.md";
 
 		if( !file_exists( $View ) )
 		{
@@ -49,6 +51,8 @@ class Markdown extends Base implements IView
 		{
 			throw new NotFoundException( "View notfound: $Layout" );
 		}
+
+		$Content = $this->getCommonmarkConverter()->convert( file_get_contents( $View ) );
 
 		ob_start();
 		require( $Layout );
@@ -83,8 +87,7 @@ class Markdown extends Base implements IView
 		// Add the extension
 		$environment->addExtension( new FootnoteExtension() );
 
-		$Converter = new MarkdownConverter( $environment );
-		return $Converter;
+		return new MarkdownConverter( $environment );
 	}
 
 }

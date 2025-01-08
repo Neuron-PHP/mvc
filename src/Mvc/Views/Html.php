@@ -47,6 +47,11 @@ class Html extends Base implements IView
 		}
 
 		ob_start();
+		require( $View );
+		$Content = ob_get_contents();
+		ob_end_clean();
+
+		ob_start();
 		require( $Layout );
 		$Page = ob_get_contents();
 		ob_end_clean();
