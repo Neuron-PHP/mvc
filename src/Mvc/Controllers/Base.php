@@ -17,6 +17,18 @@ class Base implements IController
 		$this->setRouter( $Router );
 	}
 
+	public function renderMarkdown( int $ResponseCode, string $Markdown ): string
+	{
+		http_response_code( $ResponseCode );
+
+		$View = ( new Html() )
+			->setController( (new \ReflectionClass( static::class ))->getShortName() )
+			->setLayout( $Layout )
+			->setPage( $Page );
+
+		return $View->render( $Markdown );
+	}
+
 	public function renderHtml( int $ResponseCode, array $Data = [], string $Page = "index", string $Layout = "default" ) : string
 	{
 		http_response_code( $ResponseCode );
