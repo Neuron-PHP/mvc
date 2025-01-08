@@ -1,3 +1,6 @@
+## 0.6.24 2025-01-08
+* Added markdown support to the view.
+
 ## 0.6.23
 * Switched the config file from ini to yaml.
 
