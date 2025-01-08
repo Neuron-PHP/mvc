@@ -2,9 +2,12 @@
 
 namespace Neuron\Mvc\Controllers;
 
+use League\CommonMark\Exception\CommonMarkException;
 use Neuron\Mvc\Application;
 use Neuron\Mvc\Views\Html;
 use Neuron\Mvc\Views\Json;
+use Neuron\Mvc\Views\Markdown;
+use Neuron\Mvc\Views\NotFoundException;
 use Neuron\Mvc\Views\Xml;
 use Neuron\Routing\Router;
 
@@ -17,6 +20,25 @@ class Base implements IController
 		$this->setRouter( $Router );
 	}
 
+	/**
+	 * @throws NotFoundException
+	 * @throws CommonMarkException
+	 */
+	public function renderMarkdown( int $ResponseCode, array $Data = [], string $Page = "index", string $Layout = "default" ) : string
+	{
+		http_response_code( $ResponseCode );
+
+		$View = ( new Markdown() )
+			->setController( (new \ReflectionClass( static::class ))->getShortName() )
+			->setLayout( $Layout )
+			->setPage( $Page );
+
+		return $View->render( $Data );
+	}
+
+	/**
+	 * @throws NotFoundException
+	 */
 	public function renderHtml( int $ResponseCode, array $Data = [], string $Page = "index", string $Layout = "default" ) : string
 	{
 		http_response_code( $ResponseCode );
