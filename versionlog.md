@@ -1,3 +1,5 @@
+## 0.6.25
+
 ## 0.6.24 2025-01-08
 * Added markdown support to the view.
 
