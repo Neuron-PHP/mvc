@@ -19,9 +19,6 @@ function Boot( string $ConfigPath ) : Application
 	/** @var Neuron\Data\Setting\Source\ISettingSource $Settings */
 	$Settings = new Yaml( "$ConfigPath/config.yaml" );
 
-	Registry::getInstance()
-			  ->set( 'Settings', $Settings );
-
 	$BasePath = $Settings->get( 'system', 'base_path' );
 
 	$Version = new Version();
@@ -41,14 +38,16 @@ function Dispatch( Application $App ) : void
 
 	if( $Route && $Route[ 0 ] != "/" )
 	{
-		$Route = "/".$Route;
+		$Route = "/$Route";
 	}
 
 	try
 	{
+		$Type = Server::filterScalar( 'REQUEST_METHOD' ) ?? "GET";
+
 		$App->run(
 			[
-				"type"  => Server::filterScalar( 'REQUEST_METHOD' ),
+				"type"  => $Type,
 				"route" => $Route
 			]
 		);

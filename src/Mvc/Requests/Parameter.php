@@ -1,24 +1,22 @@
 <?php
 namespace Neuron\Mvc\Requests;
 use Neuron\Log\Log;
-use Neuron\Validation\ArrayData;
-use Neuron\Validation\Boolean;
-use Neuron\Validation\Currency;
-use Neuron\Validation\Date;
-use Neuron\Validation\DateTime;
-use Neuron\Validation\Ein;
-use Neuron\Validation\Email;
-use Neuron\Validation\FloatingPoint;
-use Neuron\Validation\Integer;
-use Neuron\Validation\IPAddress;
-use Neuron\Validation\Name;
-use Neuron\Validation\Numeric;
-use Neuron\Validation\ObjectData;
-use Neuron\Validation\PhoneNumber;
-use Neuron\Validation\StringData;
-use Neuron\Validation\Time;
-use Neuron\Validation\Upc;
-use Neuron\Validation\Url;
+use Neuron\Validation\IsArray;
+use Neuron\Validation\IsBoolean;
+use Neuron\Validation\IsCurrency;
+use Neuron\Validation\IsDate;
+use Neuron\Validation\IsDateTime;
+use Neuron\Validation\IsEin;
+use Neuron\Validation\IsEmail;
+use Neuron\Validation\IsFloatingPoint;
+use Neuron\Validation\IsInteger;
+use Neuron\Validation\IsName;
+use Neuron\Validation\IsObject;
+use Neuron\Validation\IsPhoneNumber;
+use Neuron\Validation\IsString;
+use Neuron\Validation\IsUpc;
+use Neuron\Validation\IsUrl;
+use Neuron\Validation\IsUuid;
 
 class Parameter
 {
@@ -47,28 +45,29 @@ class Parameter
 		$this->_MaxValue	= 0;
 		$this->_Pattern	= '';
 
-		$IntlPhoneNumber = new PhoneNumber();
-		$IntlPhoneNumber->setType( PhoneNumber::INTERNATIONAL );
+		$IntlPhoneNumber = new IsPhoneNumber();
+		$IntlPhoneNumber->setType( IsPhoneNumber::INTERNATIONAL );
 		
 		$this->_Validators = [
-			'array'					=> new ArrayData(),
-			'boolean'				=> new Boolean(),
-			'currency'				=> new Currency(),
-			'date'					=> new Date(),
-			'date_time'				=> new DateTime(),
-			'ein'						=> new Ein(),
-			'email'					=> new Email(),
-			'float'					=> new FloatingPoint(),
-			'integer'				=> new Integer(),
-			'ip_address'			=> new IPAddress(),
-			'name'					=> new Name(),
-			'numeric'				=> new Numeric(),
-			'object'					=> new ObjectData(),
-			'string'					=> new StringData(),
-			'time'					=> new Time(),
-			'upc'						=> new Upc(),
-			'url'						=> new Url(),
-			'us_phone_number'		=> new PhoneNumber(),
+			'array'					=> new IsArray(),
+			'boolean'				=> new IsBoolean(),
+			'currency'				=> new IsCurrency(),
+			'date'					=> new IsDate(),
+			'date_time'				=> new IsDateTime(),
+			'ein'						=> new IsEin(),
+			'email'					=> new IsEmail(),
+			'float'					=> new IsFloatingPoint(),
+			'integer'				=> new IsInteger(),
+			'ip_address'			=> new IsInteger(),
+			'name'					=> new IsName(),
+			'numeric'				=> new IsPhoneNumber(),
+			'object'					=> new IsObject(),
+			'string'					=> new IsString(),
+			'time'					=> new IsDateTime(),
+			'upc'						=> new IsUpc(),
+			'uuid'					=> new IsUuid(),
+			'url'						=> new IsUrl(),
+			'us_phone_number'		=> new IsPhoneNumber(),
 			'intl_phone_number' 	=> $IntlPhoneNumber
 		];
 	}

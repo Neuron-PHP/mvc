@@ -11,5 +11,9 @@ class BootstrapTest extends TestCase
 		 $cwd = getcwd();
 		 $App = Boot( 'examples/config' );
 		 $this->assertTrue( is_object( $App ) );
+
+		 Dispatch( $App );
 	 }
+
+
 }
