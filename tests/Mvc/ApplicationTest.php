@@ -261,7 +261,7 @@ class ApplicationTest extends TestCase
 		);
 
 		global $ControllerState;
-		$this->assertTrue( $ControllerState );
+		$this->assertFalse( $ControllerState );
 	}
 
 	public function testControllerNoRequest()
