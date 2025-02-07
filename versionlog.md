@@ -1,4 +1,6 @@
 ## 0.6.30
+* Updated to core/application packages.
+* Updated to php8.4
 
 ## 0.6.29 2025-01-27
 * Updated router.
