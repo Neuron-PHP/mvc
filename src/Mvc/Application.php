@@ -1,15 +1,15 @@
 <?php
 namespace Neuron\Mvc;
 
-use Neuron\Data\Setting\Source\ISettingSource;
 use Exception;
-use Neuron\Core\Application\Base;
-use Neuron\Core\CrossCutting\Event;
+use Neuron\Application\Base;
+use Neuron\Application\CrossCutting\Event;
+use Neuron\Core\Exceptions\BadRequestMethod;
+use Neuron\Core\Exceptions\MissingMethod;
+use Neuron\Core\Exceptions\NotFound;
+use Neuron\Data\Setting\Source\ISettingSource;
 use Neuron\Log\Log;
-use Neuron\Mvc\Controllers\BadRequestMethodException;
 use Neuron\Mvc\Controllers\Factory;
-use Neuron\Mvc\Controllers\MissingMethodException;
-use Neuron\Mvc\Controllers\NotFoundException;
 use Neuron\Mvc\Events\Http404;
 use Neuron\Mvc\Requests\Request;
 use Neuron\Patterns\Registry;
@@ -102,7 +102,7 @@ class Application extends Base
 	 * @param string $Request
 	 * @return Application
 	 *
-	 * @throws BadRequestMethodException
+	 * @throws BadRequestMethod
 	 * @throws Exception
 	 */
 	public function addRoute( string $Method, string $Route, string $ControllerMethod, string $Request = '' ) : Application
@@ -151,7 +151,7 @@ class Application extends Base
 				break;
 
 			case RequestMethod::UNKNOWN:
-				throw new BadRequestMethodException();
+				throw new BadRequestMethod();
 		}
 
 		$Route->Payload = [ "Controller" => $ControllerMethod ];
@@ -185,9 +185,9 @@ class Application extends Base
 	/**
 	 * @return void
 	 * @throws Exception
-	 * @throws MissingMethodException
-	 * @throws BadRequestMethodException
-	 * @throws NotFoundException
+	 * @throws MissingMethod
+	 * @throws BadRequestMethod
+	 * @throws NotFound
 	 */
 	protected function onRun() : void
 	{
@@ -201,8 +201,8 @@ class Application extends Base
 	 * @param array $Parameters
 	 * @param string $RequestName
 	 * @return mixed
-	 * @throws MissingMethodException
-	 * @throws NotFoundException
+	 * @throws MissingMethod
+	 * @throws NotFound
 	 */
 	public function executeController( array $Parameters, string $RequestName = '' ): mixed
 	{
@@ -215,7 +215,7 @@ class Application extends Base
 
 		if( !method_exists( $Controller, $Method ) )
 		{
-			throw new MissingMethodException( "Method '$Method'' not found." );
+			throw new MissingMethod( "Method '$Method'' not found." );
 		}
 
 		$Request = null;

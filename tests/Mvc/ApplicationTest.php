@@ -2,12 +2,11 @@
 
 namespace Mvc;
 
-use Neuron\Core\CrossCutting\Event;
-use Neuron\Data\Setting\Source\Ini;
+use Neuron\Application\CrossCutting\Event;
+use Neuron\Core\Exceptions\BadRequestMethod;
+use Neuron\Core\Exceptions\NotFound;
 use Neuron\Data\Setting\Source\Yaml;
 use Neuron\Mvc\Application;
-use Neuron\Mvc\Controllers\BadRequestMethodException;
-use Neuron\Mvc\Controllers\NotFoundException;
 use Neuron\Mvc\Events\Http404;
 use Neuron\Patterns\Registry;
 use PHPUnit\Framework\TestCase;
@@ -102,7 +101,7 @@ class ApplicationTest extends TestCase
 		{
 			$this->App->addRoute( 'poop', '/test', 'Test' );
 		}
-		catch( BadRequestMethodException $Exception )
+		catch( BadRequestMethod $Exception )
 		{
 			$Success = false;
 		}
@@ -126,7 +125,7 @@ class ApplicationTest extends TestCase
 				]
 			);
 		}
-		catch( NotFoundException $Exception )
+		catch( NotFound $Exception )
 		{
 			$Success = false;
 		}

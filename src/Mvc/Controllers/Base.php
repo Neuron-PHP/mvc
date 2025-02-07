@@ -4,10 +4,11 @@ namespace Neuron\Mvc\Controllers;
 
 use League\CommonMark\Exception\CommonMarkException;
 use Neuron\Mvc\Application;
+use Neuron\Mvc\Responses\HttpResponseStatus;
 use Neuron\Mvc\Views\Html;
 use Neuron\Mvc\Views\Json;
 use Neuron\Mvc\Views\Markdown;
-use Neuron\Mvc\Views\NotFoundException;
+use Neuron\Mvc\Views\NotFound;
 use Neuron\Mvc\Views\Xml;
 use Neuron\Routing\Router;
 
@@ -21,12 +22,12 @@ class Base implements IController
 	}
 
 	/**
-	 * @throws NotFoundException
+	 * @throws \Neuron\Core\Exceptions\NotFound
 	 * @throws CommonMarkException
 	 */
-	public function renderMarkdown( int $ResponseCode, array $Data = [], string $Page = "index", string $Layout = "default" ) : string
+	public function renderMarkdown( HttpResponseStatus $ResponseCode, array $Data = [], string $Page = "index", string $Layout = "default" ) : string
 	{
-		http_response_code( $ResponseCode );
+		@http_response_code( $ResponseCode->value );
 
 		$View = ( new Markdown() )
 			->setController( (new \ReflectionClass( static::class ))->getShortName() )
@@ -37,11 +38,11 @@ class Base implements IController
 	}
 
 	/**
-	 * @throws NotFoundException
+	 * @throws \Neuron\Core\Exceptions\NotFound
 	 */
-	public function renderHtml( int $ResponseCode, array $Data = [], string $Page = "index", string $Layout = "default" ) : string
+	public function renderHtml( HttpResponseStatus $ResponseCode, array $Data = [], string $Page = "index", string $Layout = "default" ) : string
 	{
-		http_response_code( $ResponseCode );
+		@http_response_code( $ResponseCode->value );
 
 		$View = ( new Html() )
 			->setController( (new \ReflectionClass( static::class ))->getShortName() )
@@ -51,18 +52,18 @@ class Base implements IController
 		return $View->render( $Data );
 	}
 
-	public function renderJson( int $ResponseCode, array $Data = [] ): string
+	public function renderJson( HttpResponseStatus $ResponseCode, array $Data = [] ): string
 	{
-		http_response_code( $ResponseCode );
+		@http_response_code( $ResponseCode->value );
 
 		$View = new Json();
 
 		return $View->render( $Data );
 	}
 
-	public function renderXml( int $ResponseCode, array $Data = [] ): string
+	public function renderXml( HttpResponseStatus $ResponseCode, array $Data = [] ): string
 	{
-		http_response_code( $ResponseCode );
+		@http_response_code( $ResponseCode->value );
 
 		$View = new Xml();
 

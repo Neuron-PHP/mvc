@@ -2,38 +2,38 @@
 
 namespace Neuron\Mvc\Responses;
 
-class HttpResponseStatus
+enum HttpResponseStatus: int
 {
-	public const OK = 200;
-	public const CREATED = 201;
-	public const ACCEPTED = 202;
-	public const NO_CONTENT = 204;
-	public const MOVED_PERMANENTLY = 301;
-	public const FOUND = 302;
-	public const SEE_OTHER = 303;
-	public const NOT_MODIFIED = 304;
-	public const TEMPORARY_REDIRECT = 307;
-	public const PERMANENT_REDIRECT = 308;
-	public const BAD_REQUEST = 400;
-	public const UNAUTHORIZED = 401;
-	public const FORBIDDEN = 403;
-	public const NOT_FOUND = 404;
-	public const METHOD_NOT_ALLOWED = 405;
-	public const NOT_ACCEPTABLE = 406;
-	public const REQUEST_TIMEOUT = 408;
-	public const CONFLICT = 409;
-	public const GONE = 410;
-	public const LENGTH_REQUIRED = 411;
-	public const PRECONDITION_FAILED = 412;
-	public const PAYLOAD_TOO_LARGE = 413;
-	public const UNSUPPORTED_MEDIA_TYPE = 415;
-	public const UPGRADE_REQUIRED = 426;
-	public const TOO_MANY_REQUESTS = 429;
-	public const INTERNAL_SERVER_ERROR = 500;
-	public const NOT_IMPLEMENTED = 501;
-	public const BAD_GATEWAY = 502;
-	public const SERVICE_UNAVAILABLE = 503;
-	public const GATEWAY_TIMEOUT = 504;
-	public const HTTP_VERSION_NOT_SUPPORTED = 505;
-	public const NETWORK_AUTHENTICATION_REQUIRED = 511;
+	case OK = 200;
+	case CREATED = 201;
+	case ACCEPTED = 202;
+	case NO_CONTENT = 204;
+	case MOVED_PERMANENTLY = 301;
+	case FOUND = 302;
+	case SEE_OTHER = 303;
+	case NOT_MODIFIED = 304;
+	case TEMPORARY_REDIRECT = 307;
+	case PERMANENT_REDIRECT = 308;
+	case BAD_REQUEST = 400;
+	case UNAUTHORIZED = 401;
+	case FORBIDDEN = 403;
+	case NOT_FOUND = 404;
+	case METHOD_NOT_ALLOWED = 405;
+	case NOT_ACCEPTABLE = 406;
+	case REQUEST_TIMEOUT = 408;
+	case CONFLICT = 409;
+	case GONE = 410;
+	case LENGTH_REQUIRED = 411;
+	case PRECONDITION_FAILED = 412;
+	case PAYLOAD_TOO_LARGE = 413;
+	case UNSUPPORTED_MEDIA_TYPE = 415;
+	case UPGRADE_REQUIRED = 426;
+	case TOO_MANY_REQUESTS = 429;
+	case INTERNAL_SERVER_ERROR = 500;
+	case NOT_IMPLEMENTED = 501;
+	case BAD_GATEWAY = 502;
+	case SERVICE_UNAVAILABLE = 503;
+	case GATEWAY_TIMEOUT = 504;
+	case HTTP_VERSION_NOT_SUPPORTED = 505;
+	case NETWORK_AUTHENTICATION_REQUIRED = 511;
 }

@@ -20,7 +20,7 @@ class Markdown extends Base implements IView
 	/**
 	 * @param array $Data
 	 * @return string markdown output
-	 * @throws NotFoundException
+	 * @throws NotFound
 	 * @throws CommonMarkException
 	 *
 	 * Outputs the html data from the layout and view.
@@ -40,7 +40,7 @@ class Markdown extends Base implements IView
 
 		if( !file_exists( $View ) )
 		{
-			throw new NotFoundException( "View notfound: $View" );
+			throw new NotFound( "View notfound: $View" );
 		}
 
 		extract( $Data );
@@ -49,7 +49,7 @@ class Markdown extends Base implements IView
 
 		if( !file_exists( $Layout ) )
 		{
-			throw new NotFoundException( "View notfound: $Layout" );
+			throw new NotFound( "View notfound: $Layout" );
 		}
 
 		$Content = $this->getCommonmarkConverter()->convert( file_get_contents( $View ) );

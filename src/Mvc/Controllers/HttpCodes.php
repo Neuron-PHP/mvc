@@ -2,12 +2,14 @@
 
 namespace Neuron\Mvc\Controllers;
 
+use Neuron\Mvc\Responses\HttpResponseStatus;
+
 class HttpCodes extends Base
 {
 	public function code404( array $Parameters ) : string
 	{
 		return $this->renderHtml(
-			404,
+			HttpResponseStatus::NOT_FOUND,
 			array_merge(
 				$Parameters,
 				[

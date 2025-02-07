@@ -2,10 +2,10 @@
 
 namespace Mvc\Requests;
 
-use Neuron\Mvc\Requests\ValidationException;
+use Neuron\Core\Exceptions\Validation;
+use Neuron\Mvc\Requests\Request;
 use Neuron\Routing\RequestMethod;
 use PHPUnit\Framework\TestCase;
-use Neuron\Mvc\Requests\Request;
 
 require_once 'tests/Mvc/HelperFunctions.php';
 
@@ -77,9 +77,9 @@ class RequestTest extends TestCase
 		{
 			$Request->processPayload( $Payload );
 		}
-		catch( ValidationException $Exception )
+		catch( Validation $Exception )
 		{
-			$Errors = $Exception->getErrors();
+			$Errors = $Exception->errors;
 		}
 
 		$this->assertEmpty( $Errors );
@@ -118,9 +118,9 @@ class RequestTest extends TestCase
 		{
 			$Request->processPayload( $Payload );
 		}
-		catch( ValidationException $Exception )
+		catch( Validation $Exception )
 		{
-			$Errors = $Exception->getErrors();
+			$Errors = $Exception->errors;
 		}
 
 		$this->assertNotEmpty( $Errors );
@@ -163,9 +163,9 @@ class RequestTest extends TestCase
 		{
 			$Request->processPayload( $Request->getJsonPayload() );
 		}
-		catch( ValidationException $Exception )
+		catch( Validation $Exception )
 		{
-			$Errors = $Exception->getErrors();
+			$Errors = $Exception->errors;
 		}
 
 		$this->assertEmpty( $Errors );
@@ -186,9 +186,9 @@ class RequestTest extends TestCase
 		{
 			$Request->processPayload( $Request->getJsonPayload() );
 		}
-		catch( ValidationException $Exception )
+		catch( Validation $Exception )
 		{
-			$Errors = $Exception->getErrors();
+			$Errors = $Exception->errors;
 		}
 
 		$this->assertEmpty( $Errors );

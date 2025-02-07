@@ -2,6 +2,7 @@
 
 namespace Neuron\Mvc\Requests;
 
+use Neuron\Core\Exceptions\Validation;
 use Neuron\Log\Log;
 use Neuron\Routing\RequestMethod;
 use Symfony\Component\Yaml\Yaml;
@@ -182,7 +183,7 @@ class Request
 
 	/**
 	 * @param array $Payload
-	 * @throws ValidationException
+	 * @throws Validation
 	 */
 	public function processPayload( array $Payload ): void
 	{
@@ -227,10 +228,10 @@ class Request
 					$Parameter->getValue()->processPayload( $Payload[ $Parameter->getName() ] );
 					continue;
 				}
-				catch( ValidationException $Exception )
+				catch( Validation $Exception )
 				{
 					Log::warning( $Exception->getMessage() );
-					$this->_Errors = array_merge( $this->_Errors, $Exception->getErrors() );
+					$this->_Errors = array_merge( $this->_Errors, $Exception->errors );
 				}
 			}
 
@@ -241,7 +242,7 @@ class Request
 
 		if( !empty( $this->_Errors ) )
 		{
-			throw new ValidationException( $this->_Name, $this->_Errors );
+			throw new Validation( $this->_Name, $this->_Errors );
 		}
 	}
 
@@ -254,7 +255,7 @@ class Request
 		{
 			$Parameter->validate();
 		}
-		catch( ValidationException $Exception )
+		catch( Validation $Exception )
 		{
 			Log::warning( $Exception->getMessage() );
 			$this->_Errors[] = $Exception->getMessage();
