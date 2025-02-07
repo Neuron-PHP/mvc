@@ -4,6 +4,7 @@ namespace Mvc;
 use Neuron\Log\Log;
 use Neuron\Mvc\Controllers\IController;
 use Neuron\Mvc\Requests\Request;
+use Neuron\Mvc\Responses\HttpResponseStatus;
 use Neuron\Routing\Router;
 
 global $ControllerState;
@@ -27,15 +28,15 @@ class TestController implements IController
 	{
 	}
 
-	public function renderHtml( int $ResponseCode, array $Data = [], string $Page = "index", string $Layout = "default" ) : string
+	public function renderHtml( HttpResponseStatus $ResponseCode, array $Data = [], string $Page = "index", string $Layout = "default" ) : string
 	{
 	}
 
-	public function renderJson( int $ResponseCode, array $Data = [] ): string
+	public function renderJson( HttpResponseStatus $ResponseCode, array $Data = [] ): string
 	{
 	}
 
-	public function renderXml( int $ResponseCode, array $Data = [] ): string
+	public function renderXml( HttpResponseStatus $ResponseCode, array $Data = [] ): string
 	{
 	}
 

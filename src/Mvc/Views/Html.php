@@ -15,7 +15,7 @@ class Html extends Base implements IView
 	/**
 	 * @param array $Data
 	 * @return string html output
-	 * @throws NotFoundException
+	 * @throws NotFound
 	 *
 	 * Outputs the html data from the layout and view.
 	 */
@@ -34,7 +34,7 @@ class Html extends Base implements IView
 
 		if( !file_exists( $View ) )
 		{
-			throw new NotFoundException( "View notfound: $View" );
+			throw new NotFound( "View notfound: $View" );
 		}
 
 		extract( $Data );
@@ -43,7 +43,7 @@ class Html extends Base implements IView
 
 		if( !file_exists( $Layout ) )
 		{
-			throw new NotFoundException( "View notfound: $Layout" );
+			throw new NotFound( "View notfound: $Layout" );
 		}
 
 		ob_start();

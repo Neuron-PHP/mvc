@@ -2,6 +2,7 @@
 
 namespace Neuron\Mvc\Controllers;
 
+use Neuron\Core\Exceptions\NotFound;
 use Neuron\Mvc\Application;
 
 /**
@@ -13,20 +14,20 @@ class Factory
 	 * @param Application $App
 	 * @param string $Class
 	 * @return IController
-	 * @throws NotFoundException
+	 * @throws NotFound
 	 */
 	static function create( Application $App, string $Class ) : IController
 	{
 		if( !class_exists( $Class ) )
 		{
-			throw new NotFoundException( "Controller $Class not found.");
+			throw new NotFound( "Controller $Class not found.");
 		}
 
 		$Implements = class_implements( $Class );
 
 		if( !in_array(IController::class, $Implements ) )
 		{
-			throw new NotFoundException( "$Class does not implement IController.");
+			throw new NotFound( "$Class does not implement IController.");
 		}
 
 		return new $Class( $App->getRouter() );

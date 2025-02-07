@@ -1,5 +1,6 @@
 <?php
 namespace Neuron\Mvc\Requests;
+use Neuron\Core\Exceptions\Validation;
 use Neuron\Log\Log;
 use Neuron\Validation\IsArray;
 use Neuron\Validation\IsBoolean;
@@ -235,7 +236,7 @@ class Parameter
 	}
 
 	/**
-	 * @throws ValidationException
+	 * @throws Validation
 	 */
 	public function validate(): void
 	{
@@ -253,7 +254,7 @@ class Parameter
 			{
 				Log::warning( $Error );
 			}
-			throw new ValidationException( $this->_Name, $this->_Errors );
+			throw new Validation( $this->_Name, $this->_Errors );
 		}
 	}
 
