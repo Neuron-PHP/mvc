@@ -1,4 +1,4 @@
-## 0.6.30
+## 0.6.30 2025-02-07
 * Updated to core/application packages.
 * Updated to php8.4
 
