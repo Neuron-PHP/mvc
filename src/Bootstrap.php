@@ -2,10 +2,8 @@
 use Neuron\Data\Filter\Get;
 use Neuron\Data\Filter\Server;
 use Neuron\Data\Object\Version;
-use Neuron\Data\Setting\Source\Ini;
 use Neuron\Data\Setting\Source\Yaml;
 use Neuron\Mvc\Application;
-use Neuron\Patterns\Registry;
 
 /**
  * Initialize the application.
@@ -14,6 +12,7 @@ use Neuron\Patterns\Registry;
  * @return Application
  * @throws Exception
  */
+
 function Boot( string $ConfigPath ) : Application
 {
 	/** @var Neuron\Data\Setting\Source\ISettingSource $Settings */
@@ -32,14 +31,10 @@ function Boot( string $ConfigPath ) : Application
  *
  * @param Application $App
  */
+
 function Dispatch( Application $App ) : void
 {
 	$Route = Get::filterScalar( 'route' ) ?? "";
-
-	if( $Route && $Route[ 0 ] != "/" )
-	{
-		$Route = "/$Route";
-	}
 
 	try
 	{
