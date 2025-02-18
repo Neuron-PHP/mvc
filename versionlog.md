@@ -1,4 +1,4 @@
-## 0.6.31
+## 0.6.31 2025-02-18
 * Updated router.
 * Cleaned up bootstrap functions.
 
