@@ -1,4 +1,6 @@
 ## 0.6.31
+* Updated router.
+* Cleaned up bootstrap functions.
 
 ## 0.6.30 2025-02-07
 * Updated to core/application packages.
