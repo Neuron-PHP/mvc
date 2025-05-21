@@ -16,9 +16,17 @@ use Neuron\Mvc\Application;
 function Boot( string $ConfigPath ) : Application
 {
 	/** @var Neuron\Data\Setting\Source\ISettingSource $Settings */
-	$Settings = new Yaml( "$ConfigPath/config.yaml" );
 
-	$BasePath = $Settings->get( 'system', 'base_path' );
+	try
+	{
+		$Settings = new Yaml( "$ConfigPath/config.yaml" );
+		$BasePath = $Settings->get( 'system', 'base_path' );
+	}
+	catch( Exception $e )
+	{
+		$Settings = null;
+		$BasePath = getenv( 'SYSTEM_BASE_PATH' ) ? : '.';
+	}
 
 	$Version = new Version();
 	$Version->loadFromFile( "$BasePath/version.json" );
