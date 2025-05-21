@@ -1,3 +1,5 @@
+## 0.6.33
+
 ## 0.6.32 2025-05-21
 * Can now operate with no config file present and default to env settings.
 
