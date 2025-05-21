@@ -29,7 +29,7 @@ function Boot( string $ConfigPath ) : Application
 	}
 
 	$Version = new Version();
-	$Version->loadFromFile( "$BasePath/version.json" );
+	$Version->loadFromFile( "$BasePath/.version.json" );
 
 	return new Application( $Version->getAsString(), $Settings );
 }
