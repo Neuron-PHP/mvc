@@ -14,7 +14,7 @@
       "ext-curl": "*",
       "ext-json": "*",
       "neuron-php/application": "0.6.*",
-      "neuron-php/routing": "0.6.*",
+      "neuron-php/routing": "^0.6.8",
       "symfony/yaml": "^6.4",
       "league/commonmark": "^2.6"
     },
