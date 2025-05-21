@@ -15,5 +15,12 @@ class BootstrapTest extends TestCase
 		 Dispatch( $App );
 	 }
 
+	 public function testMissingConfig()
+	 {
+		 $cwd = getcwd();
+		 $App = Boot( 'examples/non-there' );
+		 $this->assertTrue( is_object( $App ) );
 
+		 Dispatch( $App );
+	 }
 }

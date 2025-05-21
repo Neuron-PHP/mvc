@@ -1,0 +1,7 @@
+{
+  "strategy": "semver",
+  "major": 0,
+  "minor": 6,
+  "patch": 32,
+  "build": 0
+}
