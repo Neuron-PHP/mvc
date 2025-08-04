@@ -31,3 +31,4 @@
 [2025-08-04 10:40:29] /Error/  Failed to load routes: A colon cannot be used in an unquoted mapping value at line 3 (near "  key2: val").
 [2025-08-04 10:59:57] /Error/  Failed to load routes: A colon cannot be used in an unquoted mapping value at line 3 (near "  key2: val").
 [2025-08-04 11:02:13] /Error/  Failed to load routes: A colon cannot be used in an unquoted mapping value at line 3 (near "  key2: val").
+[2025-08-04 11:06:56] /Error/  Failed to load routes: A colon cannot be used in an unquoted mapping value at line 3 (near "  key2: val").
