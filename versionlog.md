@@ -1,5 +1,7 @@
 ## 0.6.33
 
+* Markdown files can now be put in nested directories.
+
 ## 0.6.32 2025-05-21
 * Can now operate with no config file present and default to env settings.
 

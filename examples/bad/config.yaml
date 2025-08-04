@@ -9,5 +9,5 @@ views:
 
 system:
   timezone: US/Eastern
-  base_path: examples
-  routes_path: examples/config
+  base_path: examples/bad
+

@@ -14,7 +14,11 @@ class TestController implements IController
 	public function test( array $Parameters, ?Request $Request )
 	{
 		global $ControllerState;
-		$ControllerState = count( $Request->getErrors() ) === 0;
+
+		if( $Request )
+			$ControllerState = count( $Request->getErrors() ) === 0;
+		else
+			$ControllerState = true;
 	}
 
 	public function no_request( array $Parameters, ?Request $Request )
