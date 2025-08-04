@@ -4,6 +4,7 @@ namespace Mvc;
 
 class MockPhpInputStream
 {
+	public $context;
 	private static $data;
 	private $position;
 

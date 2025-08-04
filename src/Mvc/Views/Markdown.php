@@ -18,6 +18,7 @@ use Neuron\Patterns\Registry;
  */
 class Markdown extends Base implements IView
 {
+	use CacheableView;
 	/**
 	 * @param array $Data
 	 * @return string markdown output
@@ -28,6 +29,13 @@ class Markdown extends Base implements IView
 	 */
 	public function render( array $Data ): string
 	{
+		$CacheKey = $this->getCacheKey( $Data );
+		
+		if( $CacheKey && $CachedContent = $this->getCachedContent( $CacheKey ) )
+		{
+			return $CachedContent;
+		}
+
 		$Path = Registry::getInstance()
 							 ->get( "Views.Path" );
 
@@ -61,6 +69,11 @@ class Markdown extends Base implements IView
 		require( $Layout );
 		$Page = ob_get_contents();
 		ob_end_clean();
+
+		if( $CacheKey )
+		{
+			$this->setCachedContent( $CacheKey, $Page );
+		}
 
 		return $Page;
 	}
