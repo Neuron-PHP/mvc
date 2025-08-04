@@ -45,7 +45,6 @@ class Markdown extends Base implements IView
 			$Path = "$BasePath/resources/views";
 		}
 
-		$cwd = getcwd();
 		$ControllerPath = "$Path/{$this->getController()}";
 		$View = $this->findMarkdownFile( $ControllerPath, $this->getPage() );
 
