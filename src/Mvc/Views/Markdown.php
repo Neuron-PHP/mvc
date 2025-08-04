@@ -9,6 +9,7 @@ use League\CommonMark\Exception\CommonMarkException;
 use League\CommonMark\Extension\CommonMark\CommonMarkCoreExtension;
 use League\CommonMark\Extension\Footnote\FootnoteExtension;
 use League\CommonMark\MarkdownConverter;
+use Neuron\Core\Exceptions\NotFound;
 use Neuron\Patterns\Registry;
 
 /**
@@ -36,11 +37,13 @@ class Markdown extends Base implements IView
 			$Path = "$BasePath/resources/views";
 		}
 
-		$View = "$Path/{$this->getController()}/{$this->getPage()}.md";
+		$cwd = getcwd();
+		$ControllerPath = "$Path/{$this->getController()}";
+		$View = $this->findMarkdownFile( $ControllerPath, $this->getPage() );
 
-		if( !file_exists( $View ) )
+		if( !$View )
 		{
-			throw new NotFound( "View notfound: $View" );
+			throw new NotFound( "View notfound: {$this->getPage()}.md in $ControllerPath" );
 		}
 
 		extract( $Data );
@@ -60,6 +63,48 @@ class Markdown extends Base implements IView
 		ob_end_clean();
 
 		return $Page;
+	}
+
+	/**
+	 * Find markdown file in controller directory or nested subdirectories
+	 *
+	 * @param string $BasePath
+	 * @param string $PageName
+	 * @return string|null
+	 */
+	protected function findMarkdownFile( string $BasePath, string $PageName ): ?string
+	{
+		if( !is_dir( $BasePath ) )
+		{
+			return null;
+		}
+
+		// First check direct path
+		$DirectPath = "$BasePath/$PageName.md";
+		if( file_exists( $DirectPath ) )
+		{
+			return $DirectPath;
+		}
+
+		// Search recursively in subdirectories
+		$Iterator = new \RecursiveIteratorIterator(
+			new \RecursiveDirectoryIterator( $BasePath, \RecursiveDirectoryIterator::SKIP_DOTS ),
+			\RecursiveIteratorIterator::SELF_FIRST
+		);
+
+		foreach( $Iterator as $File )
+		{
+			if( $File->isFile() && $File->getExtension() === 'md' )
+			{
+				$FileName = $File->getBasename( '.md' );
+				if( $FileName === $PageName )
+				{
+					return $File->getPathname();
+				}
+			}
+		}
+
+		return null;
 	}
 
 	/**

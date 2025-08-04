@@ -4,6 +4,7 @@ namespace Mvc;
 
 use Neuron\Application\CrossCutting\Event;
 use Neuron\Core\Exceptions\BadRequestMethod;
+use Neuron\Core\Exceptions\MissingMethod;
 use Neuron\Core\Exceptions\NotFound;
 use Neuron\Data\Setting\Source\Yaml;
 use Neuron\Mvc\Application;
@@ -276,5 +277,113 @@ class ApplicationTest extends TestCase
 		);
 
 		$this->assertTrue( $ControllerState );
+	}
+
+	public function testCaptureOutput()
+	{
+		$this->App->setCaptureOutput( true );
+
+		$this->assertTrue( $this->App->getCaptureOutput() );
+
+		$this->App->setRegistryObject( 'Requests.Path', $this->App->getBasePath().'/config/requests' );
+
+		$this->App->run(
+			[
+				"type"  => "GET",
+				"route" => "/test"
+			]
+		);
+
+		$Output = $this->App->getOutput();
+
+		$this->assertStringContainsString(
+			"<html>",
+			$Output
+		);
+
+		$this->assertStringContainsString(
+			"Resource Not Found",
+			$Output
+		);
+
+		$this->assertStringContainsString(
+			"does not exist",
+			$Output
+		);
+
+		global $ControllerState;
+
+		if( $ControllerState )
+			return;
+
+		throw new \Exception( "Controller state is not false." );
+
+	}
+
+	/**
+	 * @throws \Exception
+	 */
+	public function testPut()
+	{
+		$this->App->run(
+			[
+				"type"  => "PUT",
+				"route" => "/test_put"
+			]
+		);
+
+		global $ControllerState;
+		$this->assertTrue( $ControllerState );
+	}
+
+	/**
+	 * @throws \Exception
+	 */
+	public function testDelete()
+	{
+		$this->App->run(
+			[
+				"type"  => "DELETE",
+				"route" => "/test_delete"
+			]
+		);
+
+		global $ControllerState;
+		$this->assertTrue( $ControllerState );
+	}
+
+	public function testRoutesPath()
+	{
+		$this->App->setRoutesPath( 'test');
+		$this->assertEquals(
+			"test",
+			$this->App->getRoutesPath()
+		);
+	}
+
+	public function testBadRoutes()
+	{
+		$this->expectException( \Neuron\Core\Exceptions\Validation::class );
+		$Ini = new Yaml( './examples/bad/config.yaml' );
+		$App = new Application( "1.0.0", $Ini );
+	}
+
+	public function testGetRequest()
+	{
+		$Request = $this->App->getRequest("" );
+
+		$this->assertNull( $Request );
+	}
+
+	public function testMissingControllerMethod()
+	{
+		$this->App->run(
+			[
+				"type"  => "GET",
+				"route" => "/bad_request"
+			]
+		);
+
+		$this->assertTrue( $this->App->getCrashed() );
 	}
 }

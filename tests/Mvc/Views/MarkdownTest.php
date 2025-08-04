@@ -4,7 +4,9 @@ namespace Mvc\Views;
 
 use Neuron\Mvc\Controllers\Base;
 use Neuron\Mvc\Responses\HttpResponseStatus;
+use Neuron\Patterns\Registry;
 use Neuron\Routing\Router;
+use org\bovigo\vfs\vfsStream;
 use PHPUnit\Framework\TestCase;
 
 class MarkdownTest extends TestCase
@@ -12,6 +14,8 @@ class MarkdownTest extends TestCase
 	public function testRender()
 	{
 		$Base = new Base( new Router() );
+
+		Registry::getInstance()->set( "Views.Path", "examples/views" );
 
 		$Result = $Base->renderMarkdown(
 			HttpResponseStatus::OK,

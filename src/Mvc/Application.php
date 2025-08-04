@@ -7,6 +7,7 @@ use Neuron\Application\CrossCutting\Event;
 use Neuron\Core\Exceptions\BadRequestMethod;
 use Neuron\Core\Exceptions\MissingMethod;
 use Neuron\Core\Exceptions\NotFound;
+use Neuron\Core\Exceptions\Validation;
 use Neuron\Data\Setting\Source\ISettingSource;
 use Neuron\Log\Log;
 use Neuron\Mvc\Controllers\Factory;
@@ -28,6 +29,8 @@ class Application extends Base
 	private string $_RoutesPath;
 	private Router $_Router;
 	private array $_Requests = [];
+	private bool $_CaptureOutput = false;
+	private ?string $_Output = '';
 
 	/**
 	 * Application constructor.
@@ -43,7 +46,7 @@ class Application extends Base
 
 		Registry::getInstance()->set( 'BasePath', $this->getBasePath() );
 
-		$RoutesPath = $this->getSetting( 'routes_path', 'paths' );
+		$RoutesPath = $this->getSetting( 'routes_path', 'system' );
 		if( $RoutesPath )
 		{
 			$this->setRoutesPath( $RoutesPath );
@@ -51,6 +54,32 @@ class Application extends Base
 
 		$this->loadRequests();
 		$this->loadRoutes();
+	}
+
+	/**
+	 * @param bool $CaptureOutput
+	 * @return $this
+	 */
+	public function setCaptureOutput( bool $CaptureOutput ): Application
+	{
+		$this->_CaptureOutput = $CaptureOutput;
+		return $this;
+	}
+
+	/**
+	 * @return bool
+	 */
+	public function getCaptureOutput(): bool
+	{
+		return $this->_CaptureOutput;
+	}
+
+	/**
+	 * @return string
+	 */
+	public function getOutput(): ?string
+	{
+		return $this->_Output;
 	}
 
 	/**
@@ -191,7 +220,16 @@ class Application extends Base
 	 */
 	protected function onRun() : void
 	{
-		echo $this->_Router->run( $this->getParameters() );
+		$Output = $this->_Router->run( $this->getParameters() );
+
+		if( !$this->_CaptureOutput )
+		{
+			echo $Output;
+		}
+		else
+		{
+			$this->_Output = $Output;
+		}
 	}
 
 	/**
@@ -270,7 +308,7 @@ class Application extends Base
 		catch( ParseException $exception )
 		{
 			Log::error( "Failed to load routes: ".$exception->getMessage() );
-			return;
+			throw new Validation( $exception->getMessage(), [] );
 		}
 
 		foreach( $Data[ 'routes' ] as $Route )

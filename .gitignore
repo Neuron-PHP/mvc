@@ -9,3 +9,4 @@ public_html/
 build/
 .phpunit.result.cache
 /examples/test.log
+/examples/bad/test.log
