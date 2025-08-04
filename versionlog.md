@@ -1,4 +1,4 @@
-## 0.6.33
+## 0.6.33 2025-08-04
 
 * Markdown files can now be put in nested directories.
 
