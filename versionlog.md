@@ -1,3 +1,7 @@
+## 0.6.34 2025-08-04
+
+* Added file based view caching.
+
 ## 0.6.33 2025-08-04
 
 * Markdown files can now be put in nested directories.

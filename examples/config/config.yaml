@@ -7,6 +7,17 @@ logging:
 views:
   path: views
 
+cache:
+  enabled: true
+  storage: file
+  path: cache/views
+  ttl: 3600
+  views:
+    html: true
+    markdown: true
+    json: false
+    xml: false
+
 system:
   timezone: US/Eastern
   base_path: examples
