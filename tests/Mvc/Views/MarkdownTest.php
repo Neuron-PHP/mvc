@@ -11,6 +11,20 @@ use PHPUnit\Framework\TestCase;
 
 class MarkdownTest extends TestCase
 {
+	protected function setUp(): void
+	{
+		// Clear any existing registry values
+		Registry::getInstance()->set( "Views.Path", null );
+		Registry::getInstance()->set( "ViewCache", null );
+	}
+
+	protected function tearDown(): void
+	{
+		// Clean up after test
+		Registry::getInstance()->set( "Views.Path", null );
+		Registry::getInstance()->set( "ViewCache", null );
+	}
+
 	public function testRender()
 	{
 		$Base = new Base( new Router() );
@@ -27,5 +41,6 @@ class MarkdownTest extends TestCase
 		);
 
 		$this->assertStringContainsString( "<h2>Header 2</h2>", $Result );
+		$this->assertStringContainsString( "This is a test.", $Result );
 	}
 }
