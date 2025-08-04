@@ -1,4 +1,4 @@
-## 0.6.34
+## 0.6.34 2025-08-04
 
 * Added file based view caching.
 
