@@ -1,3 +1,5 @@
+## 0.6.36
+
 ## 0.6.35 2025-08-04
 
 * Added garbage collection for view file cache.
