@@ -51,4 +51,11 @@ interface ICacheStorage
 	 * @return bool
 	 */
 	public function isExpired( string $Key ): bool;
+	
+	/**
+	 * Run garbage collection to remove expired cache entries
+	 *
+	 * @return int Number of entries removed
+	 */
+	public function gc(): int;
 }

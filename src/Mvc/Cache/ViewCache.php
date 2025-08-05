@@ -168,6 +168,7 @@ class ViewCache
 	 */
 	public function gc(): int
 	{
+		Log::debug( "Cache gc" );
 		return $this->_Storage->gc();
 	}
 
