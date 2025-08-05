@@ -1,4 +1,4 @@
-## 0.6.36
+## 0.6.36 2025-08-05
 
 * Added cache debug logging.
 
