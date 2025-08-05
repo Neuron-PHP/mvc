@@ -1,6 +1,7 @@
 <?php
 namespace Neuron\Mvc\Cache\Storage;
 
+use Neuron\Log\Log;
 use Neuron\Mvc\Cache\Exceptions\CacheException;
 
 class FileCacheStorage implements ICacheStorage
@@ -29,6 +30,7 @@ class FileCacheStorage implements ICacheStorage
 	{
 		if( $this->isExpired( $Key ) )
 		{
+			Log::debug( "Cache entry expired for key: $Key" );
 			$this->delete( $Key );
 			return null;
 		}

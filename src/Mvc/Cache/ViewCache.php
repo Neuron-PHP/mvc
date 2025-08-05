@@ -1,6 +1,7 @@
 <?php
 namespace Neuron\Mvc\Cache;
 
+use Neuron\Log\Log;
 use Neuron\Mvc\Cache\Exceptions\CacheException;
 use Neuron\Mvc\Cache\Storage\ICacheStorage;
 
@@ -40,7 +41,17 @@ class ViewCache
 			return null;
 		}
 
-		return $this->_Storage->read( $Key );
+		$Data = $this->_Storage->read( $Key );
+
+		if( !$Data )
+		{
+			Log::debug( "Cache miss for key: $Key" );
+			return null;
+		}
+
+		Log::debug( "Cache hit for key: $Key" );
+
+		return $Data;
 	}
 
 	/**
