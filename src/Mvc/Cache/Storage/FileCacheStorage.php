@@ -182,6 +182,7 @@ class FileCacheStorage implements ICacheStorage
 	 */
 	public function gc(): int
 	{
+		Log::debug( "FileCacheStorage gc" );
 		$Count = 0;
 		
 		if( !is_dir( $this->_BasePath ) )
@@ -330,6 +331,8 @@ class FileCacheStorage implements ICacheStorage
 					
 					if( $MetaData && isset( $MetaData['expires'] ) && time() > $MetaData['expires'] )
 					{
+						Log::debug( "Cache entry expired for key: $ItemPath" );
+
 						// Remove the meta file
 						@unlink( $ItemPath );
 						

@@ -134,4 +134,113 @@ class FileCacheStorageTest extends TestCase
 		
 		new FileCacheStorage( $InvalidPath );
 	}
+	
+	public function testGarbageCollection()
+	{
+		// Create some cache entries with different TTLs
+		$this->Storage->write( 'keep1', 'content1', 3600 ); // Keep for 1 hour
+		$this->Storage->write( 'keep2', 'content2', 3600 ); // Keep for 1 hour
+		$this->Storage->write( 'expire1', 'content3', 1 ); // Expire in 1 second
+		$this->Storage->write( 'expire2', 'content4', 1 ); // Expire in 1 second
+		
+		// All should exist initially
+		$this->assertTrue( $this->Storage->exists( 'keep1' ) );
+		$this->assertTrue( $this->Storage->exists( 'keep2' ) );
+		$this->assertTrue( $this->Storage->exists( 'expire1' ) );
+		$this->assertTrue( $this->Storage->exists( 'expire2' ) );
+		
+		// Wait for some entries to expire
+		sleep( 2 );
+		
+		// Run garbage collection
+		$Removed = $this->Storage->gc();
+		$this->assertEquals( 2, $Removed );
+		
+		// Check that only non-expired entries remain
+		$this->assertTrue( $this->Storage->exists( 'keep1' ) );
+		$this->assertTrue( $this->Storage->exists( 'keep2' ) );
+		$this->assertFalse( $this->Storage->exists( 'expire1' ) );
+		$this->assertFalse( $this->Storage->exists( 'expire2' ) );
+	}
+	
+	public function testGarbageCollectionOnEmptyCache()
+	{
+		$Removed = $this->Storage->gc();
+		$this->assertEquals( 0, $Removed );
+	}
+	
+	public function testReadExpiredEntry()
+	{
+		$Key = 'test_read_expired';
+		$this->Storage->write( $Key, 'content', 1 );
+		
+		sleep( 2 );
+		
+		// Reading expired entry should return null and delete it
+		$this->assertNull( $this->Storage->read( $Key ) );
+		$this->assertFalse( $this->Storage->exists( $Key ) );
+	}
+	
+	public function testClearWithNonExistentDirectory()
+	{
+		// Create storage with non-existent base path
+		$Storage = new FileCacheStorage( vfsStream::url( 'cache/newdir' ) );
+		
+		// Clear should still return true even if directory doesn't fully exist
+		$this->assertTrue( $Storage->clear() );
+	}
+	
+	public function testIsExpiredWithMissingMetaFile()
+	{
+		$Key = 'test_missing_meta';
+		
+		// Manually create cache file without meta file
+		$Hash = md5( $Key );
+		$SubDir = substr( $Hash, 0, 2 );
+		$Dir = vfsStream::newDirectory( $SubDir )->at( $this->Root );
+		vfsStream::newFile( $Hash . '.cache' )
+			->at( $Dir )
+			->withContent( 'content' );
+		
+		// Should be considered expired if meta file is missing
+		$this->assertTrue( $this->Storage->isExpired( $Key ) );
+	}
+	
+	public function testIsExpiredWithCorruptedMetaFile()
+	{
+		$Key = 'test_corrupted_meta';
+		
+		// Manually create cache and corrupted meta file
+		$Hash = md5( $Key );
+		$SubDir = substr( $Hash, 0, 2 );
+		$Dir = vfsStream::newDirectory( $SubDir )->at( $this->Root );
+		vfsStream::newFile( $Hash . '.cache' )
+			->at( $Dir )
+			->withContent( 'content' );
+		vfsStream::newFile( $Hash . '.meta' )
+			->at( $Dir )
+			->withContent( 'not valid json' );
+		
+		// Should be considered expired if meta file is corrupted
+		$this->assertTrue( $this->Storage->isExpired( $Key ) );
+	}
+	
+	public function testIsExpiredWithIncompleteMetaData()
+	{
+		$Key = 'test_incomplete_meta';
+		
+		// Manually create cache and meta file without expires field
+		$Hash = md5( $Key );
+		$SubDir = substr( $Hash, 0, 2 );
+		$Dir = vfsStream::newDirectory( $SubDir )->at( $this->Root );
+		vfsStream::newFile( $Hash . '.cache' )
+			->at( $Dir )
+			->withContent( 'content' );
+		vfsStream::newFile( $Hash . '.meta' )
+			->at( $Dir )
+			->withContent( json_encode( [ 'created' => time() ] ) );
+		
+		// Should be considered expired if meta data is incomplete
+		$this->assertTrue( $this->Storage->isExpired( $Key ) );
+	}
 }
