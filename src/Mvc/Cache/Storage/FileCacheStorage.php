@@ -174,6 +174,25 @@ class FileCacheStorage implements ICacheStorage
 	}
 
 	/**
+	 * Run garbage collection to remove expired cache entries
+	 *
+	 * @return int Number of entries removed
+	 */
+	public function gc(): int
+	{
+		$Count = 0;
+		
+		if( !is_dir( $this->_BasePath ) )
+		{
+			return 0;
+		}
+		
+		$this->scanAndClean( $this->_BasePath, $Count );
+		
+		return $Count;
+	}
+
+	/**
 	 * Get file path for cache key
 	 *
 	 * @param string $Key
@@ -266,5 +285,69 @@ class FileCacheStorage implements ICacheStorage
 		}
 
 		return true;
+	}
+
+	/**
+	 * Scan directory and clean expired entries
+	 *
+	 * @param string $Dir
+	 * @param int $Count
+	 * @return void
+	 */
+	private function scanAndClean( string $Dir, int &$Count ): void
+	{
+		$Items = scandir( $Dir );
+		
+		if( $Items === false )
+		{
+			return;
+		}
+		
+		foreach( $Items as $Item )
+		{
+			if( $Item === '.' || $Item === '..' )
+			{
+				continue;
+			}
+			
+			$ItemPath = $Dir . DIRECTORY_SEPARATOR . $Item;
+			
+			if( is_dir( $ItemPath ) )
+			{
+				// Recursively scan subdirectories
+				$this->scanAndClean( $ItemPath, $Count );
+			}
+			elseif( substr( $Item, -5 ) === '.meta' )
+			{
+				// Check if this meta file indicates an expired entry
+				$MetaContent = file_get_contents( $ItemPath );
+				
+				if( $MetaContent !== false )
+				{
+					$MetaData = json_decode( $MetaContent, true );
+					
+					if( $MetaData && isset( $MetaData['expires'] ) && time() > $MetaData['expires'] )
+					{
+						// Remove the meta file
+						@unlink( $ItemPath );
+						
+						// Remove the corresponding cache file
+						$CachePath = substr( $ItemPath, 0, -5 ) . '.cache';
+						if( file_exists( $CachePath ) )
+						{
+							@unlink( $CachePath );
+						}
+						
+						$Count++;
+					}
+				}
+			}
+		}
+		
+		// Try to remove empty subdirectories (but not the base directory)
+		if( $Dir !== $this->_BasePath )
+		{
+			@rmdir( $Dir );
+		}
 	}
 }

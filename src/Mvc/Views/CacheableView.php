@@ -151,7 +151,7 @@ trait CacheableView
 					$CachePath = $BasePath . DIRECTORY_SEPARATOR . $Config->getCachePath();
 					
 					$Storage = new FileCacheStorage( $CachePath );
-					$Cache = new ViewCache( $Storage, true, $Config->getDefaultTtl() );
+					$Cache = new ViewCache( $Storage, true, $Config->getDefaultTtl(), $Config );
 					
 					$Registry->set( 'ViewCache', $Cache );
 					

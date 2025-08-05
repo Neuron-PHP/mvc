@@ -366,5 +366,47 @@ class Application extends Base
 			}
 		);
 	}
+
+	/**
+	 * Clear expired cache entries
+	 *
+	 * @return int Number of entries removed
+	 */
+	public function clearExpiredCache(): int
+	{
+		$Cache = Registry::getInstance()->get( 'ViewCache' );
+		
+		if( $Cache instanceof \Neuron\Mvc\Cache\ViewCache )
+		{
+			return $Cache->gc();
+		}
+		
+		// Try to initialize cache from settings if not already loaded
+		$Settings = $this->getSettingManager();
+		
+		if( $Settings )
+		{
+			try
+			{
+				$Config = \Neuron\Mvc\Cache\CacheConfig::fromSettings( $Settings->getSource() );
+				
+				if( $Config->isEnabled() )
+				{
+					$BasePath = $this->getBasePath();
+					$CachePath = $BasePath . DIRECTORY_SEPARATOR . $Config->getCachePath();
+					
+					$Storage = new \Neuron\Mvc\Cache\Storage\FileCacheStorage( $CachePath );
+					
+					return $Storage->gc();
+				}
+			}
+			catch( \Exception $e )
+			{
+				// Unable to initialize cache
+			}
+		}
+		
+		return 0;
+	}
 }
 
