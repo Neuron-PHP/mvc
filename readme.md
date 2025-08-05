@@ -100,6 +100,7 @@ routes:
     controller: App\Controllers\HomeController@index
 ```
 
+
 ## Core Components
 
 ### Application
@@ -207,6 +208,9 @@ public function profile(Request $request): string
 ```
 
 ## Configuration
+
+All YAML config file parameters can be overridden by environment variables in the form of `<CATEGORY>_<KEY>`, e.g.
+`SYSTEM_BASE_PATH`.
 
 ### Main Configuration (config.yaml)
 
