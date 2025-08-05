@@ -122,6 +122,41 @@ class CacheConfig
 			$CacheSettings['views'] = $ViewSettings;
 		}
 		
+		// Get GC settings if present
+		$GcProbability = $Settings->get( 'cache', 'gc_probability' );
+		if( $GcProbability !== null )
+		{
+			$CacheSettings['gc_probability'] = (float) $GcProbability;
+		}
+		
+		$GcDivisor = $Settings->get( 'cache', 'gc_divisor' );
+		if( $GcDivisor !== null )
+		{
+			$CacheSettings['gc_divisor'] = (int) $GcDivisor;
+		}
+		
 		return new self( $CacheSettings );
+	}
+
+	/**
+	 * Get garbage collection probability
+	 *
+	 * @return float
+	 */
+	public function getGcProbability(): float
+	{
+		// Default: 1% chance (0.01)
+		return (float) ( $this->_Settings['gc_probability'] ?? 0.01 );
+	}
+
+	/**
+	 * Get garbage collection divisor
+	 *
+	 * @return int
+	 */
+	public function getGcDivisor(): int
+	{
+		// Default divisor for probability calculation
+		return (int) ( $this->_Settings['gc_divisor'] ?? 100 );
 	}
 }

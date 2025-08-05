@@ -1,3 +1,7 @@
+## 0.6.35
+
+* Added garbage collection for view file cache.
+
 ## 0.6.34 2025-08-04
 
 * Added file based view caching.

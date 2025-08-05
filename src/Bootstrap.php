@@ -60,3 +60,14 @@ function Dispatch( Application $App ) : void
 		echo 'Ouch.';
 	}
 }
+
+/**
+ * Clear expired cache entries
+ *
+ * @param Application $App
+ * @return int Number of entries removed
+ */
+function ClearExpiredCache( Application $App ) : int
+{
+	return $App->clearExpiredCache();
+}

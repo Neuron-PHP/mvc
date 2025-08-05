@@ -7,9 +7,9 @@ use Neuron\Mvc\Cache\Storage\ICacheStorage;
 class ViewCache
 {
 	private bool $_Enabled;
-	private string $_CachePath;
 	private int $_DefaultTtl;
 	private ICacheStorage $_Storage;
+	private ?CacheConfig $_Config;
 
 	/**
 	 * ViewCache constructor
@@ -17,12 +17,14 @@ class ViewCache
 	 * @param ICacheStorage $Storage
 	 * @param bool $Enabled
 	 * @param int $DefaultTtl
+	 * @param CacheConfig|null $Config
 	 */
-	public function __construct( ICacheStorage $Storage, bool $Enabled = true, int $DefaultTtl = 3600 )
+	public function __construct( ICacheStorage $Storage, bool $Enabled = true, int $DefaultTtl = 3600, ?CacheConfig $Config = null )
 	{
 		$this->_Storage = $Storage;
 		$this->_Enabled = $Enabled;
 		$this->_DefaultTtl = $DefaultTtl;
+		$this->_Config = $Config;
 	}
 
 	/**
@@ -59,7 +61,15 @@ class ViewCache
 
 		$Ttl = $Ttl ?? $this->_DefaultTtl;
 		
-		return $this->_Storage->write( $Key, $Content, $Ttl );
+		$Result = $this->_Storage->write( $Key, $Content, $Ttl );
+		
+		// Run garbage collection based on probability
+		if( $Result && $this->shouldRunGc() )
+		{
+			$this->gc();
+		}
+		
+		return $Result;
 	}
 
 	/**
@@ -141,6 +151,16 @@ class ViewCache
 	}
 
 	/**
+	 * Run garbage collection to remove expired cache entries
+	 *
+	 * @return int Number of entries removed
+	 */
+	public function gc(): int
+	{
+		return $this->_Storage->gc();
+	}
+
+	/**
 	 * Hash data array for cache key
 	 *
 	 * @param array $Data
@@ -151,5 +171,38 @@ class ViewCache
 		ksort( $Data );
 		
 		return md5( serialize( $Data ) );
+	}
+
+	/**
+	 * Check if garbage collection should run
+	 *
+	 * @return bool
+	 */
+	private function shouldRunGc(): bool
+	{
+		if( !$this->_Config )
+		{
+			// If no config, use default 1% probability
+			return mt_rand( 1, 100 ) === 1;
+		}
+		
+		$Probability = $this->_Config->getGcProbability();
+		
+		// If probability is 0, GC is disabled
+		if( $Probability <= 0 )
+		{
+			return false;
+		}
+		
+		// If probability is 1 or higher, always run
+		if( $Probability >= 1 )
+		{
+			return true;
+		}
+		
+		$Divisor = $this->_Config->getGcDivisor();
+		
+		// Roll the dice
+		return mt_rand( 1, $Divisor ) <= ( $Probability * $Divisor );
 	}
 }
