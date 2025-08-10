@@ -1,5 +1,7 @@
 ## 0.6.39
 
+* Added namespace to the bootstrap functions.
+
 ## 0.6.38 2025-08-05
 
 * Updated readme.
