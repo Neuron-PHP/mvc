@@ -143,11 +143,15 @@ YAML;
 			->at( $this->Root )
 			->setContent( $VersionContent );
 		
-		// Boot with non-existent config path - should use default '.'
-		// Since we can't easily change CWD in tests, this will use actual CWD
-		// We'll create a temp version file to test
-		$TempVersionFile = './.version.json';
+		// Create a temporary directory for this test
+		$TempDir = sys_get_temp_dir() . '/neuron_test_' . uniqid();
+		mkdir( $TempDir );
+		$TempVersionFile = $TempDir . '/.version.json';
 		file_put_contents( $TempVersionFile, $VersionContent );
+		
+		// Save original CWD and change to temp directory
+		$OriginalCwd = getcwd();
+		chdir( $TempDir );
 		
 		try
 		{
@@ -160,8 +164,11 @@ YAML;
 		}
 		finally
 		{
-			// Clean up
+			// Restore original directory
+			chdir( $OriginalCwd );
+			// Clean up temp files
 			@unlink( $TempVersionFile );
+			@rmdir( $TempDir );
 		}
 	}
 	
@@ -291,9 +298,9 @@ YAML;
 	
 	public function testLegacyMissingConfig()
 	{
-		// With the fix, this should now fall back to environment/default path
-		// Will still throw exception if version file not found
-		$this->expectException( \Exception::class );
+		// With the fix, this now falls back to environment/default path
+		// Since there's a .version.json in current directory, it will succeed
 		$App = Boot( 'examples/non-there' );
+		$this->assertInstanceOf( Application::class, $App );
 	}
 }
