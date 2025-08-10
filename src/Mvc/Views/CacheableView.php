@@ -19,6 +19,12 @@ trait CacheableView
 	 */
 	protected function getCacheKey( array $Data ): string
 	{
+		// Check view-level cache setting first
+		if( $this->getCacheEnabled() === false )
+		{
+			return '';
+		}
+		
 		$Cache = $this->getCache();
 		
 		if( !$Cache )
@@ -26,11 +32,17 @@ trait CacheableView
 			return '';
 		}
 		
-		return $Cache->generateKey( 
-			$this->getController(), 
-			$this->getPage(), 
-			$Data 
-		);
+		// If cache is explicitly enabled at view level, generate key even if globally disabled
+		if( $this->getCacheEnabled() === true || $Cache->isEnabled() )
+		{
+			return $Cache->generateKey( 
+				$this->getController(), 
+				$this->getPage(), 
+				$Data 
+			);
+		}
+		
+		return '';
 	}
 
 	/**
@@ -41,13 +53,51 @@ trait CacheableView
 	 */
 	protected function getCachedContent( string $Key ): ?string
 	{
-		$Cache = $this->getCache();
-		
-		if( !$Cache || !$Cache->isEnabled() )
+		// Check view-level cache setting first
+		if( $this->getCacheEnabled() === false )
 		{
 			return null;
 		}
 		
+		$Cache = $this->getCache();
+		
+		if( !$Cache )
+		{
+			return null;
+		}
+		
+		// If cache is explicitly enabled at view level, bypass global check
+		if( $this->getCacheEnabled() === true )
+		{
+			// When explicitly enabled, bypass global check
+			// We temporarily enable cache to retrieve content
+			$WasEnabled = $Cache->isEnabled();
+			if( !$WasEnabled )
+			{
+				// Use reflection to temporarily enable cache
+				$Reflection = new \ReflectionObject( $Cache );
+				$EnabledProperty = $Reflection->getProperty( '_Enabled' );
+				$EnabledProperty->setAccessible( true );
+				$EnabledProperty->setValue( $Cache, true );
+			}
+			
+			try
+			{
+				$Content = $Cache->get( $Key );
+			}
+			finally
+			{
+				if( !$WasEnabled )
+				{
+					// Restore original state
+					$EnabledProperty->setValue( $Cache, false );
+				}
+			}
+			
+			return $Content;
+		}
+		
+		// Otherwise use normal cache method which checks global setting
 		return $Cache->get( $Key );
 	}
 
@@ -60,20 +110,61 @@ trait CacheableView
 	 */
 	protected function setCachedContent( string $Key, string $Content ): void
 	{
-		$Cache = $this->getCache();
-		
-		if( !$Cache || !$Cache->isEnabled() )
+		// Check view-level cache setting first
+		if( $this->getCacheEnabled() === false )
 		{
 			return;
 		}
 		
-		try
+		$Cache = $this->getCache();
+		
+		if( !$Cache )
 		{
-			$Cache->set( $Key, $Content );
+			return;
 		}
-		catch( CacheException $e )
+		
+		// If cache is explicitly enabled at view level, use it even if globally disabled
+		if( $this->getCacheEnabled() === true )
 		{
-			// Silently fail on cache write errors
+			// When explicitly enabled, bypass global check
+			// We can't directly access storage, so we temporarily enable cache
+			$WasEnabled = $Cache->isEnabled();
+			if( !$WasEnabled )
+			{
+				// Use reflection to temporarily enable cache
+				$Reflection = new \ReflectionObject( $Cache );
+				$EnabledProperty = $Reflection->getProperty( '_Enabled' );
+				$EnabledProperty->setAccessible( true );
+				$EnabledProperty->setValue( $Cache, true );
+			}
+			
+			try
+			{
+				$Cache->set( $Key, $Content );
+			}
+			catch( CacheException $e )
+			{
+				// Silently fail on cache write errors
+			}
+			finally
+			{
+				if( !$WasEnabled )
+				{
+					// Restore original state
+					$EnabledProperty->setValue( $Cache, false );
+				}
+			}
+		}
+		elseif( $Cache->isEnabled() )
+		{
+			try
+			{
+				$Cache->set( $Key, $Content );
+			}
+			catch( CacheException $e )
+			{
+				// Silently fail on cache write errors  
+			}
 		}
 	}
 
@@ -84,6 +175,14 @@ trait CacheableView
 	 */
 	protected function isCacheEnabled(): bool
 	{
+		// Check view-level cache setting first
+		$ViewCacheSetting = $this->getCacheEnabled();
+		if( $ViewCacheSetting !== null )
+		{
+			return $ViewCacheSetting;
+		}
+		
+		// Fall back to global cache setting
 		$Cache = $this->getCache();
 		
 		return $Cache && $Cache->isEnabled();

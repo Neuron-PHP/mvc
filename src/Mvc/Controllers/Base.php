@@ -25,14 +25,15 @@ class Base implements IController
 	 * @throws \Neuron\Core\Exceptions\NotFound
 	 * @throws CommonMarkException
 	 */
-	public function renderMarkdown( HttpResponseStatus $ResponseCode, array $Data = [], string $Page = "index", string $Layout = "default" ) : string
+	public function renderMarkdown( HttpResponseStatus $ResponseCode, array $Data = [], string $Page = "index", string $Layout = "default", ?bool $CacheEnabled = null ) : string
 	{
 		@http_response_code( $ResponseCode->value );
 
 		$View = ( new Markdown() )
 			->setController( (new \ReflectionClass( static::class ))->getShortName() )
 			->setLayout( $Layout )
-			->setPage( $Page );
+			->setPage( $Page )
+			->setCacheEnabled( $CacheEnabled );
 
 		return $View->render( $Data );
 	}
@@ -40,14 +41,15 @@ class Base implements IController
 	/**
 	 * @throws \Neuron\Core\Exceptions\NotFound
 	 */
-	public function renderHtml( HttpResponseStatus $ResponseCode, array $Data = [], string $Page = "index", string $Layout = "default" ) : string
+	public function renderHtml( HttpResponseStatus $ResponseCode, array $Data = [], string $Page = "index", string $Layout = "default", ?bool $CacheEnabled = null ) : string
 	{
 		@http_response_code( $ResponseCode->value );
 
 		$View = ( new Html() )
 			->setController( (new \ReflectionClass( static::class ))->getShortName() )
 			->setLayout( $Layout )
-			->setPage( $Page );
+			->setPage( $Page )
+			->setCacheEnabled( $CacheEnabled );
 
 		return $View->render( $Data );
 	}

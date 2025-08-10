@@ -24,7 +24,7 @@ class TestController implements IController
 		return $this->_Router;
 	}
 	
-	public function renderHtml( HttpResponseStatus $ResponseCode, array $Data = [], string $Page = "index", string $Layout = "default" ): string
+	public function renderHtml( HttpResponseStatus $ResponseCode, array $Data = [], string $Page = "index", string $Layout = "default", ?bool $CacheEnabled = null ): string
 	{
 		return 'html';
 	}

@@ -1,16 +1,17 @@
 <?php
+namespace Neuron\Mvc;
+
 use Neuron\Data\Filter\Get;
 use Neuron\Data\Filter\Server;
 use Neuron\Data\Object\Version;
 use Neuron\Data\Setting\Source\Yaml;
-use Neuron\Mvc\Application;
 
 /**
  * Initialize the application.
  *
  * @param string $ConfigPath
  * @return Application
- * @throws Exception
+ * @throws \Exception
  */
 
 function Boot( string $ConfigPath ) : Application
@@ -22,7 +23,7 @@ function Boot( string $ConfigPath ) : Application
 		$Settings = new Yaml( "$ConfigPath/config.yaml" );
 		$BasePath = $Settings->get( 'system', 'base_path' );
 	}
-	catch( Exception $e )
+	catch( \Exception $e )
 	{
 		$Settings = null;
 		$BasePath = getenv( 'SYSTEM_BASE_PATH' ) ? : '.';
@@ -55,7 +56,7 @@ function Dispatch( Application $App ) : void
 			]
 		);
 	}
-	catch( Exception $e )
+	catch( \Exception $e )
 	{
 		echo 'Ouch.';
 	}
