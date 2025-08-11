@@ -10,7 +10,7 @@ use PHPUnit\Framework\TestCase;
 // Import the namespaced functions
 use function Neuron\Mvc\boot;
 use function Neuron\Mvc\dispatch;
-use function Neuron\Mvc\ClearExpiredCache;
+use function Neuron\Mvc\clearExpiredCache;
 
 class BootstrapTest extends TestCase
 {
@@ -263,7 +263,7 @@ YAML;
 			->willReturn( 42 );  // Mock cleared 42 entries
 		
 		// Clear cache
-		$ClearedCount = ClearExpiredCache( $App );
+		$ClearedCount = clearExpiredCache( $App );
 		
 		// Assert return value
 		$this->assertEquals( 42, $ClearedCount );
@@ -281,7 +281,7 @@ YAML;
 			->willReturn( 0 );  // No entries cleared
 		
 		// Clear cache
-		$ClearedCount = ClearExpiredCache( $App );
+		$ClearedCount = clearExpiredCache( $App );
 		
 		// Assert return value
 		$this->assertEquals( 0, $ClearedCount );
