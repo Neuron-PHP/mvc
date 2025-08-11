@@ -1,3 +1,5 @@
+## 0.6.42
+
 ## 0.6.41 2025-08-11
 * renamed the bootstrap functions.
 
