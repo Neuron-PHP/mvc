@@ -65,9 +65,7 @@ class CacheConfig
 	 */
 	public function isViewTypeEnabled( string $ViewType ): bool
 	{
-		$ViewSettings = $this->_Settings['views'] ?? [];
-		
-		return $ViewSettings[$ViewType] ?? true;
+		return $this->_Settings[$ViewType] ?? true;
 	}
 
 	/**
@@ -106,20 +104,14 @@ class CacheConfig
 		
 		// For views settings, we need to check each view type
 		$ViewTypes = [ 'html', 'markdown', 'json', 'xml' ];
-		$ViewSettings = [];
 		
 		foreach( $ViewTypes as $ViewType )
 		{
-			$ViewEnabled = $Settings->get( 'views', $ViewType );
+			$ViewEnabled = $Settings->get( 'cache', $ViewType );
 			if( $ViewEnabled !== null )
 			{
-				$ViewSettings[$ViewType] = $ViewEnabled === 'true' || $ViewEnabled === '1';
+				$CacheSettings[$ViewType] = $ViewEnabled === 'true' || $ViewEnabled === '1';
 			}
-		}
-		
-		if( !empty( $ViewSettings ) )
-		{
-			$CacheSettings['views'] = $ViewSettings;
 		}
 		
 		// Get GC settings if present

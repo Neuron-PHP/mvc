@@ -10,7 +10,8 @@ use PHPUnit\Framework\TestCase;
 class ControllerTest extends Base
 {
 	public function index()
-	{}
+	{
+	}
 
 	public function add()
 	{}

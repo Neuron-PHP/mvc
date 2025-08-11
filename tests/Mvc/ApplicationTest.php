@@ -52,6 +52,25 @@ class ApplicationTest extends TestCase
 		);
 	}
 
+	public function testPartial()
+	{
+		$this->App->setCaptureOutput( true );
+
+		$this->App->run(
+			[
+				"type"  => "GET",
+				"route" => "/partial-test"
+			]
+		);
+
+		$Output = $this->App->getOutput();
+
+		$this->assertStringContainsString(
+			"poop",
+			$Output
+		);
+	}
+
 	/**
 	 * @throws \Exception
 	 */

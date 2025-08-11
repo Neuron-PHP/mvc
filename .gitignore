@@ -10,6 +10,6 @@ build/
 .phpunit.result.cache
 /examples/test.log
 /examples/bad/test.log
-/CLAUDE.md
+CLAUDE.md
 /cache/
 /.claude/

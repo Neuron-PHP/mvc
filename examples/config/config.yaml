@@ -12,11 +12,11 @@ cache:
   storage: file
   path: cache/views
   ttl: 3600
-  views:
-    html: true
-    markdown: true
-    json: false
-    xml: false
+  html: true
+  markdown: true
+  json: false
+  xml: false
+
   # Garbage collection settings (optional, defaults shown)
   # gc_probability: 0.01  # 1% chance to run GC on cache write
   # gc_divisor: 100      # Used with probability for fine-tuning
