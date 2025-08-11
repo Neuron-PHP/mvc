@@ -1,4 +1,4 @@
-## 0.6.40
+## 0.6.40 2025-08-10
 * Added the ability to render partials.
 
 ## 0.6.39 2025-08-10
