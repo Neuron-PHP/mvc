@@ -43,10 +43,10 @@ Create a `public/index.php` file:
 require_once '../vendor/autoload.php';
 
 // Bootstrap the application
-$app = Boot('../config');
+$app = boot('../config');
 
 // Dispatch the current request
-Dispatch($app);
+dispatch($app);
 ```
 
 ### 2. Configure Apache (.htaccess)

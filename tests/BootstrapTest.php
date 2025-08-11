@@ -8,8 +8,8 @@ use org\bovigo\vfs\vfsStream;
 use PHPUnit\Framework\TestCase;
 
 // Import the namespaced functions
-use function Neuron\Mvc\Boot;
-use function Neuron\Mvc\Dispatch;
+use function Neuron\Mvc\boot;
+use function Neuron\Mvc\dispatch;
 use function Neuron\Mvc\ClearExpiredCache;
 
 class BootstrapTest extends TestCase
@@ -88,7 +88,7 @@ YAML;
 		$this->Root->getChild( 'config.yaml' )->setContent( $ConfigContent );
 		
 		// Boot the application
-		$App = Boot( $BasePath );
+		$App = boot( $BasePath );
 		
 		// Assertions
 		$this->assertInstanceOf( Application::class, $App );
@@ -117,7 +117,7 @@ YAML;
 			->setContent( $VersionContent );
 		
 		// Boot with non-existent config path - should now use environment variable
-		$App = Boot( vfsStream::url( 'test/nonexistent' ) );
+		$App = boot( vfsStream::url( 'test/nonexistent' ) );
 		
 		// Should successfully create application with environment path
 		$this->assertInstanceOf( Application::class, $App );
@@ -156,7 +156,7 @@ YAML;
 		try
 		{
 			// Boot with non-existent config path - will use current directory
-			$App = Boot( vfsStream::url( 'test/nonexistent' ) );
+			$App = boot( vfsStream::url( 'test/nonexistent' ) );
 			
 			// Should successfully create application
 			$this->assertInstanceOf( Application::class, $App );
@@ -191,7 +191,7 @@ YAML;
 			} ) );
 		
 		// Dispatch - will use actual superglobals
-		Dispatch( $App );
+		dispatch( $App );
 	}
 	
 	/**
@@ -206,7 +206,7 @@ YAML;
 			->with( $this->isType( 'array' ) );
 		
 		// Dispatch
-		Dispatch( $App );
+		dispatch( $App );
 	}
 	
 	/**
@@ -228,7 +228,7 @@ YAML;
 			} ) );
 		
 		// Dispatch
-		Dispatch( $App );
+		dispatch( $App );
 	}
 	
 	/**
@@ -244,7 +244,7 @@ YAML;
 		
 		// Capture output
 		ob_start();
-		Dispatch( $App );
+		dispatch( $App );
 		$Output = ob_get_clean();
 		
 		// Should output 'Ouch.' when exception is caught
@@ -292,7 +292,7 @@ YAML;
 	 */
 	public function testLegacyBootstrap()
 	{
-		$App = Boot( 'examples/config' );
+		$App = boot( 'examples/config' );
 		$this->assertInstanceOf( Application::class, $App );
 	}
 	
@@ -300,7 +300,7 @@ YAML;
 	{
 		// With the fix, this now falls back to environment/default path
 		// Since there's a .version.json in current directory, it will succeed
-		$App = Boot( 'examples/non-there' );
+		$App = boot( 'examples/non-there' );
 		$this->assertInstanceOf( Application::class, $App );
 	}
 }

@@ -1,3 +1,6 @@
+## 0.6.41 2025-08-11
+* renamed the bootstrap functions.
+
 ## 0.6.40 2025-08-10
 * Added the ability to render partials.
 
