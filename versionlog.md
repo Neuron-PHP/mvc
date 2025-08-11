@@ -1,4 +1,5 @@
 ## 0.6.42
+* Added variable injection to partials.
 
 ## 0.6.41 2025-08-11
 * renamed the bootstrap functions.
