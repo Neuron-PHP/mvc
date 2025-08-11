@@ -16,7 +16,7 @@ use Neuron\Patterns\Registry;
  * @throws \Exception
  */
 
-function Boot( string $ConfigPath ) : Application
+function boot( string $ConfigPath ) : Application
 {
 	/** @var Neuron\Data\Setting\Source\ISettingSource $Settings */
 
@@ -42,7 +42,7 @@ function Boot( string $ConfigPath ) : Application
  *
  * @param Application $App
  */
-function Dispatch( Application $App ) : void
+function dispatch( Application $App ) : void
 {
 	$Route = Get::filterScalar( 'route' ) ?? "";
 
@@ -69,7 +69,7 @@ function Dispatch( Application $App ) : void
  * @param Application $App
  * @return int Number of entries removed
  */
-function ClearExpiredCache( Application $App ) : int
+function clearExpiredCache( Application $App ) : int
 {
 	return $App->clearExpiredCache();
 }
@@ -77,11 +77,12 @@ function ClearExpiredCache( Application $App ) : int
 /**
  * Render a partial view from the shared directory.
  * This function looks for a file named _{name}.php in the shared views directory.
- * @param string $name
+ * @param string $name The name of the partial (without underscore prefix or .php extension)
+ * @param array $Data Optional data array to pass to the partial as variables
  * @return void
  * @throws NotFound
  */
-function Partial( string $name ) : void
+function partial( string $name, array $Data = [] ) : void
 {
 	$Path = Registry::getInstance()
 						 ->get( "Views.Path" );
@@ -98,6 +99,9 @@ function Partial( string $name ) : void
 	{
 		throw new NotFound( "Partial not found: $View" );
 	}
+
+	// Extract data array as variables in the partial's scope
+	extract( $Data );
 
 	ob_start();
 	require( $View );

@@ -7,7 +7,7 @@ use Neuron\Patterns\Registry;
 use PHPUnit\Framework\TestCase;
 
 // Import the namespaced function
-use function Neuron\Mvc\Partial;
+use function Neuron\Mvc\partial;
 
 class PartialTest extends TestCase
 {
@@ -104,10 +104,10 @@ class PartialTest extends TestCase
 	/**
 	 * Helper to capture output from Partial function
 	 */
-	private function capturePartialOutput( string $Name ): string
+	private function capturePartialOutput( string $Name, array $Data = [] ): string
 	{
 		ob_start();
-		Partial( $Name );
+		partial( $Name, $Data );
 		return ob_get_clean();
 	}
 	
@@ -131,7 +131,7 @@ class PartialTest extends TestCase
 		$this->expectException( NotFound::class );
 		$this->expectExceptionMessage( 'Partial not found' );
 		
-		Partial( 'nonexistent' );
+		partial( 'nonexistent' );
 	}
 	
 	/**
@@ -284,7 +284,7 @@ $items = ["Apple", "Banana", "Orange"];
 		echo "Before partial ";
 		
 		// Partial now echoes directly
-		Partial( 'test' );
+		partial( 'test' );
 		
 		echo " After partial";
 		$FullOutput = ob_get_clean();

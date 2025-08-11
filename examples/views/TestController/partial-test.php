@@ -1,1 +1,1 @@
-<?php Neuron\Mvc\Partial( 'test' ); ?>
+<?php Neuron\Mvc\partial( 'test' ); ?>
