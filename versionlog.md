@@ -1,3 +1,5 @@
+## 0.6.43
+
 ## 0.6.42 2025-08-11
 * Added variable injection to partials.
 
