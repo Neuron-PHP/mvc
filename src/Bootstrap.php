@@ -1,10 +1,12 @@
 <?php
 namespace Neuron\Mvc;
 
+use Neuron\Core\Exceptions\NotFound;
 use Neuron\Data\Filter\Get;
 use Neuron\Data\Filter\Server;
 use Neuron\Data\Object\Version;
 use Neuron\Data\Setting\Source\Yaml;
+use Neuron\Patterns\Registry;
 
 /**
  * Initialize the application.
@@ -40,7 +42,6 @@ function Boot( string $ConfigPath ) : Application
  *
  * @param Application $App
  */
-
 function Dispatch( Application $App ) : void
 {
 	$Route = Get::filterScalar( 'route' ) ?? "";
@@ -71,4 +72,37 @@ function Dispatch( Application $App ) : void
 function ClearExpiredCache( Application $App ) : int
 {
 	return $App->clearExpiredCache();
+}
+
+/**
+ * Render a partial view from the shared directory.
+ * This function looks for a file named _{name}.php in the shared views directory.
+ * @param string $name
+ * @return void
+ * @throws NotFound
+ */
+function Partial( string $name ) : void
+{
+	$Path = Registry::getInstance()
+						 ->get( "Views.Path" );
+
+	if( !$Path )
+	{
+		$BasePath = Registry::getInstance()->get( "Base.Path" );
+		$Path = "$BasePath/resources/views";
+	}
+
+	$View = "$Path/shared/_$name.php";
+
+	if( !file_exists( $View ) )
+	{
+		throw new NotFound( "Partial not found: $View" );
+	}
+
+	ob_start();
+	require( $View );
+	$Content = ob_get_contents();
+	ob_end_clean();
+
+	echo $Content;
 }

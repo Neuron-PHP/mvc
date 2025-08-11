@@ -11,6 +11,11 @@ routes:
     controller: Mvc\TestController@test
     request: test
 
+  partial:
+    route: /partial-test
+    method: GET
+    controller: Mvc\TestController@partial
+
   put:
     route: /test_put
     method: PUT
