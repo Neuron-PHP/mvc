@@ -253,6 +253,211 @@ class Base implements IController
 	}
 
 	/**
+	 * Check if view cache exists using only cache key data.
+	 * This allows checking cache without fetching full view data.
+	 * 
+	 * @param string $Page The page/view name
+	 * @param array $CacheKeyData The minimal data that determines cache uniqueness
+	 * @return bool True if cache exists, false otherwise
+	 */
+	protected function hasViewCacheByKey( string $Page, array $CacheKeyData = [] ): bool
+	{
+		$ViewCache = $this->initializeViewCache();
+		
+		if( !$ViewCache || !$ViewCache->isEnabled() )
+		{
+			return false;
+		}
+		
+		$CacheKey = $ViewCache->generateKey(
+			$this->getControllerName(),
+			$Page,
+			$CacheKeyData
+		);
+		
+		return $ViewCache->exists( $CacheKey );
+	}
+
+	/**
+	 * Get cached view content using only cache key data.
+	 * This allows retrieving cache without fetching full view data.
+	 * 
+	 * @param string $Page The page/view name
+	 * @param array $CacheKeyData The minimal data that determines cache uniqueness
+	 * @return string|null The cached content or null if not found
+	 */
+	protected function getViewCacheByKey( string $Page, array $CacheKeyData = [] ): ?string
+	{
+		$ViewCache = $this->initializeViewCache();
+		
+		if( !$ViewCache || !$ViewCache->isEnabled() )
+		{
+			return null;
+		}
+		
+		$CacheKey = $ViewCache->generateKey(
+			$this->getControllerName(),
+			$Page,
+			$CacheKeyData
+		);
+		
+		return $ViewCache->get( $CacheKey );
+	}
+
+	/**
+	 * Render HTML with separate cache key data.
+	 * Allows checking/using cache without fetching full view data.
+	 * 
+	 * @param HttpResponseStatus $ResponseCode HTTP response status
+	 * @param array $ViewData Full data for rendering (can be empty if using cache)
+	 * @param array $CacheKeyData Minimal data for cache key generation
+	 * @param string $Page Page template name
+	 * @param string $Layout Layout template name
+	 * @param bool|null $CacheEnabled Whether to enable caching
+	 * @return string Rendered HTML content
+	 * @throws \Neuron\Core\Exceptions\NotFound
+	 */
+	public function renderHtmlWithCacheKey( 
+		HttpResponseStatus $ResponseCode, 
+		array $ViewData = [], 
+		array $CacheKeyData = [], 
+		string $Page = "index", 
+		string $Layout = "default", 
+		?bool $CacheEnabled = null 
+	): string
+	{
+		@http_response_code( $ResponseCode->value );
+
+		// If view data is empty and cache is enabled, try to get cached content
+		if( empty( $ViewData ) && $CacheEnabled !== false )
+		{
+			$CachedContent = $this->getViewCacheByKey( $Page, $CacheKeyData );
+			if( $CachedContent !== null )
+			{
+				return $CachedContent;
+			}
+		}
+
+		// Create view and set up for rendering
+		$View = new Html()
+			->setController( $this->getControllerName() )
+			->setLayout( $Layout )
+			->setPage( $Page )
+			->setCacheEnabled( $CacheEnabled );
+
+		// If we have view data, render normally
+		if( !empty( $ViewData ) )
+		{
+			$RenderedContent = $View->render( $ViewData );
+			
+			// Store in cache using cache key data
+			if( $CacheEnabled === true )
+			{
+				$ViewCache = $this->initializeViewCache();
+				if( $ViewCache && $ViewCache->isEnabled() )
+				{
+					$CacheKey = $ViewCache->generateKey(
+						$this->getControllerName(),
+						$Page,
+						$CacheKeyData
+					);
+					try
+					{
+						$ViewCache->set( $CacheKey, $RenderedContent );
+					}
+					catch( CacheException $e )
+					{
+						// Silently fail on cache write errors
+					}
+				}
+			}
+			
+			return $RenderedContent;
+		}
+
+		// No view data and no cache - this shouldn't happen in normal use
+		// but render with cache key data as fallback
+		return $View->render( $CacheKeyData );
+	}
+
+	/**
+	 * Render Markdown with separate cache key data.
+	 * Allows checking/using cache without fetching full view data.
+	 * 
+	 * @param HttpResponseStatus $ResponseCode HTTP response status
+	 * @param array $ViewData Full data for rendering (can be empty if using cache)
+	 * @param array $CacheKeyData Minimal data for cache key generation
+	 * @param string $Page Page template name
+	 * @param string $Layout Layout template name
+	 * @param bool|null $CacheEnabled Whether to enable caching
+	 * @return string Rendered Markdown content
+	 * @throws \Neuron\Core\Exceptions\NotFound
+	 * @throws CommonMarkException
+	 */
+	public function renderMarkdownWithCacheKey( 
+		HttpResponseStatus $ResponseCode, 
+		array $ViewData = [], 
+		array $CacheKeyData = [], 
+		string $Page = "index", 
+		string $Layout = "default", 
+		?bool $CacheEnabled = null 
+	): string
+	{
+		@http_response_code( $ResponseCode->value );
+
+		// If view data is empty and cache is enabled, try to get cached content
+		if( empty( $ViewData ) && $CacheEnabled !== false )
+		{
+			$CachedContent = $this->getViewCacheByKey( $Page, $CacheKeyData );
+			if( $CachedContent !== null )
+			{
+				return $CachedContent;
+			}
+		}
+
+		// Create view and set up for rendering
+		$View = new Markdown()
+			->setController( $this->getControllerName() )
+			->setLayout( $Layout )
+			->setPage( $Page )
+			->setCacheEnabled( $CacheEnabled );
+
+		// If we have view data, render normally
+		if( !empty( $ViewData ) )
+		{
+			$RenderedContent = $View->render( $ViewData );
+			
+			// Store in cache using cache key data
+			if( $CacheEnabled === true )
+			{
+				$ViewCache = $this->initializeViewCache();
+				if( $ViewCache && $ViewCache->isEnabled() )
+				{
+					$CacheKey = $ViewCache->generateKey(
+						$this->getControllerName(),
+						$Page,
+						$CacheKeyData
+					);
+					try
+					{
+						$ViewCache->set( $CacheKey, $RenderedContent );
+					}
+					catch( CacheException $e )
+					{
+						// Silently fail on cache write errors
+					}
+				}
+			}
+			
+			return $RenderedContent;
+		}
+
+		// No view data and no cache - this shouldn't happen in normal use
+		// but render with cache key data as fallback
+		return $View->render( $CacheKeyData );
+	}
+
+	/**
 	 * This method registers routes for any of the standard methods that
 	 * are currently implemented in the class.
 	 * Index
