@@ -15,7 +15,7 @@ use org\bovigo\vfs\vfsStream;
 use PHPUnit\Framework\TestCase;
 
 // Create a named test controller class instead of anonymous class
-class TestCacheController extends Base
+class DynamicTestCacheController extends Base
 {
 	public function testAction(): string
 	{
@@ -88,7 +88,7 @@ class DynamicCacheControlTest extends TestCase
 	 */
 	private function createTestController(): Base
 	{
-		return new TestCacheController( $this->Router );
+		return new DynamicTestCacheController( $this->Router );
 	}
 	
 	/**
@@ -99,7 +99,7 @@ class DynamicCacheControlTest extends TestCase
 		$Controller = $this->createTestController();
 		
 		// Create view templates
-		$ViewsDir = vfsStream::newDirectory( 'TestCacheController' )
+		$ViewsDir = vfsStream::newDirectory( 'DynamicTestCacheController' )
 			->at( $this->Root->getChild( 'resources/views' ) );
 		
 		vfsStream::newFile( 'test.php' )
@@ -138,7 +138,7 @@ class DynamicCacheControlTest extends TestCase
 		$Controller = $this->createTestController();
 		
 		// Create view templates
-		$ViewsDir = vfsStream::newDirectory( 'TestCacheController' )
+		$ViewsDir = vfsStream::newDirectory( 'DynamicTestCacheController' )
 			->at( $this->Root->getChild( 'resources/views' ) );
 		
 		vfsStream::newFile( 'nocache.php' )
@@ -189,7 +189,7 @@ class DynamicCacheControlTest extends TestCase
 		$Controller = $this->createTestController();
 		
 		// Create view templates
-		$ViewsDir = vfsStream::newDirectory( 'TestCacheController' )
+		$ViewsDir = vfsStream::newDirectory( 'DynamicTestCacheController' )
 			->at( $this->Root->getChild( 'resources/views' ) );
 		
 		vfsStream::newFile( 'default.php' )
@@ -261,7 +261,7 @@ class DynamicCacheControlTest extends TestCase
 		$Controller = $this->createTestController();
 		
 		// Create markdown file
-		$ViewsDir = vfsStream::newDirectory( 'TestCacheController' )
+		$ViewsDir = vfsStream::newDirectory( 'DynamicTestCacheController' )
 			->at( $this->Root->getChild( 'resources/views' ) );
 		
 		vfsStream::newFile( 'test.md' )
@@ -306,7 +306,7 @@ class DynamicCacheControlTest extends TestCase
 		$Controller = $this->createTestController();
 		
 		// Create view templates
-		$ViewsDir = vfsStream::newDirectory( 'TestCacheController' )
+		$ViewsDir = vfsStream::newDirectory( 'DynamicTestCacheController' )
 			->at( $this->Root->getChild( 'resources/views' ) );
 		
 		vfsStream::newFile( 'page1.php' )
