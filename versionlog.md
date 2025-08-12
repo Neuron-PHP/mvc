@@ -1,3 +1,7 @@
+## 0.6.43 2025-08-12
+* Updated blagh and mvc components.
+* Added the ability to access the view cache from the controller.
+
 ## 0.6.42 2025-08-11
 * Added variable injection to partials.
 

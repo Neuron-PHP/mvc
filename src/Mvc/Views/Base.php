@@ -87,5 +87,4 @@ class Base
 		$this->_CacheEnabled = $CacheEnabled;
 		return $this;
 	}
-
 }
