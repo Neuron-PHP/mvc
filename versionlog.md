@@ -1,4 +1,4 @@
-## 0.6.45
+## 0.6.45 2025-08-12
 * Fixed an issue with the cache override.
 
 ## 0.6.44 2025-08-12
