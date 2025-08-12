@@ -363,6 +363,127 @@ class CacheKeyDataTest extends TestCase
 		$this->assertFalse( $Controller->testHasViewCacheByKey( 'product', $CacheKeyData ) );
 	}
 	
+	public function testRenderWithCacheKeyRespectsDefaultSettings()
+	{
+		// Setup cache that is enabled by default
+		$Storage = new FileCacheStorage( $this->TempCacheDir );
+		$ViewCache = new ViewCache( $Storage, true, 3600 );  // Cache enabled
+		Registry::getInstance()->set( 'ViewCache', $ViewCache );
+		
+		// Create controller
+		$Controller = new CacheKeyTestController( new Router() );
+		
+		$ViewData = ['product_name' => 'Default Test', 'price' => 75];
+		$CacheKeyData = ['id' => 999];
+		
+		// Render with null (should use default - enabled)
+		$Result1 = $Controller->renderHtmlWithCacheKey(
+			HttpResponseStatus::OK,
+			$ViewData,
+			$CacheKeyData,
+			'product',
+			'default',
+			null  // Use default settings
+		);
+		
+		$this->assertStringContainsString( 'Default Test', $Result1 );
+		
+		// Should be cached because default is enabled
+		$this->assertTrue( $Controller->testHasViewCacheByKey( 'product', $CacheKeyData ) );
+		
+		// Now render again with empty data - should use cache
+		$Result2 = $Controller->renderHtmlWithCacheKey(
+			HttpResponseStatus::OK,
+			[],  // Empty data
+			$CacheKeyData,
+			'product',
+			'default',
+			null  // Use default settings
+		);
+		
+		$this->assertEquals( $Result1, $Result2 );
+	}
+	
+	public function testRenderWithCacheKeyRespectsDefaultDisabled()
+	{
+		// Setup cache that is disabled by default
+		$Storage = new FileCacheStorage( $this->TempCacheDir );
+		$ViewCache = new ViewCache( $Storage, false, 3600 );  // Cache disabled
+		Registry::getInstance()->set( 'ViewCache', $ViewCache );
+		
+		// Create controller
+		$Controller = new CacheKeyTestController( new Router() );
+		
+		$ViewData = ['product_name' => 'Disabled Test', 'price' => 25];
+		$CacheKeyData = ['id' => 888];
+		
+		// Render with null (should use default - disabled)
+		$Result = $Controller->renderHtmlWithCacheKey(
+			HttpResponseStatus::OK,
+			$ViewData,
+			$CacheKeyData,
+			'product',
+			'default',
+			null  // Use default settings
+		);
+		
+		$this->assertStringContainsString( 'Disabled Test', $Result );
+		
+		// Should NOT be cached because default is disabled
+		$this->assertFalse( $Controller->testHasViewCacheByKey( 'product', $CacheKeyData ) );
+	}
+	
+	public function testRenderWithCacheKeyOverridesDefault()
+	{
+		// Setup cache that is disabled by default
+		$Storage = new FileCacheStorage( $this->TempCacheDir );
+		$ViewCache = new ViewCache( $Storage, false, 3600 );  // Cache disabled by default
+		Registry::getInstance()->set( 'ViewCache', $ViewCache );
+		
+		// Create controller
+		$Controller = new CacheKeyTestController( new Router() );
+		
+		$ViewData = ['product_name' => 'Override Test', 'price' => 100];
+		$CacheKeyData = ['id' => 777];
+		
+		// Render with true (should override default and enable cache)
+		$Result = $Controller->renderHtmlWithCacheKey(
+			HttpResponseStatus::OK,
+			$ViewData,
+			$CacheKeyData,
+			'product',
+			'default',
+			true  // Override default - force enable
+		);
+		
+		$this->assertStringContainsString( 'Override Test', $Result );
+		
+		// The cache was stored when we forced it with true
+		// To verify, enable the cache globally and check if the content exists
+		$ViewCache->setEnabled( true );
+		$CacheKey = $ViewCache->generateKey( 'CacheKeyTestController', 'product', $CacheKeyData );
+		$this->assertTrue( $ViewCache->exists( $CacheKey ), 'Cache should exist after forcing with true' );
+		
+		// Now test the opposite - cache enabled by default, but override to disable
+		$ViewData2 = ['product_name' => 'Override2', 'price' => 200];
+		$CacheKeyData2 = ['id' => 666];
+		
+		$Result2 = $Controller->renderHtmlWithCacheKey(
+			HttpResponseStatus::OK,
+			$ViewData2,
+			$CacheKeyData2,
+			'product',
+			'default',
+			false  // Override default - force disable
+		);
+		
+		$this->assertStringContainsString( 'Override2', $Result2 );
+		
+		// Should NOT be cached even though default is enabled
+		$CacheKey2 = $ViewCache->generateKey( 'CacheKeyTestController', 'product', $CacheKeyData2 );
+		$this->assertFalse( $ViewCache->exists( $CacheKey2 ), 'Cache should not exist after forcing with false' );
+	}
+	
 	private function deleteDirectory( string $Dir ): void
 	{
 		if( !is_dir( $Dir ) )

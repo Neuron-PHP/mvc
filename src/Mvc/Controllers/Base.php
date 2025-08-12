@@ -253,6 +253,17 @@ class Base implements IController
 	}
 
 	/**
+	 * Check if cache is enabled by default in system settings.
+	 * 
+	 * @return bool True if cache is enabled in settings, false otherwise
+	 */
+	protected function isCacheEnabledByDefault(): bool
+	{
+		$ViewCache = $this->initializeViewCache();
+		return $ViewCache && $ViewCache->isEnabled();
+	}
+
+	/**
 	 * Check if view cache exists using only cache key data.
 	 * This allows checking cache without fetching full view data.
 	 * 
@@ -328,8 +339,12 @@ class Base implements IController
 	{
 		@http_response_code( $ResponseCode->value );
 
-		// If view data is empty and cache is enabled, try to get cached content
-		if( empty( $ViewData ) && $CacheEnabled !== false )
+		// Determine if cache should be used based on explicit setting or system default
+		$ShouldUseCache = $CacheEnabled !== false && 
+		                  ( $CacheEnabled === true || $this->isCacheEnabledByDefault() );
+
+		// If view data is empty and cache should be used, try to get cached content
+		if( empty( $ViewData ) && $ShouldUseCache )
 		{
 			$CachedContent = $this->getViewCacheByKey( $Page, $CacheKeyData );
 			if( $CachedContent !== null )
@@ -350,24 +365,41 @@ class Base implements IController
 		{
 			$RenderedContent = $View->render( $ViewData );
 			
-			// Store in cache using cache key data
-			if( $CacheEnabled === true )
+			// Store in cache using cache key data if cache should be used
+			if( $ShouldUseCache )
 			{
 				$ViewCache = $this->initializeViewCache();
-				if( $ViewCache && $ViewCache->isEnabled() )
+				if( $ViewCache )
 				{
-					$CacheKey = $ViewCache->generateKey(
-						$this->getControllerName(),
-						$Page,
-						$CacheKeyData
-					);
-					try
+					// When cache is explicitly enabled, bypass global check
+					if( $CacheEnabled === true || $ViewCache->isEnabled() )
 					{
-						$ViewCache->set( $CacheKey, $RenderedContent );
-					}
-					catch( CacheException $e )
-					{
-						// Silently fail on cache write errors
+						$CacheKey = $ViewCache->generateKey(
+							$this->getControllerName(),
+							$Page,
+							$CacheKeyData
+						);
+						try
+						{
+							// Temporarily enable cache if needed for storage
+							$WasEnabled = $ViewCache->isEnabled();
+							if( $CacheEnabled === true && !$WasEnabled )
+							{
+								$ViewCache->setEnabled( true );
+							}
+							
+							$ViewCache->set( $CacheKey, $RenderedContent );
+							
+							// Restore original state
+							if( $CacheEnabled === true && !$WasEnabled )
+							{
+								$ViewCache->setEnabled( false );
+							}
+						}
+						catch( CacheException $e )
+						{
+							// Silently fail on cache write errors
+						}
 					}
 				}
 			}
@@ -405,8 +437,12 @@ class Base implements IController
 	{
 		@http_response_code( $ResponseCode->value );
 
-		// If view data is empty and cache is enabled, try to get cached content
-		if( empty( $ViewData ) && $CacheEnabled !== false )
+		// Determine if cache should be used based on explicit setting or system default
+		$ShouldUseCache = $CacheEnabled !== false && 
+		                  ( $CacheEnabled === true || $this->isCacheEnabledByDefault() );
+
+		// If view data is empty and cache should be used, try to get cached content
+		if( empty( $ViewData ) && $ShouldUseCache )
 		{
 			$CachedContent = $this->getViewCacheByKey( $Page, $CacheKeyData );
 			if( $CachedContent !== null )
@@ -427,24 +463,41 @@ class Base implements IController
 		{
 			$RenderedContent = $View->render( $ViewData );
 			
-			// Store in cache using cache key data
-			if( $CacheEnabled === true )
+			// Store in cache using cache key data if cache should be used
+			if( $ShouldUseCache )
 			{
 				$ViewCache = $this->initializeViewCache();
-				if( $ViewCache && $ViewCache->isEnabled() )
+				if( $ViewCache )
 				{
-					$CacheKey = $ViewCache->generateKey(
-						$this->getControllerName(),
-						$Page,
-						$CacheKeyData
-					);
-					try
+					// When cache is explicitly enabled, bypass global check
+					if( $CacheEnabled === true || $ViewCache->isEnabled() )
 					{
-						$ViewCache->set( $CacheKey, $RenderedContent );
-					}
-					catch( CacheException $e )
-					{
-						// Silently fail on cache write errors
+						$CacheKey = $ViewCache->generateKey(
+							$this->getControllerName(),
+							$Page,
+							$CacheKeyData
+						);
+						try
+						{
+							// Temporarily enable cache if needed for storage
+							$WasEnabled = $ViewCache->isEnabled();
+							if( $CacheEnabled === true && !$WasEnabled )
+							{
+								$ViewCache->setEnabled( true );
+							}
+							
+							$ViewCache->set( $CacheKey, $RenderedContent );
+							
+							// Restore original state
+							if( $CacheEnabled === true && !$WasEnabled )
+							{
+								$ViewCache->setEnabled( false );
+							}
+						}
+						catch( CacheException $e )
+						{
+							// Silently fail on cache write errors
+						}
 					}
 				}
 			}
