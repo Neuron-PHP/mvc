@@ -1,3 +1,6 @@
+## 0.6.45 2025-08-12
+* Fixed an issue with the cache override.
+
 ## 0.6.44 2025-08-12
 * Improved caching to support getting/setting cache data by a separate data key. This allows for avoiding expensive api calls in the controller when possible.
 
