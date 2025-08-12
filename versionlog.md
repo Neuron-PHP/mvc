@@ -1,4 +1,4 @@
-## 0.6.44
+## 0.6.44 2025-08-12
 * Improved caching to support getting/setting cache data by a separate data key. This allows for avoiding expensive api calls in the controller when possible.
 
 ## 0.6.43 2025-08-12
