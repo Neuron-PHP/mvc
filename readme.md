@@ -11,6 +11,7 @@ A lightweight MVC (Model-View-Controller) framework component for PHP 8.4+ that 
 - [Configuration](#configuration)
 - [Usage Examples](#usage-examples)
 - [Advanced Features](#advanced-features)
+- [CLI Commands](#cli-commands)
 - [API Reference](#api-reference)
 - [Testing](#testing)
 - [More Information](#more-information)
@@ -406,6 +407,8 @@ echo "Removed $removed expired cache entries";
 $app->getViewCache()->clear();
 ```
 
+You can also manage cache using the CLI commands. See [CLI Commands](#cli-commands) section for details.
+
 ### Custom View Implementations
 
 Create custom view types by implementing `IView`:
@@ -435,6 +438,143 @@ listeners:
   http_404:
     class: App\Listeners\NotFoundLogger
     method: logNotFound
+```
+
+## CLI Commands
+
+The MVC component includes several CLI commands for managing cache and routes. These commands are available when using the Neuron CLI tool.
+
+### Cache Management Commands
+
+#### mvc:cache:clear
+
+Clear view cache entries.
+
+**Options:**
+- `--type, -t VALUE` - Clear specific cache type (html, json, xml, markdown)
+- `--expired, -e` - Only clear expired entries
+- `--force, -f` - Clear without confirmation
+- `--config, -c PATH` - Path to configuration directory
+
+**Examples:**
+
+```bash
+# Clear all cache entries (with confirmation)
+neuron mvc:cache:clear
+
+# Clear only expired entries
+neuron mvc:cache:clear --expired
+
+# Clear specific cache type
+neuron mvc:cache:clear --type=html
+
+# Force clear without confirmation
+neuron mvc:cache:clear --force
+
+# Specify custom config path
+neuron mvc:cache:clear --config=/path/to/config
+```
+
+#### mvc:cache:stats
+
+Display comprehensive cache statistics.
+
+**Options:**
+- `--config, -c PATH` - Path to configuration directory
+- `--json, -j` - Output statistics in JSON format
+- `--detailed, -d` - Show detailed breakdown by view type
+
+**Examples:**
+
+```bash
+# Display cache statistics
+neuron mvc:cache:stats
+
+# Show detailed statistics with view type breakdown
+neuron mvc:cache:stats --detailed
+
+# Output as JSON for scripting
+neuron mvc:cache:stats --json
+
+# Detailed JSON output
+neuron mvc:cache:stats --detailed --json
+```
+
+**Sample Output:**
+
+```
+MVC View Cache Statistics
+==================================================
+Configuration:
+Cache Path: /path/to/cache/views
+Cache Enabled: Yes
+Default TTL: 3600 seconds (1 hour)
+
+Overall Statistics:
+Total Cache Entries: 247
+Valid Entries: 189
+Expired Entries: 58
+Total Cache Size: 2.4 MB
+Average Entry Size: 10.2 KB
+Oldest Entry: 2025-08-10 14:23:15
+Newest Entry: 2025-08-13 09:45:32
+
+Recommendations:
+- 58 expired entries can be cleared (saving ~580 KB)
+  Run: neuron mvc:cache:clear --expired
+```
+
+### Route Management Commands
+
+#### mvc:routes:list
+
+List all registered routes with filtering options.
+
+**Options:**
+- `--config, -c PATH` - Path to configuration directory
+- `--controller VALUE` - Filter by controller name
+- `--method, -m VALUE` - Filter by HTTP method (GET, POST, PUT, DELETE, etc.)
+- `--pattern, -p VALUE` - Search routes by pattern
+- `--json, -j` - Output routes in JSON format
+
+**Examples:**
+
+```bash
+# List all routes
+neuron mvc:routes:list
+
+# Filter by controller
+neuron mvc:routes:list --controller=UserController
+
+# Filter by HTTP method
+neuron mvc:routes:list --method=POST
+
+# Search by pattern
+neuron mvc:routes:list --pattern=/api/
+
+# Combine filters
+neuron mvc:routes:list --controller=Api --method=GET
+
+# Output as JSON for processing
+neuron mvc:routes:list --json
+```
+
+**Sample Output:**
+
+```
+MVC Routes
+================================================================================
+Pattern                  | Method | Controller            | Action    | Parameters
+--------------------------------------------------------------------------------
+/                       | GET    | HomeController        | index     | -
+/user/{id}              | GET    | UserController        | profile   | id
+/api/users              | GET    | Api\UserController    | list      | -
+/api/users              | POST   | Api\UserController    | create    | name, email
+/products               | GET    | ProductController     | list      | -
+/products/{id}          | GET    | ProductController     | details   | id
+
+Total routes: 6
+Methods: GET: 4, POST: 2
 ```
 
 ## API Reference
