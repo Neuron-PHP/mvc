@@ -239,11 +239,10 @@ cache:
   storage: file
   path: cache/views
   ttl: 3600  # Default TTL in seconds
-  views:
-    html: true      # Enable HTML view caching
-    markdown: true  # Enable Markdown view caching
-    json: false     # Disable JSON response caching
-    xml: false      # Disable XML response caching
+  html: true      # Enable HTML view caching
+  markdown: true  # Enable Markdown view caching
+  json: false     # Disable JSON response caching
+  xml: false      # Disable XML response caching
   # Garbage collection settings (optional)
   gc_probability: 0.01  # 1% chance to run GC on cache write
   gc_divisor: 100      # Fine-tune probability calculation

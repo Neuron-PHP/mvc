@@ -34,11 +34,5 @@ class Provider
 			'mvc:routes:list', 
 			'Neuron\\Mvc\\Cli\\Commands\\Routes\\ListCommand' 
 		);
-		
-		// Future commands can be added here:
-		// $registry->register( 'mvc:routes:test', 'Neuron\\Mvc\\Cli\\Commands\\Routes\\TestCommand' );
-		// $registry->register( 'mvc:controller:create', 'Neuron\\Mvc\\Cli\\Commands\\Controller\\CreateCommand' );
-		// $registry->register( 'mvc:view:create', 'Neuron\\Mvc\\Cli\\Commands\\View\\CreateCommand' );
-		// $registry->register( 'mvc:serve', 'Neuron\\Mvc\\Cli\\Commands\\ServeCommand' );
 	}
 }
