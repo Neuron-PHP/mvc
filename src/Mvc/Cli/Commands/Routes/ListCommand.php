@@ -144,10 +144,16 @@ class ListCommand extends Command
 				return [];
 			}
 			
-			foreach( $data as $routePattern => $routeConfig )
+			// Check if routes are nested under 'routes' key
+			if( isset( $data['routes'] ) && is_array( $data['routes'] ) )
+			{
+				$data = $data['routes'];
+			}
+			
+			foreach( $data as $routeName => $routeConfig )
 			{
 				// Parse route configuration
-				$route = $this->parseRoute( $routePattern, $routeConfig );
+				$route = $this->parseRoute( $routeName, $routeConfig );
 				if( $route )
 				{
 					$routes[] = $route;
@@ -166,29 +172,51 @@ class ListCommand extends Command
 	/**
 	 * Parse a single route configuration
 	 * 
-	 * @param string $pattern
+	 * @param string $routeName
 	 * @param mixed $config
 	 * @return array|null
 	 */
-	private function parseRoute( string $pattern, $config ): ?array
+	private function parseRoute( string $routeName, $config ): ?array
 	{
 		if( !is_array( $config ) )
 		{
 			return null;
 		}
 		
-		// Extract route information
-		$controller = $config['controller'] ?? 'Unknown';
-		$action = $config['method'] ?? $config['action'] ?? 'index';
-		$httpMethod = strtoupper( $config['type'] ?? $config['http_method'] ?? 'GET' );
+		// Extract the actual route pattern
+		$pattern = $config['route'] ?? $routeName;
 		
-		// Extract parameters if present
+		// Extract controller and action from controller string (e.g., "App\Controllers\StaticPages@index")
+		$controllerString = $config['controller'] ?? 'Unknown';
+		if( strpos( $controllerString, '@' ) !== false )
+		{
+			list( $controller, $action ) = explode( '@', $controllerString, 2 );
+		}
+		else
+		{
+			$controller = $controllerString;
+			$action = $config['action'] ?? 'index';
+		}
+		
+		// Extract HTTP method
+		$httpMethod = strtoupper( $config['method'] ?? $config['type'] ?? 'GET' );
+		
+		// Extract parameters from route pattern (e.g., :page, :title)
 		$parameters = [];
+		if( preg_match_all( '/:(\w+)/', $pattern, $matches ) )
+		{
+			$parameters = $matches[1];
+		}
+		
+		// Also check for explicit request parameters
 		if( isset( $config['request'] ) && is_array( $config['request'] ) )
 		{
 			foreach( $config['request'] as $param => $rules )
 			{
-				$parameters[] = $param;
+				if( !in_array( $param, $parameters ) )
+				{
+					$parameters[] = $param;
+				}
 			}
 		}
 		
