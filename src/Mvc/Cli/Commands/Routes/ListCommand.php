@@ -246,57 +246,27 @@ class ListCommand extends Command
 	private function outputTable( array $routes ): void
 	{
 		$this->output->title( 'MVC Routes' );
-		$this->output->write( str_repeat( '=', 80 ) );
 		
-		// Calculate column widths
-		$maxPattern = 20;
-		$maxController = 20;
-		$maxAction = 15;
+		// Prepare table headers
+		$headers = ['Pattern', 'Method', 'Controller', 'Action', 'Parameters'];
 		
+		// Prepare table rows
+		$rows = [];
 		foreach( $routes as $route )
 		{
-			$maxPattern = max( $maxPattern, strlen( $route['pattern'] ) );
-			$maxController = max( $maxController, strlen( $route['controller'] ) );
-			$maxAction = max( $maxAction, strlen( $route['action'] ) );
-		}
-		
-		// Limit widths
-		$maxPattern = min( $maxPattern, 40 );
-		$maxController = min( $maxController, 30 );
-		$maxAction = min( $maxAction, 20 );
-		
-		// Output header
-		$header = sprintf( 
-			"%-{$maxPattern}s | %-6s | %-{$maxController}s | %-{$maxAction}s | %s",
-			'Pattern',
-			'Method',
-			'Controller',
-			'Action',
-			'Parameters'
-		);
-		
-		$this->output->info( $header );
-		$this->output->write( str_repeat( '-', strlen( $header ) + 10 ) );
-		
-		// Output routes
-		foreach( $routes as $route )
-		{
-			$pattern = $this->truncate( $route['pattern'], $maxPattern );
-			$controller = $this->truncate( $route['controller'], $maxController );
-			$action = $this->truncate( $route['action'], $maxAction );
-			$parameters = empty( $route['parameters'] ) ? '-' : implode( ', ', $route['parameters'] );
-			
-			$this->output->write( sprintf( 
-				"%-{$maxPattern}s | %-6s | %-{$maxController}s | %-{$maxAction}s | %s",
-				$pattern,
+			$rows[] = [
+				$route['pattern'],
 				$route['method'],
-				$controller,
-				$action,
-				$parameters
-			));
+				$route['controller'],
+				$route['action'],
+				empty( $route['parameters'] ) ? '-' : implode( ', ', $route['parameters'] )
+			];
 		}
 		
-		$this->output->write( '' );
+		// Display the table using Output's table method
+		$this->output->table( $headers, $rows );
+		
+		$this->output->newLine();
 		$this->output->info( 'Total routes: ' . count( $routes ) );
 		
 		// Show method distribution
@@ -318,23 +288,6 @@ class ListCommand extends Command
 	private function outputJson( array $routes ): void
 	{
 		$this->output->write( json_encode( $routes, JSON_PRETTY_PRINT ) );
-	}
-	
-	/**
-	 * Truncate string to maximum length
-	 * 
-	 * @param string $str
-	 * @param int $maxLength
-	 * @return string
-	 */
-	private function truncate( string $str, int $maxLength ): string
-	{
-		if( strlen( $str ) <= $maxLength )
-		{
-			return $str;
-		}
-		
-		return substr( $str, 0, $maxLength - 3 ) . '...';
 	}
 	
 	/**
