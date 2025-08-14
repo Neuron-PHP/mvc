@@ -12,16 +12,16 @@ use PHPUnit\Framework\TestCase;
 
 class TestController implements IController
 {
-	private Router $_Router;
+	private Application $_app;
 	
-	public function __construct( Router $Router )
+	public function __construct( ?Application $app )
 	{
-		$this->_Router = $Router;
+		$this->_app = $app;
 	}
 	
 	public function getRouter(): Router
 	{
-		return $this->_Router;
+		return $this->_app->getRouter();
 	}
 	
 	public function renderHtml( HttpResponseStatus $ResponseCode, array $Data = [], string $Page = "index", string $Layout = "default", ?bool $CacheEnabled = null ): string

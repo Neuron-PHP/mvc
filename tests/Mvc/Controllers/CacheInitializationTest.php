@@ -2,6 +2,7 @@
 
 namespace Tests\Mvc\Controllers;
 
+use Neuron\Mvc\Application;
 use Neuron\Mvc\Cache\CacheConfig;
 use Neuron\Mvc\Cache\Storage\FileCacheStorage;
 use Neuron\Mvc\Cache\ViewCache;
@@ -67,7 +68,7 @@ class CacheInitializationTest extends TestCase
 		$Registry->set( 'Base.Path', $this->TempCacheDir );
 		
 		// Create test controller
-		$Controller = new CacheInitTestController( new Router() );
+		$Controller = new CacheInitTestController();
 		
 		// Test initialization
 		$ViewCache = $Controller->testInitializeViewCache();
@@ -89,7 +90,7 @@ class CacheInitializationTest extends TestCase
 		$Registry->set( 'ViewCache', $ExistingCache );
 		
 		// Create test controller
-		$Controller = new CacheInitTestController( new Router() );
+		$Controller = new CacheInitTestController( new Application() );
 		
 		// Test initialization returns existing instance
 		$ViewCache = $Controller->testInitializeViewCache();
@@ -113,7 +114,7 @@ class CacheInitializationTest extends TestCase
 		$Registry->set( 'Settings', $Settings );
 		
 		// Create test controller
-		$Controller = new CacheInitTestController( new Router() );
+		$Controller = new CacheInitTestController( new Application() );
 		
 		// Test initialization returns null
 		$ViewCache = $Controller->testInitializeViewCache();
@@ -136,7 +137,7 @@ class CacheInitializationTest extends TestCase
 		$Registry->set( 'ViewCache', $ViewCache );
 		
 		// Create test controller
-		$Controller = new CacheInitTestController( new Router() );
+		$Controller = new CacheInitTestController();
 		
 		// Test hasViewCache
 		$this->assertTrue( $Controller->testHasViewCache( 'testpage', ['id' => 123] ) );
@@ -166,7 +167,7 @@ class CacheInitializationTest extends TestCase
 		$this->assertNull( $Registry->get( 'ViewCache' ) );
 		
 		// Create test controller
-		$Controller = new CacheInitTestController( new Router() );
+		$Controller = new CacheInitTestController();
 		
 		// Call hasViewCache should initialize cache
 		$Result = $Controller->testHasViewCache( 'testpage', [] );
@@ -191,7 +192,7 @@ class CacheInitializationTest extends TestCase
 		$Registry->set( 'ViewCache', $ViewCache );
 		
 		// Create test controller
-		$Controller = new CacheInitTestController( new Router() );
+		$Controller = new CacheInitTestController( new Application() );
 		
 		// Test getViewCache
 		$CachedContent = $Controller->testGetViewCache( 'testpage', ['id' => 123] );
@@ -224,7 +225,7 @@ class CacheInitializationTest extends TestCase
 		$this->assertNull( $Registry->get( 'ViewCache' ) );
 		
 		// Create test controller
-		$Controller = new CacheInitTestController( new Router() );
+		$Controller = new CacheInitTestController();
 		
 		// Call getViewCache should initialize cache
 		$Result = $Controller->testGetViewCache( 'testpage', [] );
@@ -236,10 +237,10 @@ class CacheInitializationTest extends TestCase
 	
 	public function testGetControllerNameReturnsCorrectName()
 	{
-		$Controller = new CacheInitTestController( new Router() );
+		$Controller = new CacheInitTestController( new Application() );
 		$this->assertEquals( 'CacheInitTestController', $Controller->testGetControllerName() );
 		
-		$Controller2 = new CacheInitAnotherTestController( new Router() );
+		$Controller2 = new CacheInitAnotherTestController( new Application() );
 		$this->assertEquals( 'CacheInitAnotherTestController', $Controller2->testGetControllerName() );
 	}
 	

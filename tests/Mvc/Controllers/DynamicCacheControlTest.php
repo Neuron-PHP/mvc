@@ -88,7 +88,7 @@ class DynamicCacheControlTest extends TestCase
 	 */
 	private function createTestController(): Base
 	{
-		return new DynamicTestCacheController( $this->Router );
+		return new DynamicTestCacheController();
 	}
 	
 	/**

@@ -173,7 +173,7 @@ class CacheControlTest extends TestCase
 		$Router = $this->createMock( Router::class );
 		
 		// Create test controller
-		$Controller = new TestControllerWithCache( $Router );
+		$Controller = new TestControllerWithCache();
 		
 		// Test rendering with cache disabled
 		$HtmlContent = $Controller->renderHtml( 
