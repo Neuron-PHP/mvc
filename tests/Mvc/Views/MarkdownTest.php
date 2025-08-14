@@ -27,7 +27,7 @@ class MarkdownTest extends TestCase
 
 	public function testRender()
 	{
-		$Base = new Base( new Router() );
+		$Base = new Base();
 
 		Registry::getInstance()->set( "Views.Path", "examples/views" );
 

@@ -3,8 +3,10 @@
 namespace Neuron\Mvc\Controllers;
 
 use League\CommonMark\Exception\CommonMarkException;
+use Neuron\Application\IApplication;
 use Neuron\Core\Exceptions\BadRequestMethod;
 use Neuron\Data\Setting\SettingManager;
+use Neuron\Data\Setting\Source\ISettingSource;
 use Neuron\Mvc\Application;
 use Neuron\Mvc\Cache\CacheConfig;
 use Neuron\Mvc\Cache\Exceptions\CacheException;
@@ -21,13 +23,36 @@ use Neuron\Routing\Router;
 class Base implements IController
 {
 	private Router  $_Router;
+	private Application $_app;
 
 	/**
-	 * @param Router $Router
+	 * @return Application
 	 */
-	public function __construct( Router $Router )
+	public function getApplication(): Application
 	{
-		$this->setRouter( $Router );
+		return $this->_app;
+	}
+
+	/**
+	 * @param Application $app
+	 * @return Base
+	 */
+	public function setApplication( Application $app ): Base
+	{
+		$this->_app = $app;
+		return $this;
+	}
+
+	/**
+	 * @param Application $app
+	 */
+	public function __construct( ?Application $app = null )
+	{
+		if( $app )
+		{
+			$this->setRouter( $app->getRouter() );
+			$this->setApplication( $app );
+		}
 	}
 
 	/**

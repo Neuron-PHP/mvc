@@ -30,6 +30,6 @@ class Factory
 			throw new NotFound( "$Class does not implement IController.");
 		}
 
-		return new $Class( $App->getRouter() );
+		return new $Class( $App );
 	}
 }

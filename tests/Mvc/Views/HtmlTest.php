@@ -3,6 +3,7 @@
 namespace Mvc\Views;
 
 use Neuron\Core\Exceptions\NotFound;
+use Neuron\Mvc\Application;
 use Neuron\Mvc\Controllers\Base;
 use Neuron\Mvc\Responses\HttpResponseStatus;
 use Neuron\Mvc\Views\Html;
@@ -49,7 +50,7 @@ class HtmlTest extends TestCase
 
 	public function testRender()
 	{
-		$Base = new Base( new Router() );
+		$Base = new Base( new Application() );
 
 		$Result = $Base->renderHtml(
 			HttpResponseStatus::OK,

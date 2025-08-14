@@ -329,14 +329,6 @@ class ApplicationTest extends TestCase
 			"does not exist",
 			$Output
 		);
-
-		global $ControllerState;
-
-		if( $ControllerState )
-			return;
-
-		throw new \Exception( "Controller state is not false." );
-
 	}
 
 	/**

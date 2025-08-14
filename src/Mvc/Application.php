@@ -38,7 +38,7 @@ class Application extends Base
 	 * @param ISettingSource|null $Source
 	 * @throws Exception
 	 */
-	public function __construct( string $Version, ?ISettingSource $Source = null )
+	public function __construct( string $Version ="1.0.0", ?ISettingSource $Source = null )
 	{
 		parent::__construct( $Version, $Source );
 
@@ -46,7 +46,7 @@ class Application extends Base
 
 		Registry::getInstance()->set( 'BasePath', $this->getBasePath() );
 
-		$RoutesPath = $this->getSetting( 'routes_path', 'system' );
+		$RoutesPath = $this->getSetting( 'system', 'routes_path' );
 		if( $RoutesPath )
 		{
 			$this->setRoutesPath( $RoutesPath );
@@ -202,7 +202,7 @@ class Application extends Base
 	 */
 	protected function onStart(): bool
 	{
-		$ViewPath = $this->getSetting( 'path', 'views' );
+		$ViewPath = $this->getSetting( 'views', 'path' );
 		$BasePath = $this->getBasePath();
 
 		if( $ViewPath )
