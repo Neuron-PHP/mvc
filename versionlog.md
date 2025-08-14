@@ -1,3 +1,5 @@
+## 0.7.1
+
 ## 0.6.49 2025-08-14
 * Refactored the controller to accept an application object, not just a router so that it can give access to settings.
 
