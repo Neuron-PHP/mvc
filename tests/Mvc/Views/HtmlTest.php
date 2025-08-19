@@ -21,7 +21,7 @@ class HtmlTest extends TestCase
 		$this->Root = vfsStream::setup( 'views' );
 		
 		// Create the necessary view structure
-		$BaseDir = vfsStream::newDirectory( 'Base' )->at( $this->Root );
+		$BaseDir = vfsStream::newDirectory( 'base' )->at( $this->Root );
 		$LayoutsDir = vfsStream::newDirectory( 'layouts' )->at( $this->Root );
 		
 		// Create the view file
@@ -101,7 +101,7 @@ class HtmlTest extends TestCase
 		// Create resources/views structure
 		$ResourcesDir = vfsStream::newDirectory( 'resources' )->at( $this->Root );
 		$ViewsDir = vfsStream::newDirectory( 'views' )->at( $ResourcesDir );
-		$BaseDir = vfsStream::newDirectory( 'Base' )->at( $ViewsDir );
+		$BaseDir = vfsStream::newDirectory( 'base' )->at( $ViewsDir );
 		$LayoutsDir = vfsStream::newDirectory( 'layouts' )->at( $ViewsDir );
 		
 		// Create the view file
