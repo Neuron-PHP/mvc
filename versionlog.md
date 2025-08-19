@@ -1,4 +1,4 @@
-## 0.7.1
+## 0.7.1 2025-08-19
 * View paths are now the snake case of the controller name.
 
 ## 0.7.0 2025-08-14
