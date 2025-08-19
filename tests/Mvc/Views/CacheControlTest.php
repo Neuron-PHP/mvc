@@ -37,8 +37,8 @@ class CacheControlTest extends TestCase
 		$this->Registry->set( 'Views.Path', vfsStream::url( 'test/resources/views' ) );
 		
 		// Create view directories
-		vfsStream::newDirectory( 'resources/views/Test' )->at( $this->Root );
-		vfsStream::newDirectory( 'resources/views/TestControllerWithCache' )->at( $this->Root );
+		vfsStream::newDirectory( 'resources/views/test' )->at( $this->Root );
+		vfsStream::newDirectory( 'resources/views/test_controller_with_cache' )->at( $this->Root );
 		vfsStream::newDirectory( 'resources/views/layouts' )->at( $this->Root );
 		vfsStream::newDirectory( 'cache/views' )->at( $this->Root );
 		
@@ -46,11 +46,11 @@ class CacheControlTest extends TestCase
 		$ViewContent = '<?php echo "Test Content"; ?>';
 		$LayoutContent = '<?php echo $Content; ?>';
 		
-		vfsStream::newFile( 'resources/views/Test/index.php' )
+		vfsStream::newFile( 'resources/views/test/index.php' )
 			->at( $this->Root )
 			->setContent( $ViewContent );
 			
-		vfsStream::newFile( 'resources/views/TestControllerWithCache/index.php' )
+		vfsStream::newFile( 'resources/views/test_controller_with_cache/index.php' )
 			->at( $this->Root )
 			->setContent( $ViewContent );
 			
@@ -59,11 +59,11 @@ class CacheControlTest extends TestCase
 			->setContent( $LayoutContent );
 			
 		// Create markdown view
-		vfsStream::newFile( 'resources/views/Test/page.md' )
+		vfsStream::newFile( 'resources/views/test/page.md' )
 			->at( $this->Root )
 			->setContent( '# Test Page' );
 			
-		vfsStream::newFile( 'resources/views/TestControllerWithCache/page.md' )
+		vfsStream::newFile( 'resources/views/test_controller_with_cache/page.md' )
 			->at( $this->Root )
 			->setContent( '# Test Page' );
 	}
@@ -139,7 +139,7 @@ class CacheControlTest extends TestCase
 		$this->assertStringContainsString( 'Test Content', $Content1 );
 		
 		// Modify the view file to have different content
-		$this->Root->getChild( 'resources/views/Test/index.php' )
+		$this->Root->getChild( 'resources/views/test/index.php' )
 			->setContent( '<?php echo "Modified Content"; ?>' );
 		
 		// Create a new view instance with cache enabled
@@ -223,7 +223,7 @@ class CacheControlTest extends TestCase
 		$Content1 = $View->render( [] );
 		
 		// Modify the view file
-		vfsStream::newFile( 'resources/views/Test/index.php' )
+		vfsStream::newFile( 'resources/views/test/index.php' )
 			->at( $this->Root )
 			->setContent( '<?php echo "Modified Content"; ?>' );
 		

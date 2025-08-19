@@ -5,6 +5,7 @@
 namespace Neuron\Mvc\Views;
 
 use Neuron\Core\Exceptions\NotFound;
+use Neuron\Core\NString;
 use Neuron\Patterns\Registry;
 
 /**
@@ -25,7 +26,7 @@ class Html extends Base implements IView
 	public function render( array $Data ): string
 	{
 		$CacheKey = $this->getCacheKey( $Data );
-		
+
 		if( $CacheKey && $CachedContent = $this->getCachedContent( $CacheKey ) )
 		{
 			return $CachedContent;
@@ -40,7 +41,8 @@ class Html extends Base implements IView
 			$Path = "$BasePath/resources/views";
 		}
 
-		$View = "$Path/{$this->getController()}/{$this->getPage()}.php";
+		$ControllerName = new NString( $this->getController() )->toSnakeCase();
+		$View = "$Path/$ControllerName/{$this->getPage()}.php";
 
 		if( !file_exists( $View ) )
 		{

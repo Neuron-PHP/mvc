@@ -10,6 +10,7 @@ use League\CommonMark\Extension\CommonMark\CommonMarkCoreExtension;
 use League\CommonMark\Extension\Footnote\FootnoteExtension;
 use League\CommonMark\MarkdownConverter;
 use Neuron\Core\Exceptions\NotFound;
+use Neuron\Core\NString;
 use Neuron\Patterns\Registry;
 
 /**
@@ -30,7 +31,7 @@ class Markdown extends Base implements IView
 	public function render( array $Data ): string
 	{
 		$CacheKey = $this->getCacheKey( $Data );
-		
+
 		if( $CacheKey && $CachedContent = $this->getCachedContent( $CacheKey ) )
 		{
 			return $CachedContent;
@@ -45,7 +46,8 @@ class Markdown extends Base implements IView
 			$Path = "$BasePath/resources/views";
 		}
 
-		$ControllerPath = "$Path/{$this->getController()}";
+		$ControllerName = new NString( $this->getController() )->toSnakeCase();
+		$ControllerPath = "$Path/$ControllerName";
 		$View = $this->findMarkdownFile( $ControllerPath, $this->getPage() );
 
 		if( !$View )
