@@ -12,6 +12,7 @@ use Neuron\Mvc\Cache\CacheConfig;
 use Neuron\Mvc\Cache\Exceptions\CacheException;
 use Neuron\Mvc\Cache\Storage\FileCacheStorage;
 use Neuron\Mvc\Cache\ViewCache;
+use Neuron\Mvc\Helpers\UrlHelper;
 use Neuron\Mvc\Responses\HttpResponseStatus;
 use Neuron\Mvc\Views\Html;
 use Neuron\Mvc\Views\Json;
@@ -75,7 +76,25 @@ class Base implements IController
 			->setPage( $Page )
 			->setCacheEnabled( $CacheEnabled );
 
-		return $View->render( $Data );
+		$DataWithHelpers = $this->injectHelpers( $Data );
+
+		return $View->render( $DataWithHelpers );
+	}
+
+	/**
+	 * Inject URL helpers and other view helpers into view data.
+	 * 
+	 * @param array $Data The view data array
+	 * @return array Data array with helpers injected
+	 */
+	protected function injectHelpers( array $Data ): array
+	{
+		// Only inject UrlHelper if router is available
+		if( isset( $this->_Router ) )
+		{
+			$Data['urlHelper'] = new UrlHelper( $this->_Router );
+		}
+		return $Data;
 	}
 
 	/**
@@ -97,7 +116,9 @@ class Base implements IController
 			->setPage( $Page )
 			->setCacheEnabled( $CacheEnabled );
 
-		return $View->render( $Data );
+		$DataWithHelpers = $this->injectHelpers( $Data );
+
+		return $View->render( $DataWithHelpers );
 	}
 
 	/**
@@ -697,5 +718,110 @@ class Base implements IController
 				"$Controller@delete"
 			);
 		}
+	}
+
+	/**
+	 * Generate a relative URL for a named route.
+	 * 
+	 * @param string $routeName The name of the route
+	 * @param array $parameters Parameters to substitute in the route path
+	 * @return string|null The generated relative URL or null if route not found
+	 */
+	protected function urlFor( string $routeName, array $parameters = [] ): ?string
+	{
+		if( !isset( $this->_Router ) || !method_exists( $this->_Router, 'generateUrl' ) )
+		{
+			return null;
+		}
+		return $this->_Router->generateUrl( $routeName, $parameters, false );
+	}
+
+	/**
+	 * Generate an absolute URL for a named route.
+	 * 
+	 * @param string $routeName The name of the route
+	 * @param array $parameters Parameters to substitute in the route path
+	 * @return string|null The generated absolute URL or null if route not found
+	 */
+	protected function urlForAbsolute( string $routeName, array $parameters = [] ): ?string
+	{
+		if( !isset( $this->_Router ) || !method_exists( $this->_Router, 'generateUrl' ) )
+		{
+			return null;
+		}
+		return $this->_Router->generateUrl( $routeName, $parameters, true );
+	}
+
+	/**
+	 * Create a new UrlHelper instance for use in controllers.
+	 * 
+	 * @return UrlHelper|null The URL helper instance or null if router not available
+	 */
+	protected function urlHelper(): ?UrlHelper
+	{
+		if( !isset( $this->_Router ) )
+		{
+			return null;
+		}
+		return new UrlHelper( $this->_Router );
+	}
+
+	/**
+	 * Check if a named route exists.
+	 * 
+	 * @param string $routeName The route name to check
+	 * @return bool True if route exists, false otherwise
+	 */
+	protected function routeExists( string $routeName ): bool
+	{
+		if( !isset( $this->_Router ) || !method_exists( $this->_Router, 'getRouteByName' ) )
+		{
+			return false;
+		}
+		return $this->_Router->getRouteByName( $routeName ) !== null;
+	}
+
+	/**
+	 * Magic method to provide Rails-style URL helper methods in controllers.
+	 * 
+	 * Supports patterns like:
+	 * - `$this->userProfilePath(['id' => 123])` -> generates relative URL for 'user_profile' route
+	 * - `$this->userProfileUrl(['id' => 123])` -> generates absolute URL for 'user_profile' route
+	 * 
+	 * @param string $method The method name (e.g., 'userProfilePath', 'userProfileUrl')
+	 * @param array $arguments Method arguments, first should be parameters array
+	 * @return string|null Generated URL or null if route not found
+	 * @throws \BadMethodCallException If method pattern is not recognized
+	 * 
+	 * @example
+	 * ```php
+	 * // In a controller method:
+	 * $profilePath = $this->userProfilePath(['id' => $userId]);
+	 * $absoluteUrl = $this->userProfileUrl(['id' => $userId]);
+	 * 
+	 * // Redirect to a named route:
+	 * return redirect($this->userDashboardPath());
+	 * ```
+	 */
+	public function __call( string $method, array $arguments ): ?string
+	{
+		$parameters = $arguments[0] ?? [];
+
+		// Handle *Path() methods for relative URLs
+		if( preg_match( '/^(.+)Path$/', $method, $matches ) )
+		{
+			$routeName = ( new \Neuron\Core\NString( $matches[1] ) )->toSnakeCase();
+			return $this->urlFor( $routeName, $parameters );
+		}
+
+		// Handle *Url() methods for absolute URLs
+		if( preg_match( '/^(.+)Url$/', $method, $matches ) )
+		{
+			$routeName = ( new \Neuron\Core\NString( $matches[1] ) )->toSnakeCase();
+			return $this->urlForAbsolute( $routeName, $parameters );
+		}
+
+		// If no URL helper pattern matches, throw an exception
+		throw new \BadMethodCallException( "Method '$method' not found in " . static::class );
 	}
 }

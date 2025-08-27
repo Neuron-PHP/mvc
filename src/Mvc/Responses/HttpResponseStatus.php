@@ -2,6 +2,56 @@
 
 namespace Neuron\Mvc\Responses;
 
+/**
+ * HTTP response status code enumeration for the MVC framework.
+ * 
+ * This enum provides a comprehensive collection of standard HTTP response status
+ * codes as defined in RFC 7231 and related specifications. It enables type-safe
+ * status code handling throughout the MVC framework and ensures consistent
+ * HTTP response behavior across all controllers and views.
+ * 
+ * Status code categories:
+ * - 2xx Success: Request successfully received, understood, and accepted
+ * - 3xx Redirection: Further action needs to be taken to complete the request
+ * - 4xx Client Error: Request contains bad syntax or cannot be fulfilled
+ * - 5xx Server Error: Server failed to fulfill an apparently valid request
+ * 
+ * Key benefits:
+ * - Type safety for HTTP status codes
+ * - IDE auto-completion support
+ * - Prevention of invalid status code usage
+ * - Clear semantic meaning for response states
+ * - Integration with framework response handling
+ * 
+ * @package Neuron\Mvc\Responses
+ * @author Neuron-PHP Framework
+ * @version 3.0.0
+ * @since 3.0.0
+ * 
+ * @example
+ * ```php
+ * // Using in controller responses
+ * public function create(): Response
+ * {
+ *     try {
+ *         $user = $this->userService->create($userData);
+ *         return $this->response($user, HttpResponseStatus::CREATED);
+ *     } catch (ValidationException $e) {
+ *         return $this->errorResponse('Validation failed', HttpResponseStatus::BAD_REQUEST);
+ *     }
+ * }
+ * 
+ * // Setting response status
+ * public function show(int $id): Response
+ * {
+ *     $user = $this->userService->find($id);
+ *     if (!$user) {
+ *         return $this->errorResponse('User not found', HttpResponseStatus::NOT_FOUND);
+ *     }
+ *     return $this->response($user, HttpResponseStatus::OK);
+ * }
+ * ```
+ */
 enum HttpResponseStatus: int
 {
 	case OK = 200;
