@@ -35,3 +35,8 @@ routes:
     route: /bad_request
     method: GET
     controller: Mvc\TestController@bad_request
+
+  404:
+    route: /404
+    method: GET
+    controller: Neuron\Mvc\Controllers\HttpCodes@code404

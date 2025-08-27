@@ -1,6 +1,7 @@
 <?php
 namespace Neuron\Mvc\Cache;
 
+use Exception;
 use Neuron\Log\Log;
 use Neuron\Mvc\Cache\Exceptions\CacheException;
 use Neuron\Mvc\Cache\Storage\ICacheStorage;
@@ -180,9 +181,51 @@ class ViewCache
 	 */
 	private function hashData( array $Data ): string
 	{
-		ksort( $Data );
+		// Filter out non-serializable objects (like UrlHelper)
+		$serializableData = $this->filterSerializableData( $Data );
 		
-		return md5( serialize( $Data ) );
+		ksort( $serializableData );
+		
+		return md5( serialize( $serializableData ) );
+	}
+
+	/**
+	 * Filter out non-serializable data from array
+	 *
+	 * @param array $Data
+	 * @return array
+	 */
+	private function filterSerializableData( array $Data ): array
+	{
+		$filtered = [];
+		
+		foreach( $Data as $key => $value )
+		{
+			// Skip objects that are likely to contain non-serializable content
+			if( is_object( $value ) )
+			{
+				$className = get_class( $value );
+				// Skip UrlHelper and Router objects as they contain closures
+				if( str_contains( $className, 'UrlHelper' ) || str_contains( $className, 'Router' ) )
+				{
+					continue;
+				}
+				
+				// Try to serialize other objects, skip if it fails
+				try
+				{
+					serialize( $value );
+				}
+				catch( Exception $e )
+				{
+					continue;
+				}
+			}
+			
+			$filtered[$key] = $value;
+		}
+		
+		return $filtered;
 	}
 
 	/**

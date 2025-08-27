@@ -208,6 +208,157 @@ public function profile(Request $request): string
 }
 ```
 
+### URL Helpers
+
+The framework provides Rails-style URL helpers for generating URLs from named routes. This makes it easy to generate consistent URLs throughout your application.
+
+#### Route Naming
+
+Routes are automatically named based on their configuration key in the YAML file:
+
+```yaml
+routes:
+  user_profile:  # This becomes the route name
+    route: /users/{id}
+    method: GET
+    controller: App\Controllers\UserController@profile
+    
+  admin_user_posts:
+    route: /admin/users/{user_id}/posts/{post_id}
+    method: GET
+    controller: App\Controllers\AdminController@userPosts
+```
+
+#### Using URL Helpers in Controllers
+
+Controllers can use URL helpers directly via magic methods:
+
+```php
+class UserController extends Base
+{
+    public function show($id): string
+    {
+        $user = User::find($id);
+        
+        // Magic methods for URL generation
+        $editUrl = $this->userEditPath(['id' => $id]);
+        $absoluteUrl = $this->userProfileUrl(['id' => $id]);
+        
+        // Use in redirects
+        if (!$user) {
+            return redirect($this->userIndexPath());
+        }
+        
+        return $this->renderHtml(HttpResponseStatus::OK, [
+            'user' => $user,
+            'edit_url' => $editUrl
+        ]);
+    }
+    
+    public function create(): string
+    {
+        // After creating user, redirect using magic method
+        $user = new User($request->all());
+        $user->save();
+        
+        return redirect($this->userProfilePath(['id' => $user->id]));
+    }
+}
+```
+
+#### Direct URL Helper Methods
+
+Controllers also provide direct helper methods:
+
+```php
+// Generate relative URLs
+$profileUrl = $this->urlFor('user_profile', ['id' => 123]);
+
+// Generate absolute URLs  
+$absoluteUrl = $this->urlForAbsolute('user_profile', ['id' => 123]);
+
+// Check if route exists
+if ($this->routeExists('user_profile')) {
+    // Route is available
+}
+
+// Get UrlHelper instance for advanced usage
+$urlHelper = $this->urlHelper();
+```
+
+#### Using URL Helpers in Views
+
+URL helpers are automatically available in all views through the injected `$urlHelper` variable:
+
+```php
+<!-- resources/views/user/profile.php -->
+<div class="user-profile">
+    <h1><?= $user->name ?></h1>
+    
+    <!-- Magic methods in views -->
+    <a href="<?= $urlHelper->userEditPath(['id' => $user->id]) ?>" class="btn">Edit</a>
+    <a href="<?= $urlHelper->userPostsPath(['user_id' => $user->id]) ?>" class="btn">View Posts</a>
+    
+    <!-- Complex routes work too -->
+    <a href="<?= $urlHelper->adminUserReportsPath(['id' => $user->id, 'year' => date('Y')]) ?>">
+        Admin Reports
+    </a>
+    
+    <!-- Direct method calls -->
+    <a href="<?= $urlHelper->routePath('user_profile', ['id' => $user->id]) ?>">Profile</a>
+    <a href="<?= $urlHelper->routeUrl('user_profile', ['id' => $user->id]) ?>">Share Link</a>
+</div>
+```
+
+#### Magic Method Conventions
+
+The magic methods follow Rails naming conventions:
+
+| Route Name in YAML | Magic Method (Relative) | Magic Method (Absolute) | Generated URL |
+|---------------------|------------------------|-------------------------|---------------|
+| `user_profile` | `userProfilePath()` | `userProfileUrl()` | `/users/123` |
+| `user_edit` | `userEditPath()` | `userEditUrl()` | `/users/123/edit` |
+| `admin_user_posts` | `adminUserPostsPath()` | `adminUserPostsUrl()` | `/admin/users/1/posts/2` |
+| `blog_category` | `blogCategoryPath()` | `blogCategoryUrl()` | `/blog/category/tech` |
+
+#### URL Helper Methods
+
+| Method | Description | Example |
+|--------|-------------|---------|
+| `routePath($name, $params)` | Generate relative URL | `$urlHelper->routePath('user_profile', ['id' => 123])` |
+| `routeUrl($name, $params)` | Generate absolute URL | `$urlHelper->routeUrl('user_profile', ['id' => 123])` |
+| `routeExists($name)` | Check if route exists | `$urlHelper->routeExists('user_profile')` |
+| `getAvailableRoutes()` | List all named routes | `$urlHelper->getAvailableRoutes()` |
+| `{routeName}Path($params)` | Magic method for relative URL | `$urlHelper->userProfilePath(['id' => 123])` |
+| `{routeName}Url($params)` | Magic method for absolute URL | `$urlHelper->userProfileUrl(['id' => 123])` |
+
+#### Error Handling
+
+URL helpers gracefully handle missing routes:
+
+```php
+// Returns null if route doesn't exist
+$url = $urlHelper->nonExistentRoutePath(['id' => 123]);
+
+if ($url === null) {
+    // Handle missing route
+    $url = $urlHelper->userIndexPath(); // fallback
+}
+```
+
+#### Advanced Usage
+
+```php
+// Get all available routes for debugging
+$routes = $urlHelper->getAvailableRoutes();
+foreach ($routes as $route) {
+    echo "Route: {$route['name']} -> {$route['method']} {$route['path']}\n";
+}
+
+// Custom UrlHelper instance
+$customHelper = new UrlHelper($customRouter);
+```
+
 ## Configuration
 
 All YAML config file parameters can be overridden by environment variables in the form of `<CATEGORY>_<KEY>`, e.g.
@@ -562,17 +713,18 @@ neuron mvc:routes:list --json
 
 ```
 MVC Routes
-================================================================================
-Pattern                  | Method | Controller            | Action    | Parameters
---------------------------------------------------------------------------------
-/                       | GET    | HomeController        | index     | -
-/user/{id}              | GET    | UserController        | profile   | id
-/api/users              | GET    | Api\UserController    | list      | -
-/api/users              | POST   | Api\UserController    | create    | name, email
-/products               | GET    | ProductController     | list      | -
-/products/{id}          | GET    | ProductController     | details   | id
+======================================================================================
+Name                    | Pattern              | Method | Controller         | Action
+--------------------------------------------------------------------------------------
+home                    | /                    | GET    | HomeController     | index
+user_profile            | /user/{id}           | GET    | UserController     | profile
+api_users_list          | /api/users           | GET    | Api\UserController | list
+api_users_create        | /api/users           | POST   | Api\UserController | create
+products_list           | /products            | GET    | ProductController  | list
+product_details         | /products/{id}       | GET    | ProductController  | details
 
 Total routes: 6
+Named routes: 6
 Methods: GET: 4, POST: 2
 ```
 

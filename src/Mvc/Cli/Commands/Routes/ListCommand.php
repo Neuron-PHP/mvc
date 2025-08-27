@@ -221,6 +221,7 @@ class ListCommand extends Command
 		}
 		
 		return [
+			'name' => $routeName,
 			'pattern' => $pattern,
 			'controller' => $controller,
 			'action' => $action,
@@ -276,18 +277,26 @@ class ListCommand extends Command
 		$this->output->title( 'MVC Routes' );
 		
 		// Prepare table headers
-		$headers = ['Pattern', 'Method', 'Controller', 'Action', 'Parameters'];
+		$headers = ['Name', 'Pattern', 'Method', 'Controller', 'Action'];
 		
 		// Prepare table rows
 		$rows = [];
+		$namedRoutes = 0;
+		
 		foreach( $routes as $route )
 		{
+			$routeName = $route['name'] ?? '';
+			if( !empty( $routeName ) )
+			{
+				$namedRoutes++;
+			}
+			
 			$rows[] = [
+				$routeName ?: '-',
 				$route['pattern'],
 				$route['method'],
 				$route['controller'],
-				$route['action'],
-				empty( $route['parameters'] ) ? '-' : implode( ', ', $route['parameters'] )
+				$route['action']
 			];
 		}
 		
@@ -296,6 +305,7 @@ class ListCommand extends Command
 		
 		$this->output->newLine();
 		$this->output->info( 'Total routes: ' . count( $routes ) );
+		$this->output->info( 'Named routes: ' . $namedRoutes );
 		
 		// Show method distribution
 		$methods = array_count_values( array_column( $routes, 'method' ) );

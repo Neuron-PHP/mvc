@@ -1,3 +1,6 @@
+## 0.7.2 2025-08-27
+* Added UrlHelper.
+
 ## 0.7.1 2025-08-19
 * View paths are now the snake case of the controller name.
 
