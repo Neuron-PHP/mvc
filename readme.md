@@ -1,4 +1,3 @@
-[![Build Status](https://app.travis-ci.com/Neuron-PHP/mvc.svg?token=F8zCwpT7x7Res7J2N4vF&branch=master)](https://app.travis-ci.com/Neuron-PHP/mvc)
 # Neuron-PHP MVC
 
 A lightweight MVC (Model-View-Controller) framework component for PHP 8.4+ that provides core MVC functionality including controllers, views, routing integration, request handling, and a powerful view caching system.
