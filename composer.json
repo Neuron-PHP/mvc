@@ -33,7 +33,8 @@
     },
     "autoload-dev": {
       "psr-4": {
-        "Mvc\\": "tests/Mvc"
+        "Mvc\\": "tests/Mvc",
+        "Tests\\": "tests/Tests"
       }
     },
     "extra": {

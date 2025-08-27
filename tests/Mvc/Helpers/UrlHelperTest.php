@@ -7,6 +7,7 @@ use Neuron\Patterns\Registry;
 use Neuron\Routing\Router;
 use Neuron\Routing\RouteMap;
 use PHPUnit\Framework\TestCase;
+use Tests\Mock\MockRouter;
 
 /**
  * Unit tests for the UrlHelper class.
@@ -16,26 +17,20 @@ use PHPUnit\Framework\TestCase;
  */
 class UrlHelperTest extends TestCase
 {
-	private Router $router;
+	private MockRouter $router;
 	private UrlHelper $urlHelper;
 
 	protected function setUp(): void
 	{
 		parent::setUp();
 
-		// Create a fresh router instance for testing
-		$this->router = new Router();
+		// Create a mock router instance for testing
+		$this->router = new MockRouter();
 		$this->urlHelper = new UrlHelper( $this->router );
 
 		// Set up Registry for URL generation
 		$registry = Registry::getInstance();
 		$registry->set( 'Base.Url', 'https://example.com' );
-
-		// Skip tests if the Router doesn't have the required URL helper methods
-		if( !method_exists( $this->router, 'generateUrl' ) )
-		{
-			$this->markTestSkipped( 'Router URL helper methods not available. Install neuron-php/routing dev version.' );
-		}
 	}
 
 	protected function tearDown(): void
@@ -56,9 +51,7 @@ class UrlHelperTest extends TestCase
 	public function testRoutePathGeneratesRelativeUrl(): void
 	{
 		// Arrange
-		$route = $this->createMockRoute( 'user_profile', '/users/:id' );
-		$this->router->get( '/users/:id', function() { return 'test'; } )
-		              ->setName( 'user_profile' );
+		$this->router->addNamedRoute( 'user_profile', '/users/:id' );
 
 		// Act
 		$url = $this->urlHelper->routePath( 'user_profile', ['id' => 123] );
@@ -70,9 +63,7 @@ class UrlHelperTest extends TestCase
 	public function testRouteUrlGeneratesAbsoluteUrl(): void
 	{
 		// Arrange
-		$route = $this->createMockRoute( 'user_profile', '/users/:id' );
-		$this->router->get( '/users/:id', function() { return 'test'; } )
-		              ->setName( 'user_profile' );
+		$this->router->addNamedRoute( 'user_profile', '/users/:id' );
 
 		// Act
 		$url = $this->urlHelper->routeUrl( 'user_profile', ['id' => 123] );
@@ -102,8 +93,7 @@ class UrlHelperTest extends TestCase
 	public function testRouteExistsReturnsTrueForExistingRoute(): void
 	{
 		// Arrange
-		$this->router->get( '/users/:id', function() { return 'test'; } )
-		              ->setName( 'user_profile' );
+		$this->router->addNamedRoute( 'user_profile', '/users/:id' );
 
 		// Act & Assert
 		$this->assertTrue( $this->urlHelper->routeExists( 'user_profile' ) );
@@ -118,8 +108,7 @@ class UrlHelperTest extends TestCase
 	public function testMagicMethodPathGeneration(): void
 	{
 		// Arrange
-		$this->router->get( '/users/:id', function() { return 'test'; } )
-		              ->setName( 'user_profile' );
+		$this->router->addNamedRoute( 'user_profile', '/users/:id' );
 
 		// Act
 		$url = $this->urlHelper->userProfilePath( ['id' => 456] );
@@ -131,8 +120,7 @@ class UrlHelperTest extends TestCase
 	public function testMagicMethodUrlGeneration(): void
 	{
 		// Arrange
-		$this->router->get( '/users/:id', function() { return 'test'; } )
-		              ->setName( 'user_profile' );
+		$this->router->addNamedRoute( 'user_profile', '/users/:id' );
 
 		// Act
 		$url = $this->urlHelper->userProfileUrl( ['id' => 456] );
@@ -144,8 +132,7 @@ class UrlHelperTest extends TestCase
 	public function testMagicMethodWithComplexRouteName(): void
 	{
 		// Arrange
-		$this->router->get( '/admin/users/:id/posts/:post_id', function() { return 'test'; } )
-		              ->setName( 'admin_user_posts' );
+		$this->router->addNamedRoute( 'admin_user_posts', '/admin/users/:id/posts/:post_id' );
 
 		// Act
 		$url = $this->urlHelper->adminUserPostsPath( ['id' => 1, 'post_id' => 2] );
@@ -167,10 +154,8 @@ class UrlHelperTest extends TestCase
 	public function testGetAvailableRoutesReturnsNamedRoutes(): void
 	{
 		// Arrange
-		$this->router->get( '/users', function() { return 'index'; } )
-		              ->setName( 'users_index' );
-		$this->router->post( '/users', function() { return 'create'; } )
-		              ->setName( 'users_create' );
+		$this->router->addNamedRoute( 'users_index', '/users', 'GET' );
+		$this->router->addNamedRoute( 'users_create', '/users', 'POST' );
 
 		// Act
 		$routes = $this->urlHelper->getAvailableRoutes();
@@ -202,8 +187,7 @@ class UrlHelperTest extends TestCase
 	public function testRouteWithoutParametersGeneratesCorrectUrl(): void
 	{
 		// Arrange
-		$this->router->get( '/about', function() { return 'about'; } )
-		              ->setName( 'about' );
+		$this->router->addNamedRoute( 'about', '/about' );
 
 		// Act
 		$url = $this->urlHelper->routePath( 'about' );
@@ -215,8 +199,7 @@ class UrlHelperTest extends TestCase
 	public function testRouteWithMultipleParameters(): void
 	{
 		// Arrange
-		$this->router->get( '/users/:id/posts/:post_id/comments/:comment_id', function() { return 'comment'; } )
-		              ->setName( 'user_post_comment' );
+		$this->router->addNamedRoute( 'user_post_comment', '/users/:id/posts/:post_id/comments/:comment_id' );
 
 		// Act
 		$url = $this->urlHelper->routePath( 'user_post_comment', [
@@ -236,8 +219,7 @@ class UrlHelperTest extends TestCase
 		$originalBaseUrl = $registry->get( 'Base.Url' );
 		$registry->set( 'Base.Url', null );
 
-		$this->router->get( '/users/:id', function() { return 'test'; } )
-		              ->setName( 'user_profile' );
+		$this->router->addNamedRoute( 'user_profile', '/users/:id' );
 
 		// Act
 		$url = $this->urlHelper->routeUrl( 'user_profile', ['id' => 123] );

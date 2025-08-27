@@ -7,7 +7,7 @@
   </coverage>
   <testsuites>
     <testsuite name="unit">
-        <directory>mvc</directory>
+        <directory>Mvc</directory>
     </testsuite>
   </testsuites>
 </phpunit>
