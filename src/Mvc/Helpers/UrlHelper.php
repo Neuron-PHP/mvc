@@ -28,9 +28,6 @@ use Neuron\Routing\Router;
  * - Missing routes return null for graceful error handling
  * 
  * @package Neuron\Mvc\Helpers
- * @author Neuron-PHP Framework
- * @version 3.0.0
- * @since 3.0.0
  * 
  * @example
  * ```php

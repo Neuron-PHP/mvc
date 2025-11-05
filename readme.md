@@ -529,12 +529,65 @@ class NotFoundController extends HttpCodes
 
 ### View Caching
 
-The framework includes a sophisticated view caching system:
+The framework includes a sophisticated view caching system with multiple storage backends:
+
+#### Storage Backends
+
+1. **File Storage** (Default): Uses the local filesystem for cache storage
+2. **Redis Storage**: High-performance in-memory caching with Redis
+
+#### Features
 
 1. **Automatic Cache Key Generation**: Based on controller, view, and data
 2. **Selective Caching**: Enable/disable per view type
 3. **TTL Support**: Configure expiration times
 4. **Garbage Collection**: Automatic cleanup of expired entries
+5. **Multiple Storage Backends**: Choose between file or Redis storage
+
+#### Configuration
+
+##### File Storage Configuration
+```yaml
+cache:
+  enabled: true
+  storage: file
+  path: cache/views
+  ttl: 3600
+  views:
+    html: true
+    markdown: true
+    json: false
+    xml: false
+```
+
+##### Redis Storage Configuration
+```yaml
+cache:
+  enabled: true
+  storage: redis          # Use Redis instead of file storage
+  ttl: 3600
+  # Redis configuration (flat structure for env variable compatibility)
+  redis_host: 127.0.0.1
+  redis_port: 6379
+  redis_database: 0
+  redis_prefix: neuron_cache_
+  redis_timeout: 2.0
+  redis_auth: null       # Optional: Redis password
+  redis_persistent: false # Optional: Use persistent connections
+  # View-specific cache settings
+  html: true
+  markdown: true
+  json: false
+  xml: false
+```
+
+This flat structure ensures compatibility with environment variables:
+- `CACHE_STORAGE=redis`
+- `CACHE_REDIS_HOST=127.0.0.1`
+- `CACHE_REDIS_PORT=6379`
+- etc.
+
+#### Programmatic Usage
 
 ```php
 // Cache is automatically used when enabled
@@ -546,15 +599,38 @@ $html = $this->renderHtml(
 );
 ```
 
-### Manual Cache Management
+#### Manual Cache Management
 
 ```php
-// Clear all expired cache entries
+// Clear all expired cache entries (file storage only)
 $removed = ClearExpiredCache($app);
 echo "Removed $removed expired cache entries";
 
 // Clear all cache
 $app->getViewCache()->clear();
+```
+
+#### Using CacheStorageFactory
+
+```php
+use Neuron\Mvc\Cache\Storage\CacheStorageFactory;
+
+// Create storage based on configuration
+$storage = CacheStorageFactory::create([
+    'storage' => 'redis',
+    'redis_host' => 'localhost',
+    'redis_port' => 6379,
+    'redis_database' => 0,
+    'redis_prefix' => 'neuron_cache_'
+]);
+
+// Auto-detect best available storage
+$storage = CacheStorageFactory::createAutoDetect();
+
+// Check storage availability
+if (CacheStorageFactory::isAvailable('redis')) {
+    echo "Redis cache is available";
+}
 ```
 
 You can also manage cache using the CLI commands. See [CLI Commands](#cli-commands) section for details.
@@ -673,6 +749,165 @@ Recommendations:
 - 58 expired entries can be cleared (saving ~580 KB)
   Run: neuron mvc:cache:clear --expired
 ```
+
+## Rate Limiting
+
+The MVC component includes integrated rate limiting support through the routing component. Rate limiting helps protect your application from abuse and ensures fair resource usage.
+
+### Configuration
+
+Rate limiting is configured in your `config.yaml` file using two categories:
+
+#### Standard Rate Limiting
+```yaml
+rate_limit:
+  enabled: false          # Enable/disable rate limiting
+  global: false          # Apply to all routes globally
+  storage: file          # Storage backend: file, redis, memory (testing only)
+  requests: 100          # Maximum requests per window
+  window: 3600           # Time window in seconds (1 hour)
+  file_path: cache/rate_limits
+  # Redis configuration (if storage: redis)
+  # redis_host: 127.0.0.1
+  # redis_port: 6379
+```
+
+#### API Rate Limiting (Higher Limits)
+```yaml
+api_limit:
+  enabled: false
+  storage: file
+  requests: 1000         # 1000 requests per hour
+  window: 3600
+  file_path: cache/api_limits
+```
+
+### Environment Variables
+
+Configuration maps to environment variables using the `{category}_{name}` pattern:
+- `RATE_LIMIT_ENABLED=true`
+- `RATE_LIMIT_STORAGE=redis`
+- `RATE_LIMIT_REQUESTS=100`
+- `API_LIMIT_ENABLED=true`
+- `API_LIMIT_REQUESTS=1000`
+
+### Usage in Routes
+
+#### Global Application
+Set `global: true` in configuration to apply rate limiting to all routes:
+```yaml
+rate_limit:
+  enabled: true
+  global: true
+  requests: 100
+  window: 3600
+```
+
+#### Per-Route Application
+Apply rate limiting to specific routes using the `filter` parameter in `routes.yaml`:
+
+```yaml
+routes:
+  # Public page - no rate limiting
+  - name: home
+    method: GET
+    route: /
+    controller: HomeController@index
+
+  # Standard protected route with rate limiting
+  - name: user_profile
+    method: GET
+    route: /user/profile
+    controller: UserController@profile
+    filter: rate_limit      # Apply rate_limit (100/hour)
+
+  # API endpoint with higher limits
+  - name: api_users
+    method: GET
+    route: /api/users
+    controller: ApiController@users
+    filter: api_limit       # Apply api_limit (1000/hour)
+```
+
+### Storage Backends
+
+#### File Storage (Default)
+Best for single-server deployments:
+```yaml
+rate_limit:
+  storage: file
+  file_path: cache/rate_limits  # Directory for rate limit files
+```
+
+#### Redis Storage (Recommended for Production)
+Best for distributed systems and high traffic:
+```yaml
+rate_limit:
+  storage: redis
+  redis_host: 127.0.0.1
+  redis_port: 6379
+  redis_database: 0
+  redis_prefix: rate_limit_
+  redis_auth: password     # Optional
+  redis_persistent: true   # Use persistent connections
+```
+
+#### Memory Storage (Testing Only)
+For unit tests and development. Data is lost when PHP process ends:
+```yaml
+rate_limit:
+  storage: memory
+```
+
+### Rate Limit Headers
+
+When rate limiting is active, the following headers are included in responses:
+- `X-RateLimit-Limit`: Maximum requests allowed
+- `X-RateLimit-Remaining`: Requests remaining in current window
+- `X-RateLimit-Reset`: Unix timestamp when limit resets
+
+When limit is exceeded (HTTP 429):
+- `Retry-After`: Seconds until retry is allowed
+
+### Example Implementation
+
+1. Enable rate limiting in `config.yaml`:
+```yaml
+rate_limit:
+  enabled: true
+  global: false
+  storage: redis
+  requests: 100
+  window: 3600
+  redis_host: 127.0.0.1
+
+api_limit:
+  enabled: true
+  storage: redis
+  requests: 1000
+  window: 3600
+  redis_host: 127.0.0.1
+```
+
+2. Apply to routes in `routes.yaml`:
+```yaml
+routes:
+  - name: login
+    method: POST
+    route: /auth/login
+    controller: AuthController@login
+    filter: rate_limit    # Strict limit for login attempts
+
+  - name: api_data
+    method: GET
+    route: /api/data
+    controller: ApiController@getData
+    filter: api_limit     # Higher limit for API access
+```
+
+### Customization
+
+For advanced use cases, you can extend the rate limiting system by creating custom filters in your application. The rate limiting system automatically detects if the routing component version supports it and gracefully degrades if not available.
 
 ### Route Management Commands
 

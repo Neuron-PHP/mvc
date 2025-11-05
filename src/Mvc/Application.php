@@ -129,53 +129,58 @@ class Application extends Base
 	 * @param string $Route
 	 * @param string $ControllerMethod
 	 * @param string $Request
-	 * @return Application
+	 * @param string $Filter
+	 * @return \Neuron\Routing\RouteMap
 	 *
 	 * @throws BadRequestMethod
 	 * @throws Exception
 	 */
-	public function addRoute( string $Method, string $Route, string $ControllerMethod, string $Request = '' ) : Application
+	public function addRoute( string $Method, string $Route, string $ControllerMethod, string $Request = '', string $Filter = '' ) : \Neuron\Routing\RouteMap
 	{
 		switch( RequestMethod::getType( $Method ) )
 		{
 			case RequestMethod::PUT:
-				$Route = $this->_Router->put(
+				$RouteMap = $this->_Router->put(
 					$Route,
 					function( $Parameters ) use ( $Request )
 					{
 						return $this->executeController( $Parameters, $Request );
-					}
+					},
+					$Filter
 				);
 
 				break;
 
 			case RequestMethod::GET:
-				$Route = $this->_Router->get(
+				$RouteMap = $this->_Router->get(
 					$Route,
 					function( $Parameters ) use ( $Request )
 					{
 						return $this->executeController( $Parameters, $Request );
-					}
+					},
+					$Filter
 				);
 				break;
 
 			case RequestMethod::POST:
-				$Route = $this->_Router->post(
+				$RouteMap = $this->_Router->post(
 					$Route,
 					function( $Parameters ) use ( $Request )
 					{
 						return $this->executeController( $Parameters, $Request );
-					}
+					},
+					$Filter
 				);
 				break;
 
 			case RequestMethod::DELETE:
-				$Route = $this->_Router->delete(
+				$RouteMap = $this->_Router->delete(
 					$Route,
 					function( $Parameters ) use ( $Request )
 					{
 						return $this->executeController( $Parameters, $Request );
-					}
+					},
+					$Filter
 				);
 				break;
 
@@ -183,9 +188,9 @@ class Application extends Base
 				throw new BadRequestMethod();
 		}
 
-		$Route->Payload = [ "Controller" => $ControllerMethod ];
+		$RouteMap->Payload = [ "Controller" => $ControllerMethod ];
 
-		return $this;
+		return $RouteMap;
 	}
 
 	/**
@@ -286,6 +291,9 @@ class Application extends Base
 	{
 		$this->_Router = new Router();
 
+		// Configure rate limiting if enabled
+		$this->configureRateLimit();
+
 		$this->configure404Route();
 
 		$File = $this->getBasePath().'/config';
@@ -314,12 +322,14 @@ class Application extends Base
 		foreach( $Data[ 'routes' ] as $Route )
 		{
 			$Request = $Route[ 'request' ] ?? '';
+			$Filter = $Route[ 'filter' ] ?? '';
 
 			$this->addRoute(
 				$Route[ 'method' ],
 				$Route[ 'route' ],
 				$Route[ 'controller' ],
-				$Request
+				$Request,
+				$Filter
 			);
 		}
 	}
@@ -368,6 +378,67 @@ class Application extends Base
 	}
 
 	/**
+	 * Configure rate limiting if enabled in settings.
+	 *
+	 * @return void
+	 */
+	protected function configureRateLimit(): void
+	{
+		$Source = $this->getSettingManager()?->getSource();
+
+		if( !$Source )
+		{
+			return;
+		}
+
+		// Check if rate limiting extension is available
+		if( !class_exists( '\Neuron\Routing\RateLimit\RateLimitConfig' ) )
+		{
+			return;
+		}
+
+		// Configure standard rate_limit
+		if( $Source->get( 'rate_limit', 'enabled' ) )
+		{
+			try
+			{
+				$Config = \Neuron\Routing\RateLimit\RateLimitConfig::fromSettings( $Source, 'rate_limit' );
+				$Filter = new \Neuron\Routing\Filters\RateLimitFilter( $Config );
+				$this->_Router->registerFilter( 'rate_limit', $Filter );
+
+				// Apply globally if configured
+				if( $Source->get( 'rate_limit', 'global' ) )
+				{
+					$this->_Router->addFilter( 'rate_limit' );
+				}
+
+				Log::debug( 'Rate limiting configured: rate_limit' );
+			}
+			catch( \Exception $e )
+			{
+				Log::warning( 'Failed to configure rate limiting: ' . $e->getMessage() );
+			}
+		}
+
+		// Configure api_limit
+		if( $Source->get( 'api_limit', 'enabled' ) )
+		{
+			try
+			{
+				$Config = \Neuron\Routing\RateLimit\RateLimitConfig::fromSettings( $Source, 'api_limit' );
+				$Filter = new \Neuron\Routing\Filters\RateLimitFilter( $Config );
+				$this->_Router->registerFilter( 'api_limit', $Filter );
+
+				Log::debug( 'Rate limiting configured: api_limit' );
+			}
+			catch( \Exception $e )
+			{
+				Log::warning( 'Failed to configure API rate limiting: ' . $e->getMessage() );
+			}
+		}
+	}
+
+	/**
 	 * Clear expired cache entries
 	 *
 	 * @return int Number of entries removed
@@ -389,14 +460,13 @@ class Application extends Base
 			try
 			{
 				$Config = \Neuron\Mvc\Cache\CacheConfig::fromSettings( $Settings->getSource() );
-				
+
 				if( $Config->isEnabled() )
 				{
 					$BasePath = $this->getBasePath();
-					$CachePath = $BasePath . DIRECTORY_SEPARATOR . $Config->getCachePath();
-					
-					$Storage = new \Neuron\Mvc\Cache\Storage\FileCacheStorage( $CachePath );
-					
+
+					$Storage = \Neuron\Mvc\Cache\Storage\CacheStorageFactory::createFromConfig( $Config, $BasePath );
+
 					return $Storage->gc();
 				}
 			}

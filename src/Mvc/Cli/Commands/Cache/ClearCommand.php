@@ -3,7 +3,8 @@
 namespace Neuron\Mvc\Cli\Commands\Cache;
 
 use Neuron\Cli\Commands\Command;
-use Neuron\Mvc\Cache\Storage\FileCacheStorage;
+use Neuron\Mvc\Cache\Storage\CacheStorageFactory;
+use Neuron\Mvc\Cache\Storage\ICacheStorage;
 use Neuron\Mvc\Cache\CacheConfig;
 use Neuron\Data\Setting\Source\Yaml;
 
@@ -64,7 +65,8 @@ class ClearCommand extends Command
 		}
 		
 		// Get cache storage
-		$storage = new FileCacheStorage( $cacheConfig->getCachePath() );
+		$basePath = dirname( $configPath );
+		$storage = CacheStorageFactory::createFromConfig( $cacheConfig, $basePath );
 		
 		// Check what type of clear operation
 		$onlyExpired = $this->input->hasOption( 'expired' );
@@ -93,7 +95,7 @@ class ClearCommand extends Command
 			
 			if( $onlyExpired )
 			{
-				$count = $storage->clearExpired();
+				$count = $storage->gc();
 				$this->output->success( "Cleared $count expired cache entries" );
 			}
 			elseif( $type )
@@ -104,8 +106,8 @@ class ClearCommand extends Command
 			}
 			else
 			{
-				$count = $storage->clear();
-				$this->output->success( "Cleared $count cache entries" );
+				$storage->clear();
+				$this->output->success( "Cleared all cache entries" );
 			}
 			
 			// Show cache path
@@ -129,11 +131,11 @@ class ClearCommand extends Command
 	/**
 	 * Clear cache entries by type
 	 * 
-	 * @param FileCacheStorage $storage
+	 * @param ICacheStorage $storage
 	 * @param string $type
 	 * @return int Number of entries cleared
 	 */
-	private function clearByType( FileCacheStorage $storage, string $type ): int
+	private function clearByType( ICacheStorage $storage, string $type ): int
 	{
 		// This would need to be implemented in FileCacheStorage
 		// For now, we'll clear all and mention it's not type-specific

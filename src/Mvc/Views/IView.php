@@ -27,9 +27,6 @@ namespace Neuron\Mvc\Views;
  * the same view instance to be reused for multiple rendering operations.
  * 
  * @package Neuron\Mvc\Views
- * @author Neuron-PHP Framework
- * @version 3.0.0
- * @since 1.0.0
  * 
  * @example
  * ```php

@@ -30,9 +30,6 @@ namespace Neuron\Mvc\Views;
  * array-to-XML conversion functionality using SimpleXMLElement or DOMDocument.
  * 
  * @package Neuron\Mvc\Views
- * @author Neuron-PHP Framework
- * @version 3.0.0
- * @since 1.0.0
  * 
  * @todo Implement proper array-to-XML conversion logic
  * 

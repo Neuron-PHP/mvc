@@ -58,6 +58,95 @@ class CacheConfig
 	}
 
 	/**
+	 * Get Redis host
+	 *
+	 * @return string
+	 */
+	public function getRedisHost(): string
+	{
+		return $this->_Settings['redis_host'] ?? '127.0.0.1';
+	}
+
+	/**
+	 * Get Redis port
+	 *
+	 * @return int
+	 */
+	public function getRedisPort(): int
+	{
+		return (int) ($this->_Settings['redis_port'] ?? 6379);
+	}
+
+	/**
+	 * Get Redis database
+	 *
+	 * @return int
+	 */
+	public function getRedisDatabase(): int
+	{
+		return (int) ($this->_Settings['redis_database'] ?? 0);
+	}
+
+	/**
+	 * Get Redis prefix
+	 *
+	 * @return string
+	 */
+	public function getRedisPrefix(): string
+	{
+		return $this->_Settings['redis_prefix'] ?? 'neuron_cache_';
+	}
+
+	/**
+	 * Get Redis timeout
+	 *
+	 * @return float
+	 */
+	public function getRedisTimeout(): float
+	{
+		return (float) ($this->_Settings['redis_timeout'] ?? 2.0);
+	}
+
+	/**
+	 * Get Redis auth
+	 *
+	 * @return string|null
+	 */
+	public function getRedisAuth(): ?string
+	{
+		return $this->_Settings['redis_auth'] ?? null;
+	}
+
+	/**
+	 * Get Redis persistent connection setting
+	 *
+	 * @return bool
+	 */
+	public function getRedisPersistent(): bool
+	{
+		$persistent = $this->_Settings['redis_persistent'] ?? false;
+		return $persistent === true || $persistent === 'true' || $persistent === '1';
+	}
+
+	/**
+	 * Get all Redis configuration as array
+	 *
+	 * @return array
+	 */
+	public function getRedisConfig(): array
+	{
+		return [
+			'host' => $this->getRedisHost(),
+			'port' => $this->getRedisPort(),
+			'database' => $this->getRedisDatabase(),
+			'prefix' => $this->getRedisPrefix(),
+			'timeout' => $this->getRedisTimeout(),
+			'auth' => $this->getRedisAuth(),
+			'persistent' => $this->getRedisPersistent()
+		];
+	}
+
+	/**
 	 * Check if specific view type caching is enabled
 	 *
 	 * @param string $ViewType
@@ -101,7 +190,27 @@ class CacheConfig
 		{
 			$CacheSettings['storage'] = $Storage;
 		}
-		
+
+		// Redis configuration parameters
+		$RedisParams = [
+			'redis_host',
+			'redis_port',
+			'redis_database',
+			'redis_prefix',
+			'redis_timeout',
+			'redis_auth',
+			'redis_persistent'
+		];
+
+		foreach( $RedisParams as $Param )
+		{
+			$Value = $Settings->get( 'cache', $Param );
+			if( $Value !== null )
+			{
+				$CacheSettings[$Param] = $Value;
+			}
+		}
+
 		// For views settings, we need to check each view type
 		$ViewTypes = [ 'html', 'markdown', 'json', 'xml' ];
 		
