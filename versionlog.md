@@ -1,3 +1,5 @@
+## 0.8.1
+
 * Added integrated rate limiting support via routing component.
 * Rate limiting configuration with rate_limit and api_limit categories.
 * Automatic rate limit filter registration from config.yaml
