@@ -10,7 +10,7 @@ use Neuron\Data\Setting\Source\ISettingSource;
 use Neuron\Mvc\Application;
 use Neuron\Mvc\Cache\CacheConfig;
 use Neuron\Mvc\Cache\Exceptions\CacheException;
-use Neuron\Mvc\Cache\Storage\FileCacheStorage;
+use Neuron\Mvc\Cache\Storage\CacheStorageFactory;
 use Neuron\Mvc\Cache\ViewCache;
 use Neuron\Mvc\Helpers\UrlHelper;
 use Neuron\Mvc\Responses\HttpResponseStatus;
@@ -225,18 +225,17 @@ class Base implements IController
 		try
 		{
 			$BasePath = $Registry->get( 'Base.Path' ) ?? '.';
-			$CachePath = $BasePath . DIRECTORY_SEPARATOR . $Config->getCachePath();
-			
-			$Storage = new FileCacheStorage( $CachePath );
+
+			$Storage = CacheStorageFactory::createFromConfig( $Config, $BasePath );
 			$ViewCache = new ViewCache(
-				$Storage, 
-				true, 
-				$Config->getDefaultTtl(), 
-				$Config 
+				$Storage,
+				true,
+				$Config->getDefaultTtl(),
+				$Config
 			);
-			
+
 			$Registry->set( 'ViewCache', $ViewCache );
-			
+
 			return $ViewCache;
 		}
 		catch( CacheException $e )

@@ -1,0 +1,2 @@
+<h2><?=$var_one?></h2>
+<p><?=$two?> + <?=$three?> = <?= ($two + $three) ?></p>

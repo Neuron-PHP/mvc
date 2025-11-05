@@ -1,3 +1,13 @@
+* Added integrated rate limiting support via routing component.
+* Rate limiting configuration with rate_limit and api_limit categories.
+* Automatic rate limit filter registration from config.yaml
+* Support for global and per-route rate limiting.
+* Filter parameter support in routes.yaml for per-route middleware.
+* Added RedisCacheStorage for high-performance Redis-based view caching.
+* Added CacheStorageFactory for flexible storage backend selection.
+* Integrated factory pattern for cache storage instantiation across all components.
+* Added support for Redis connection pooling and persistent connections.
+
 ## 0.7.2 2025-08-27
 * Added UrlHelper.
 
@@ -74,7 +84,7 @@
 ## 0.6.29 2025-01-27
 * Updated router.
 
-## 0.6.28
+## 0.6.28 2025-11-04
 ## 0.6.27
 ## 0.6.26
 ## 0.6.25

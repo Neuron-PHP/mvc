@@ -24,9 +24,6 @@ namespace Neuron\Mvc\Responses;
  * - Integration with framework response handling
  * 
  * @package Neuron\Mvc\Responses
- * @author Neuron-PHP Framework
- * @version 3.0.0
- * @since 3.0.0
  * 
  * @example
  * ```php

@@ -9,17 +9,48 @@ views:
 
 cache:
   enabled: true
-  storage: file
-  path: cache/views
+  storage: file           # Options: 'file' or 'redis'
+  path: cache/views       # Path for file storage
   ttl: 3600
   html: true
   markdown: true
   json: false
   xml: false
 
+  # Redis configuration (used when storage: redis)
+  # redis_host: 127.0.0.1
+  # redis_port: 6379
+  # redis_database: 0
+  # redis_prefix: neuron_cache_
+  # redis_timeout: 2.0
+  # redis_auth: null
+  # redis_persistent: false
+
   # Garbage collection settings (optional, defaults shown)
   # gc_probability: 0.01  # 1% chance to run GC on cache write
   # gc_divisor: 100      # Used with probability for fine-tuning
+
+# Rate limiting configuration
+rate_limit:
+  enabled: false          # Enable/disable rate limiting
+  global: false          # Apply to all routes globally
+  storage: file          # Storage backend: file, redis, memory (testing only)
+  requests: 100          # Maximum requests per window
+  window: 3600           # Time window in seconds (3600 = 1 hour)
+  file_path: cache/rate_limits
+  # Redis configuration (if storage: redis)
+  # redis_host: 127.0.0.1
+  # redis_port: 6379
+  # redis_database: 0
+  # redis_prefix: rate_limit_
+
+# API rate limiting (higher limits)
+api_limit:
+  enabled: false
+  storage: file
+  requests: 1000         # 1000 requests
+  window: 3600           # Per hour
+  file_path: cache/api_limits
 
 system:
   timezone: US/Eastern

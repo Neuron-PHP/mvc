@@ -15,8 +15,6 @@ use Neuron\Routing\Router;
  * Controllers handle request processing and response generation for HTML, JSON, and XML.
  * 
  * @package Neuron\Mvc\Controllers
- * @author Neuron-PHP Framework
- * @version 3.0.0
  */
 interface IController
 {

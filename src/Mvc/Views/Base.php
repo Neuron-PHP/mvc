@@ -23,9 +23,6 @@ namespace Neuron\Mvc\Views;
  * 3. Layout wrapping with content injection
  * 
  * @package Neuron\Mvc\Views
- * @author Neuron-PHP Framework
- * @version 3.0.0
- * @since 1.0.0
  * 
  * @example
  * ```php
