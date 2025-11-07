@@ -1,4 +1,4 @@
-## 0.8.3
+## 0.8.3 2025-11-07
 
 * Added exception formatting.
 
