@@ -478,5 +478,43 @@ class Application extends Base
 		
 		return 0;
 	}
+
+	public function beautifyException( \Exception $e ): string
+	{
+		// this function should return a nicely formatted HTML representation of the exception
+		$ExceptionType = get_class( $e );
+		$Message = htmlspecialchars( $e->getMessage(), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' );
+		$File = htmlspecialchars( $e->getFile(), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' );
+		$Line = $e->getLine();
+		$Trace = nl2br( htmlspecialchars( $e->getTraceAsString(), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' ) );
+		$Html = "<html><head><title>Exception: $ExceptionType</title>
+		<style>
+		body { font-family: Arial, sans-serif; margin: 20px; }
+		h1 { color: #c00; }
+		pre { background-color: #f4f4f4; padding: 10px; border: 1px solid #ddd; }
+		</style>
+		</head><body>";
+		$Html .= "<h1>Exception: $ExceptionType</h1>";
+		$Html .= "<p><strong>Message:</strong> $Message</p>";
+		$Html .= "<p><strong>File:</strong> $File</p>";
+		$Html .= "<p><strong>Line:</strong> $Line</p>";
+		$Html .= "<h2>Stack Trace:</h2><pre>$Trace</pre>";
+		$Html .= "</body></html>";
+
+		return $Html;
+	}
+
+	public function handleException( \Exception $e ) : string
+	{
+		if( $this->getCaptureOutput() )
+		{
+			$this->_Output .= $this->beautifyException( $e );
+			return $this->_Output;
+		}
+		else
+		{
+			return $this->beautifyException( $e );
+		}
+	}
 }
 
