@@ -41,7 +41,14 @@ class Html extends Base implements IView
 			$Path = "$BasePath/resources/views";
 		}
 
-		$ControllerName = new NString( $this->getController() )->toSnakeCase();
+		// Convert controller name to snake_case, preserving directory separators
+		$controllerParts = explode( '/', $this->getController() );
+		$snakeCaseParts = array_map(
+			fn( $part ) => ( new NString( $part ) )->toSnakeCase(),
+			$controllerParts
+		);
+		$ControllerName = implode( '/', $snakeCaseParts );
+
 		$View = "$Path/$ControllerName/{$this->getPage()}.php";
 
 		if( !file_exists( $View ) )
