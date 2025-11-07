@@ -236,21 +236,25 @@ YAML;
 	 */
 	public function testDispatchWithException()
 	{
-		// Create mock application that throws exception
-		$App = $this->createMock( Application::class );
-		$App->expects( $this->once() )
-			->method( 'run' )
-			->willThrowException( new \Exception( 'Test exception' ) );
-		
-		// Capture output
-		ob_start();
-		dispatch( $App );
-		$Output = ob_get_clean();
-		
-		// Should output 'Ouch.' when exception is caught
-		$this->assertStringContainsString( 'Exception', $Output );
+		 // Create mock application with handleException
+		 $App = $this->createMock(Application::class);
+		 $App->expects($this->once())
+			  ->method('run')
+			  ->willThrowException(new \Exception('Test exception'));
+		 $App->expects($this->once())
+			  ->method('handleException')
+				->willReturnCallback( function( $e ) {
+					return "Exception: " . $e->getMessage();
+				});
+
+		 // Capture output
+		 ob_start();
+		 dispatch($App);
+		 $Output = ob_get_clean();
+
+		 $this->assertStringContainsString('Exception', $Output);
 	}
-	
+
 	/**
 	 * Test ClearExpiredCache function
 	 */

@@ -59,7 +59,7 @@ function dispatch( Application $App ) : void
 	}
 	catch( \Exception $e )
 	{
-		echo $e->getMessage()."<br>".$e->getTraceAsString();
+		echo $App->handleException( $e );
 	}
 }
 

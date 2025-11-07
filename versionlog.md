@@ -1,3 +1,5 @@
+* Added exception formatting.
+
 ## 0.8.2
 
 * Added routing exception output.
