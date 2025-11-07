@@ -1,3 +1,5 @@
+* Added routing exception output.
+
 ## 0.8.1
 
 * Added integrated rate limiting support via routing component.

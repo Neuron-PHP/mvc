@@ -248,7 +248,7 @@ YAML;
 		$Output = ob_get_clean();
 		
 		// Should output 'Ouch.' when exception is caught
-		$this->assertEquals( 'Ouch.', $Output );
+		$this->assertStringContainsString( 'Exception', $Output );
 	}
 	
 	/**
