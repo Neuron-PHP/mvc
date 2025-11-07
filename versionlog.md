@@ -1,3 +1,5 @@
+## 0.8.3
+
 * Added exception formatting.
 
 ## 0.8.2 2025-11-07
