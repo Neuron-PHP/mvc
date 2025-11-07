@@ -1,6 +1,6 @@
 * Added routing exception output.
 
-## 0.8.1
+## 0.8.1 2025-11-07
 
 * Added integrated rate limiting support via routing component.
 * Rate limiting configuration with rate_limit and api_limit categories.
