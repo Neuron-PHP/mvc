@@ -1,3 +1,5 @@
+## 0.8.2
+
 * Added routing exception output.
 
 ## 0.8.1 2025-11-07
