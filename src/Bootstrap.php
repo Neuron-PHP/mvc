@@ -34,7 +34,17 @@ function boot( string $ConfigPath ) : Application
 	$Version = new Version();
 	$Version->loadFromFile( "$BasePath/.version.json" );
 
-	return new Application( $Version->getAsString(), $Settings );
+	try
+	{
+		$App = new Application( $Version->getAsString(), $Settings );
+	}
+	catch( \Exception $e )
+	{
+		echo Application::beautifyException( $e );
+		exit( 1 );
+	}
+
+	return $App;
 }
 
 /**
@@ -42,6 +52,7 @@ function boot( string $ConfigPath ) : Application
  *
  * @param Application $App
  */
+
 function dispatch( Application $App ) : void
 {
 	$Route = Get::filterScalar( 'route' ) ?? "";

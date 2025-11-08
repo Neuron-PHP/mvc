@@ -480,7 +480,7 @@ class Application extends Base
 		return 0;
 	}
 
-	public function beautifyException( \Exception $e ): string
+	public static function beautifyException( \Exception $e ): string
 	{
 		// this function should return a nicely formatted HTML representation of the exception
 		$ExceptionType = get_class( $e );
