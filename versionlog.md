@@ -1,3 +1,5 @@
+## 0.8.6
+
 
 * Added `controller:generate` CLI command for scaffolding controllers, views, and routes.
 * Added `event:generate` CLI command for scaffolding event classes.
