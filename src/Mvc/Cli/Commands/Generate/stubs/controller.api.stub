@@ -1,0 +1,84 @@
+<?php
+
+namespace {{namespace}};
+
+use Neuron\Mvc\Controllers\Base;
+use Neuron\Mvc\Responses\HttpResponseStatus;
+
+/**
+ * {{class}} - RESTful API controller for {{model}} resources
+ *
+ * @package {{namespace}}
+ */
+class {{class}} extends Base
+{
+	/**
+	 * Display a listing of {{models}}
+	 */
+	public function index( array $Parameters ): string
+	{
+		// TODO: Fetch all {{models}} from repository
+		${{variables}} = [];
+
+		return $this->renderJson( HttpResponseStatus::OK, [
+			'data' => ${{variables}}
+		]);
+	}
+
+	/**
+	 * Store a newly created {{model}}
+	 */
+	public function store( array $Parameters ): string
+	{
+		// TODO: Validate request data
+		// TODO: Create new {{model}} in repository
+
+		return $this->renderJson( HttpResponseStatus::CREATED, [
+			'message' => '{{model}} created successfully'
+		]);
+	}
+
+	/**
+	 * Display the specified {{model}}
+	 */
+	public function show( array $Parameters ): string
+	{
+		$id = (int)$Parameters['id'];
+
+		// TODO: Fetch {{model}} by ID from repository
+		${{variable}} = null;
+
+		return $this->renderJson( HttpResponseStatus::OK, [
+			'data' => ${{variable}}
+		]);
+	}
+
+	/**
+	 * Update the specified {{model}}
+	 */
+	public function update( array $Parameters ): string
+	{
+		$id = (int)$Parameters['id'];
+
+		// TODO: Validate request data
+		// TODO: Update {{model}} in repository
+
+		return $this->renderJson( HttpResponseStatus::OK, [
+			'message' => '{{model}} updated successfully'
+		]);
+	}
+
+	/**
+	 * Remove the specified {{model}}
+	 */
+	public function destroy( array $Parameters ): string
+	{
+		$id = (int)$Parameters['id'];
+
+		// TODO: Delete {{model}} from repository
+
+		return $this->renderJson( HttpResponseStatus::OK, [
+			'message' => '{{model}} deleted successfully'
+		]);
+	}
+}

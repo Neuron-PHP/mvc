@@ -18,7 +18,7 @@ class ClearCommand extends Command
 	 */
 	public function getName(): string
 	{
-		return 'mvc:cache:clear';
+		return 'cache:clear';
 	}
 	
 	/**

@@ -17,7 +17,7 @@ class StatsCommand extends Command
 	 */
 	public function getName(): string
 	{
-		return 'mvc:cache:stats';
+		return 'cache:stats';
 	}
 	
 	/**

@@ -16,7 +16,7 @@ class ListCommand extends Command
 	 */
 	public function getName(): string
 	{
-		return 'mvc:routes:list';
+		return 'routes:list';
 	}
 	
 	/**

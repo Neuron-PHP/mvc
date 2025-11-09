@@ -12,27 +12,74 @@ class Provider
 {
 	/**
 	 * Register MVC commands with the CLI registry
-	 * 
+	 *
 	 * @param Registry $registry CLI Registry instance
 	 * @return void
 	 */
 	public static function register( Registry $registry ): void
 	{
 		// Cache management commands
-		$registry->register( 
-			'mvc:cache:clear', 
-			'Neuron\\Mvc\\Cli\\Commands\\Cache\\ClearCommand' 
+		$registry->register(
+			'cache:clear',
+			'Neuron\\Mvc\\Cli\\Commands\\Cache\\ClearCommand'
 		);
-		
-		$registry->register( 
-			'mvc:cache:stats', 
-			'Neuron\\Mvc\\Cli\\Commands\\Cache\\StatsCommand' 
+
+		$registry->register(
+			'cache:stats',
+			'Neuron\\Mvc\\Cli\\Commands\\Cache\\StatsCommand'
 		);
-		
+
 		// Route management commands
-		$registry->register( 
-			'mvc:routes:list', 
-			'Neuron\\Mvc\\Cli\\Commands\\Routes\\ListCommand' 
+		$registry->register(
+			'routes:list',
+			'Neuron\\Mvc\\Cli\\Commands\\Routes\\ListCommand'
+		);
+
+		// Generator commands
+		$registry->register(
+			'controller:generate',
+			'Neuron\\Mvc\\Cli\\Commands\\Generate\\ControllerCommand'
+		);
+
+		$registry->register(
+			'event:generate',
+			'Neuron\\Mvc\\Cli\\Commands\\Generate\\EventCommand'
+		);
+
+		$registry->register(
+			'listener:generate',
+			'Neuron\\Mvc\\Cli\\Commands\\Generate\\ListenerCommand'
+		);
+
+		$registry->register(
+			'job:generate',
+			'Neuron\\Mvc\\Cli\\Commands\\Generate\\JobCommand'
+		);
+
+		// Database migration commands
+		$registry->register(
+			'db:migration:generate',
+			'Neuron\\Mvc\\Cli\\Commands\\Migrate\\CreateCommand'
+		);
+
+		$registry->register(
+			'db:migrate',
+			'Neuron\\Mvc\\Cli\\Commands\\Migrate\\RunCommand'
+		);
+
+		$registry->register(
+			'db:rollback',
+			'Neuron\\Mvc\\Cli\\Commands\\Migrate\\RollbackCommand'
+		);
+
+		$registry->register(
+			'db:migrate:status',
+			'Neuron\\Mvc\\Cli\\Commands\\Migrate\\StatusCommand'
+		);
+
+		$registry->register(
+			'db:seed',
+			'Neuron\\Mvc\\Cli\\Commands\\Migrate\\SeedCommand'
 		);
 	}
 }
