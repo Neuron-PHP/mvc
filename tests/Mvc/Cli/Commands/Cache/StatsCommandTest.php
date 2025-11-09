@@ -21,7 +21,7 @@ class StatsCommandTest extends TestCase
 	
 	public function testGetName(): void
 	{
-		$this->assertEquals( 'mvc:cache:stats', $this->command->getName() );
+		$this->assertEquals( 'cache:stats', $this->command->getName() );
 	}
 	
 	public function testGetDescription(): void

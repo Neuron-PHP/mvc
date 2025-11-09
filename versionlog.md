@@ -1,3 +1,12 @@
+
+* Added `controller:generate` CLI command for scaffolding controllers, views, and routes.
+* Added `event:generate` CLI command for scaffolding event classes.
+* Added `listener:generate` CLI command for scaffolding listener classes.
+* Added `job:generate` CLI command for scaffolding scheduled job classes.
+* Migration commands: `db:migrate`, `db:migration:generate`, `db:rollback`, `db:migrate:status`, `db:seed`.
+* Multi-database support: SQLite, MySQL, PostgreSQL.
+* MigrationManager bridges Neuron configuration to Phinx.
+
 ## 0.8.4 2025-11-07
 
 ## 0.8.3 2025-11-07
@@ -97,7 +106,7 @@
 * Updated router.
 
 ## 0.6.28 2025-11-04
-## 0.6.27
+## 0.6.27 2025-11-08
 ## 0.6.26
 ## 0.6.25
 ## 0.6.24 2025-01-08
