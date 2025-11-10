@@ -1,4 +1,5 @@
 ## 0.8.7
+* Updated error handling.
 
 ## 0.8.6 2025-11-10
 
