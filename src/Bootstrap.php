@@ -61,6 +61,18 @@ function dispatch( Application $App ) : void
 	{
 		$Type = Server::filterScalar( 'REQUEST_METHOD' ) ?? "GET";
 
+		// Support HTML form method spoofing via _method field
+		// HTML forms can only submit GET/POST, so frameworks use a hidden _method field
+		// to indicate PUT/DELETE/PATCH requests
+		if( $Type === 'POST' && isset( $_POST['_method'] ) )
+		{
+			$SpoofedMethod = strtoupper( $_POST['_method'] );
+			if( in_array( $SpoofedMethod, [ 'PUT', 'DELETE', 'PATCH' ] ) )
+			{
+				$Type = $SpoofedMethod;
+			}
+		}
+
 		$App->run(
 			[
 				"type"  => $Type,
