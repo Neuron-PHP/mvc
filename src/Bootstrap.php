@@ -38,7 +38,7 @@ function boot( string $ConfigPath ) : Application
 	{
 		$App = new Application( $Version->getAsString(), $Settings );
 	}
-	catch( \Exception $e )
+	catch( \Throwable $e )
 	{
 		echo Application::beautifyException( $e );
 		exit( 1 );
@@ -80,7 +80,7 @@ function dispatch( Application $App ) : void
 			]
 		);
 	}
-	catch( \Exception $e )
+	catch( \Throwable $e )
 	{
 		echo $App->handleException( $e );
 	}

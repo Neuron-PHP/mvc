@@ -1,3 +1,6 @@
+## 0.8.7 2025-11-10
+* Updated error handling.
+
 ## 0.8.6 2025-11-10
 
 * Set error handling to true.
