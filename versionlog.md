@@ -1,3 +1,9 @@
+## 0.8.6 2025-11-10
+
+* Set error handling to true.
+* Added method spoofing.
+
+## 0.8.5 2025-11-09
 
 * Added `controller:generate` CLI command for scaffolding controllers, views, and routes.
 * Added `event:generate` CLI command for scaffolding event classes.

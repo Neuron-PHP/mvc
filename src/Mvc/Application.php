@@ -40,6 +40,9 @@ class Application extends Base
 	 */
 	public function __construct( string $Version ="1.0.0", ?ISettingSource $Source = null )
 	{
+		$this->setHandleFatal( true );
+		$this->setHandleErrors( true );
+
 		parent::__construct( $Version, $Source );
 
 		$this->_RoutesPath = '';
