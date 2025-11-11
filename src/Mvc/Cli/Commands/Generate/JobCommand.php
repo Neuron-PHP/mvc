@@ -54,7 +54,7 @@ class JobCommand extends Command
 	public function execute(): int
 	{
 		$this->output->info( "\n╔═══════════════════════════════════════╗" );
-		$this->output->info( "║  Job Generator                       ║" );
+		$this->output->info( "║  Job Generator                        ║" );
 		$this->output->info( "╚═══════════════════════════════════════╝\n" );
 
 		// Get job name
