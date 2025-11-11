@@ -60,7 +60,7 @@ class ControllerCommand extends Command
 	public function execute( array $Parameters = [] ): int
 	{
 		$this->output->info( "\n╔═══════════════════════════════════════╗" );
-		$this->output->info( "║  MVC Controller Generator            ║" );
+		$this->output->info( "║  MVC Controller Generator             ║" );
 		$this->output->info( "╚═══════════════════════════════════════╝\n" );
 
 		// Get controller name
@@ -315,34 +315,37 @@ class ControllerCommand extends Command
 		}
 		$controller = $namespace . '\\' . $info['class'];
 
-		// Build routes
+		// Generate route name prefix (e.g., "posts" or "admin_posts")
+		$routeNamePrefix = strtolower( str_replace( '/', '_', $info['controllerPath'] ) );
+
+		// Build routes with named keys
 		$newRoutes = [
-			[
+			$routeNamePrefix . '_index' => [
 				'method' => 'GET',
 				'route' => $info['routePrefix'],
 				'controller' => $controller . '@index',
 			],
-			[
+			$routeNamePrefix . '_create' => [
 				'method' => 'GET',
 				'route' => $info['routePrefix'] . '/create',
 				'controller' => $controller . '@create',
 			],
-			[
+			$routeNamePrefix . '_store' => [
 				'method' => 'POST',
 				'route' => $info['routePrefix'],
 				'controller' => $controller . '@store',
 			],
-			[
+			$routeNamePrefix . '_edit' => [
 				'method' => 'GET',
 				'route' => $info['routePrefix'] . '/:id/edit',
 				'controller' => $controller . '@edit',
 			],
-			[
+			$routeNamePrefix . '_update' => [
 				'method' => 'PUT',
 				'route' => $info['routePrefix'] . '/:id',
 				'controller' => $controller . '@update',
 			],
-			[
+			$routeNamePrefix . '_destroy' => [
 				'method' => 'DELETE',
 				'route' => $info['routePrefix'] . '/:id',
 				'controller' => $controller . '@destroy',
@@ -352,11 +355,28 @@ class ControllerCommand extends Command
 		// Add show route for API controllers
 		if( $info['isApi'] )
 		{
-			array_splice( $newRoutes, 1, 0, [[
-				'method' => 'GET',
-				'route' => $info['routePrefix'] . '/:id',
-				'controller' => $controller . '@show',
-			]]);
+			// Insert show route after index, before create
+			$showRoute = [
+				$routeNamePrefix . '_show' => [
+					'method' => 'GET',
+					'route' => $info['routePrefix'] . '/:id',
+					'controller' => $controller . '@show',
+				]
+			];
+
+			// Merge in the correct position
+			$routesArray = [];
+			$inserted = false;
+			foreach( $newRoutes as $key => $route )
+			{
+				$routesArray[$key] = $route;
+				if( $key === $routeNamePrefix . '_index' && !$inserted )
+				{
+					$routesArray = array_merge( $routesArray, $showRoute );
+					$inserted = true;
+				}
+			}
+			$newRoutes = $routesArray;
 		}
 
 		// Add filter if specified

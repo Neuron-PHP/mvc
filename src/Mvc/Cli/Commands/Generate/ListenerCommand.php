@@ -53,7 +53,7 @@ class ListenerCommand extends Command
 	public function execute(): int
 	{
 		$this->output->info( "\n╔═══════════════════════════════════════╗" );
-		$this->output->info( "║  Listener Generator                  ║" );
+		$this->output->info( "║  Listener Generator                   ║" );
 		$this->output->info( "╚═══════════════════════════════════════╝\n" );
 
 		// Get listener name

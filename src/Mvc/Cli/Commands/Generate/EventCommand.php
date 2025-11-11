@@ -51,7 +51,7 @@ class EventCommand extends Command
 	public function execute(): int
 	{
 		$this->output->info( "\n╔═══════════════════════════════════════╗" );
-		$this->output->info( "║  Event Generator                     ║" );
+		$this->output->info( "║  Event Generator                      ║" );
 		$this->output->info( "╚═══════════════════════════════════════╝\n" );
 
 		// Get event name

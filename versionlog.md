@@ -1,4 +1,5 @@
 ## 0.8.9
+* Fixed named routes in controller scaffolding.
 
 ## 0.8.8 2025-11-11
 * Fixed named routes.
