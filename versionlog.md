@@ -1,3 +1,6 @@
+## 0.8.8 2025-11-11
+* Fixed named routes.
+
 ## 0.8.7 2025-11-10
 * Updated error handling.
 

@@ -397,4 +397,31 @@ class ApplicationTest extends TestCase
 
 		$this->assertTrue( $this->App->getCrashed() );
 	}
+
+	/**
+	 * Test that route names are loaded from YAML and set on RouteMap objects
+	 */
+	public function testRouteNamesLoadedFromYaml()
+	{
+		$Router = $this->App->getRouter();
+
+		// Test that we can retrieve a route by its name from YAML
+		$LoginRoute = $Router->getRouteByName( 'login' );
+
+		$this->assertNotNull( $LoginRoute, 'Route "login" should be found by name' );
+		$this->assertEquals( '/login', $LoginRoute->Path, 'Route path should match' );
+		$this->assertEquals( 'login', $LoginRoute->Name, 'Route name should be set' );
+
+		// Test another named route
+		$TestRoute = $Router->getRouteByName( 'test' );
+
+		$this->assertNotNull( $TestRoute, 'Route "test" should be found by name' );
+		$this->assertEquals( '/test', $TestRoute->Path, 'Test route path should match' );
+		$this->assertEquals( 'test', $TestRoute->Name, 'Test route name should be set' );
+
+		// Test that a non-existent route returns null
+		$NonExistentRoute = $Router->getRouteByName( 'nonexistent' );
+
+		$this->assertNull( $NonExistentRoute, 'Non-existent route should return null' );
+	}
 }
