@@ -43,7 +43,7 @@ class CacheKeyDataTest extends TestCase
 		// Create default layout
 		file_put_contents( 
 			$LayoutsDir . '/default.php', 
-			'<!DOCTYPE html><html><head><title>Test</title></head><body><?= $Content ?></body></html>' 
+			'<!DOCTYPE html><html><head><title>Test</title></head><body><?= $content ?></body></html>' 
 		);
 		
 		// Create test view files

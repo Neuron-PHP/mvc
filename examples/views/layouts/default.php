@@ -1,8 +1,8 @@
 <html>
 	<head></head>
-	<title><?= $Title ?? '' ?></title>
+	<title><?= $title ?? '' ?></title>
 	<body>
 		<h1>Test Layout</h1>
-		<?= $Content ?>
+		<?= $content ?>
 	</body>
 </html>

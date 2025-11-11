@@ -111,7 +111,7 @@ class DynamicCacheControlTest extends TestCase
 		
 		vfsStream::newFile( 'layout.php' )
 			->at( $this->Root->getChild( 'resources/views/layouts' ) )
-			->setContent( '<?php echo $Content; ?>' );
+			->setContent( '<?php echo $content; ?>' );
 		
 		// Render with cache explicitly enabled
 		$Result = $Controller->renderHtml(
@@ -150,7 +150,7 @@ class DynamicCacheControlTest extends TestCase
 		
 		vfsStream::newFile( 'layout.php' )
 			->at( $this->Root->getChild( 'resources/views/layouts' ) )
-			->setContent( '<?php echo $Content; ?>' );
+			->setContent( '<?php echo $content; ?>' );
 		
 		// Render with cache explicitly disabled
 		$Result1 = $Controller->renderHtml(
@@ -201,7 +201,7 @@ class DynamicCacheControlTest extends TestCase
 		
 		vfsStream::newFile( 'layout.php' )
 			->at( $this->Root->getChild( 'resources/views/layouts' ) )
-			->setContent( '<?php echo $Content; ?>' );
+			->setContent( '<?php echo $content; ?>' );
 		
 		// Render with default cache setting (null)
 		$Result = $Controller->renderHtml(
@@ -273,7 +273,7 @@ class DynamicCacheControlTest extends TestCase
 		
 		vfsStream::newFile( 'layout.php' )
 			->at( $this->Root->getChild( 'resources/views/layouts' ) )
-			->setContent( '<?php echo $Content; ?>' );
+			->setContent( '<?php echo $content; ?>' );
 		
 		// Render Markdown with cache enabled
 		$Result1 = $Controller->renderMarkdown(
@@ -326,7 +326,7 @@ class DynamicCacheControlTest extends TestCase
 		
 		vfsStream::newFile( 'layout.php' )
 			->at( $this->Root->getChild( 'resources/views/layouts' ) )
-			->setContent( '<?php echo $Content; ?>' );
+			->setContent( '<?php echo $content; ?>' );
 		
 		// First render with cache enabled
 		$Result1 = $Controller->renderHtml(

@@ -12,11 +12,11 @@ use Symfony\Component\Yaml\Yaml;
  */
 class Request
 {
-	private string $_Name;
-	private int   $_RequestMethod;
-	private array $_Headers = [];
-	private array $_Parameters;
-	private array $_Errors = [];
+	private string $_name;
+	private int   $_requestMethod;
+	private array $_headers = [];
+	private array $_parameters;
+	private array $_errors = [];
 
 	/**
 	 * Request constructor.
@@ -27,7 +27,7 @@ class Request
 
 	public function getErrors(): array
 	{
-		return $this->_Errors;
+		return $this->_errors;
 	}
 
 	/**
@@ -36,15 +36,15 @@ class Request
 	 */
 	public function getJsonPayload(): array
 	{
-		$Input = file_get_contents( 'php://input' );
-		$Result = json_decode( $Input, true ) ?? [];
+		$input = file_get_contents( 'php://input' );
+		$result = json_decode( $input, true ) ?? [];
 
 		if( json_last_error() !== JSON_ERROR_NONE )
 		{
 			return [];
 		}
 
-		return $Result;
+		return $result;
 	}
 
 	/**
@@ -53,7 +53,7 @@ class Request
 	 */
 	public function getRequestMethod(): int
 	{
-		return $this->_RequestMethod;
+		return $this->_requestMethod;
 	}
 
 	/**
@@ -61,7 +61,7 @@ class Request
 	 */
 	public function getHeaders(): array
 	{
-		return $this->_Headers;
+		return $this->_headers;
 	}
 
 	/**
@@ -69,92 +69,92 @@ class Request
 	 */
 	public function getParameters(): array
 	{
-		return $this->_Parameters;
+		return $this->_parameters;
 	}
 
 	/**
-	 * @param string $Name
+	 * @param string $name
 	 * @return Parameter|null
 	 */
-	public function getParameter( string $Name ): ?Parameter
+	public function getParameter( string $name ): ?Parameter
 	{
-		return $this->_Parameters[ $Name ] ?? null;
+		return $this->_parameters[ $name ] ?? null;
 	}
 
 	/**
-	 * @param string $FileName
+	 * @param string $fileName
 	 * @return void
 	 */
-	public function loadFile( string $FileName ): void
+	public function loadFile( string $fileName ): void
 	{
-		$Name = pathinfo( $FileName )[ 'filename' ];
-		$Data = Yaml::parseFile( $FileName );
+		$name = pathinfo( $fileName )[ 'filename' ];
+		$data = Yaml::parseFile( $fileName );
 
-		$this->_RequestMethod = RequestMethod::getType( $Data[ 'request' ][ 'method' ] );
-		$this->_Headers       = $Data[ 'request' ][ 'headers' ];
+		$this->_requestMethod = RequestMethod::getType( $data[ 'request' ][ 'method' ] );
+		$this->_headers       = $data[ 'request' ][ 'headers' ];
 
-		$this->loadData( $Name, $Data[ 'request' ] );
+		$this->loadData( $name, $data[ 'request' ] );
 	}
 
 	/**
-	 * @param string $Name
-	 * @param array $Request
+	 * @param string $name
+	 * @param array $request
 	 */
-	protected function loadData( string $Name, array $Request ) : void
+	protected function loadData( string $name, array $request ) : void
 	{
-		$this->_Name = $Name;
-		$this->_Parameters = [];
+		$this->_name = $name;
+		$this->_parameters = [];
 
-		if( !isset( $Request[ 'properties' ] ) )
+		if( !isset( $request[ 'properties' ] ) )
 		{
 			return;
 		}
 
-		foreach( $Request[ 'properties' ] as $Name => $Parameter )
+		foreach( $request[ 'properties' ] as $name => $parameter )
 		{
-			$P = new Parameter();
-			$P->setName( $Name );
+			$p = new Parameter();
+			$p->setName( $name );
 
-			if( isset( $Parameter[ 'required' ] ) )
+			if( isset( $parameter[ 'required' ] ) )
 			{
-				$P->setRequired( $Parameter[ 'required' ] );
+				$p->setRequired( $parameter[ 'required' ] );
 			}
 
-			$P->setType( $Parameter[ 'type' ] );
+			$p->setType( $parameter[ 'type' ] );
 
-			if( $P->getType() === 'object' )
+			if( $p->getType() === 'object' )
 			{
-				$Request = new Request();
-				$Request->loadData( $this->_Name.':'.$Name, $Parameter );
-				$P->setValue( $Request );
+				$request = new Request();
+				$request->loadData( $this->_name.':'.$name, $parameter );
+				$p->setValue( $request );
 			}
 
-			if( isset( $Parameter[ 'minLength' ] ) )
+			if( isset( $parameter[ 'minLength' ] ) )
 			{
-				$P->setMinLength( $Parameter[ 'minLength' ] );
+				$p->setMinLength( $parameter[ 'minLength' ] );
 			}
 
-			if( isset( $Parameter[ 'maxLength' ] ) )
+			if( isset( $parameter[ 'maxLength' ] ) )
 			{
-				$P->setMaxLength( $Parameter[ 'maxLength' ] );
+				$p->setMaxLength( $parameter[ 'maxLength' ] );
 			}
 
-			if( isset( $Parameter[ 'minimum' ] ) )
+			if( isset( $parameter[ 'minimum' ] ) )
 			{
-				$P->setMinValue( $Parameter[ 'minimum' ] );
+				$p->setMinValue( $parameter[ 'minimum' ] );
 			}
 
-			if( isset( $Parameter[ 'maximum' ] ) )
+			if( isset( $parameter[ 'maximum' ] ) )
 			{
-				$P->setMaxValue( $Parameter[ 'maximum' ] );
+				$p->setMaxValue( $parameter[ 'maximum' ] );
 			}
 
-			if( isset( $Parameter[ 'pattern' ] ) )
+			if( isset( $parameter[ 'pattern' ] ) )
 			{
-				$P->setPattern( $Parameter[ 'pattern' ] );
+				$p->setPattern( $parameter[ 'pattern' ] );
 			}
 
-			$this->_Parameters[ $P->getName() ] = $P;
+			$this->_parameters[ $p->getName() ] = $p;
 		}
 	}
 
@@ -182,83 +182,83 @@ class Request
 	}
 
 	/**
-	 * @param array $Payload
+	 * @param array $payload
 	 * @throws Validation
 	 */
-	public function processPayload( array $Payload ): void
+	public function processPayload( array $payload ): void
 	{
-		$this->_Errors = [];
+		$this->_errors = [];
 
-		$RequiredHeaders = $this->_Headers;
+		$requiredHeaders = $this->_headers;
 
-		$Headers = $this->getHttpHeaders();
+		$headers = $this->getHttpHeaders();
 
-		foreach( $RequiredHeaders as $RequiredName => $RequiredValue )
+		foreach( $requiredHeaders as $requiredName => $requiredValue )
 		{
-			if( !array_key_exists( $RequiredName, $Headers ) )
+			if( !array_key_exists( $requiredName, $headers ) )
 			{
-				$Msg = 'Missing header: ' . $RequiredName;
-				Log::warning( $Msg );
+				$msg = 'Missing header: ' . $requiredName;
+				Log::warning( $msg );
 
-				$this->_Errors[] = $Msg;
+				$this->_errors[] = $msg;
 				continue;
 			}
 
-			if( $Headers[ $RequiredName ] !== $RequiredValue )
+			if( $headers[ $requiredName ] !== $requiredValue )
 			{
-				$Msg = "Invalid header value: $RequiredName, expected: $RequiredValue, got: " . $Headers[ $RequiredName ];
-				Log::warning( $Msg );
+				$msg = "Invalid header value: $requiredName, expected: $requiredValue, got: " . $headers[ $requiredName ];
+				Log::warning( $msg );
 
-				$this->_Errors[] = $Msg;
+				$this->_errors[] = $msg;
 			}
 		}
 
-		foreach( $this->_Parameters as $Parameter )
+		foreach( $this->_parameters as $parameter )
 		{
-			if( !isset( $Payload[ $Parameter->getName() ] )  )
+			if( !isset( $payload[ $parameter->getName() ] )  )
 			{
-				$this->validateParameter( $Parameter );
+				$this->validateParameter( $parameter );
 				continue;
 			}
 
-			if( $Parameter->getType() === 'object' )
+			if( $parameter->getType() === 'object' )
 			{
 				try
 				{
-					$Parameter->getValue()->processPayload( $Payload[ $Parameter->getName() ] );
+					$parameter->getValue()->processPayload( $payload[ $parameter->getName() ] );
 					continue;
 				}
-				catch( Validation $Exception )
+				catch( Validation $exception )
 				{
-					Log::warning( $Exception->getMessage() );
-					$this->_Errors = array_merge( $this->_Errors, $Exception->errors );
+					Log::warning( $exception->getMessage() );
+					$this->_errors = array_merge( $this->_errors, $exception->errors );
 				}
 			}
 
-			$Parameter->setValue( $Payload[ $Parameter->getName() ] );
+			$parameter->setValue( $payload[ $parameter->getName() ] );
 
-			$this->validateParameter( $Parameter );
+			$this->validateParameter( $parameter );
 		}
 
-		if( !empty( $this->_Errors ) )
+		if( !empty( $this->_errors ) )
 		{
-			throw new Validation( $this->_Name, $this->_Errors );
+			throw new Validation( $this->_name, $this->_errors );
 		}
 	}
 
 	/**
-	 * @param mixed $Parameter
+	 * @param mixed $parameter
 	 */
-	protected function validateParameter( mixed $Parameter ): void
+	protected function validateParameter( mixed $parameter ): void
 	{
 		try
 		{
-			$Parameter->validate();
+			$parameter->validate();
 		}
-		catch( Validation $Exception )
+		catch( Validation $exception )
 		{
-			Log::warning( $Exception->getMessage() );
-			$this->_Errors[] = $Exception->getMessage();
+			Log::warning( $exception->getMessage() );
+			$this->_errors[] = $exception->getMessage();
 		}
 	}
 }

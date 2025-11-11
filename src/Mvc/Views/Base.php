@@ -40,10 +40,10 @@ namespace Neuron\Mvc\Views;
 
 class Base
 {
-	private string $_Layout;
-	private string $_Controller;
-	private string $_Page;
-	private ?bool $_CacheEnabled = null;
+	private string $_layout;
+	private string $_controller;
+	private string $_page;
+	private ?bool $_cacheEnabled = null;
 
 	public function __construct()
 	{}
@@ -53,16 +53,16 @@ class Base
 	 */
 	public function getLayout(): string
 	{
-		return $this->_Layout;
+		return $this->_layout;
 	}
 
 	/**
-	 * @param string $Layout
+	 * @param string $layout
 	 * @return Html
 	 */
-	public function setLayout( string $Layout ): Base
+	public function setLayout( string $layout ): Base
 	{
-		$this->_Layout = $Layout;
+		$this->_layout = $layout;
 		return $this;
 	}
 
@@ -71,16 +71,16 @@ class Base
 	 */
 	public function getController(): string
 	{
-		return $this->_Controller;
+		return $this->_controller;
 	}
 
 	/**
-	 * @param string $Controller
+	 * @param string $controller
 	 * @return Html
 	 */
-	public function setController( string $Controller ): Base
+	public function setController( string $controller ): Base
 	{
-		$this->_Controller = $Controller;
+		$this->_controller = $controller;
 		return $this;
 	}
 
@@ -89,16 +89,16 @@ class Base
 	 */
 	public function getPage(): string
 	{
-		return $this->_Page;
+		return $this->_page;
 	}
 
 	/**
-	 * @param string $Page
+	 * @param string $page
 	 * @return Html
 	 */
-	public function setPage( string $Page ): Base
+	public function setPage( string $page ): Base
 	{
-		$this->_Page = $Page;
+		$this->_page = $page;
 		return $this;
 	}
 
@@ -109,18 +109,18 @@ class Base
 	 */
 	public function getCacheEnabled(): ?bool
 	{
-		return $this->_CacheEnabled;
+		return $this->_cacheEnabled;
 	}
 
 	/**
 	 * Set cache enabled setting for this view instance
 	 * 
-	 * @param bool|null $CacheEnabled null uses global config, true/false overrides
+	 * @param bool|null $cacheEnabled null uses global config, true/false overrides
 	 * @return Base
 	 */
-	public function setCacheEnabled( ?bool $CacheEnabled ): Base
+	public function setCacheEnabled( ?bool $cacheEnabled ): Base
 	{
-		$this->_CacheEnabled = $CacheEnabled;
+		$this->_cacheEnabled = $cacheEnabled;
 		return $this;
 	}
 }

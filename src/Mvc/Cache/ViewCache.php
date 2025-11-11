@@ -8,112 +8,112 @@ use Neuron\Mvc\Cache\Storage\ICacheStorage;
 
 class ViewCache
 {
-	private bool $_Enabled;
-	private int $_DefaultTtl;
-	private ICacheStorage $_Storage;
-	private ?CacheConfig $_Config;
+	private bool $_enabled;
+	private int $_defaultTtl;
+	private ICacheStorage $_storage;
+	private ?CacheConfig $_config;
 
 	/**
 	 * ViewCache constructor
 	 *
-	 * @param ICacheStorage $Storage
-	 * @param bool $Enabled
-	 * @param int $DefaultTtl
-	 * @param CacheConfig|null $Config
+	 * @param ICacheStorage $storage
+	 * @param bool $enabled
+	 * @param int $defaultTtl
+	 * @param CacheConfig|null $config
 	 */
-	public function __construct( ICacheStorage $Storage, bool $Enabled = true, int $DefaultTtl = 3600, ?CacheConfig $Config = null )
+	public function __construct( ICacheStorage $storage, bool $enabled = true, int $defaultTtl = 3600, ?CacheConfig $config = null )
 	{
-		$this->_Storage = $Storage;
-		$this->_Enabled = $Enabled;
-		$this->_DefaultTtl = $DefaultTtl;
-		$this->_Config = $Config;
+		$this->_storage = $storage;
+		$this->_enabled = $enabled;
+		$this->_defaultTtl = $defaultTtl;
+		$this->_config = $config;
 	}
 
 	/**
 	 * Get cached content
 	 *
-	 * @param string $Key
+	 * @param string $key
 	 * @return string|null
 	 */
-	public function get( string $Key ): ?string
+	public function get( string $key ): ?string
 	{
-		if( !$this->_Enabled )
+		if( !$this->_enabled )
 		{
 			return null;
 		}
 
-		$Data = $this->_Storage->read( $Key );
+		$data = $this->_storage->read( $key );
 
-		if( !$Data )
+		if( !$data )
 		{
-			Log::debug( "Cache miss for key: $Key" );
+			Log::debug( "Cache miss for key: $key" );
 			return null;
 		}
 
-		Log::debug( "Cache hit for key: $Key" );
+		Log::debug( "Cache hit for key: $key" );
 
-		return $Data;
+		return $data;
 	}
 
 	/**
 	 * Set cached content
 	 *
-	 * @param string $Key
-	 * @param string $Content
-	 * @param int|null $Ttl
+	 * @param string $key
+	 * @param string $content
+	 * @param int|null $ttl
 	 * @return bool
 	 * @throws CacheException
 	 */
-	public function set( string $Key, string $Content, ?int $Ttl = null ): bool
+	public function set( string $key, string $content, ?int $ttl = null ): bool
 	{
-		if( !$this->_Enabled )
+		if( !$this->_enabled )
 		{
 			return false;
 		}
 
-		$Ttl = $Ttl ?? $this->_DefaultTtl;
-		
-		$Result = $this->_Storage->write( $Key, $Content, $Ttl );
-		
+		$ttl = $ttl ?? $this->_defaultTtl;
+
+		$result = $this->_storage->write( $key, $content, $ttl );
+
 		// Run garbage collection based on probability
-		if( $Result && $this->shouldRunGc() )
+		if( $result && $this->shouldRunGc() )
 		{
 			$this->gc();
 		}
-		
-		return $Result;
+
+		return $result;
 	}
 
 	/**
 	 * Check if cache key exists
 	 *
-	 * @param string $Key
+	 * @param string $key
 	 * @return bool
 	 */
-	public function exists( string $Key ): bool
+	public function exists( string $key ): bool
 	{
-		if( !$this->_Enabled )
+		if( !$this->_enabled )
 		{
 			return false;
 		}
 
-		return $this->_Storage->exists( $Key );
+		return $this->_storage->exists( $key );
 	}
 
 	/**
 	 * Delete cache entry
 	 *
-	 * @param string $Key
+	 * @param string $key
 	 * @return bool
 	 */
-	public function delete( string $Key ): bool
+	public function delete( string $key ): bool
 	{
-		if( !$this->_Enabled )
+		if( !$this->_enabled )
 		{
 			return false;
 		}
 
-		return $this->_Storage->delete( $Key );
+		return $this->_storage->delete( $key );
 	}
 
 	/**
@@ -123,22 +123,22 @@ class ViewCache
 	 */
 	public function clear(): bool
 	{
-		return $this->_Storage->clear();
+		return $this->_storage->clear();
 	}
 
 	/**
 	 * Generate cache key from controller, view and data
 	 *
-	 * @param string $Controller
-	 * @param string $View
-	 * @param array $Data
+	 * @param string $controller
+	 * @param string $view
+	 * @param array $data
 	 * @return string
 	 */
-	public function generateKey( string $Controller, string $View, array $Data ): string
+	public function generateKey( string $controller, string $view, array $data ): string
 	{
-		$DataKey = $this->hashData( $Data );
-		
-		return sprintf( 'view_%s_%s_%s', $Controller, $View, $DataKey );
+		$dataKey = $this->hashData( $data );
+
+		return sprintf( 'view_%s_%s_%s', $controller, $view, $dataKey );
 	}
 
 	/**
@@ -148,18 +148,18 @@ class ViewCache
 	 */
 	public function isEnabled(): bool
 	{
-		return $this->_Enabled;
+		return $this->_enabled;
 	}
 
 	/**
 	 * Enable or disable cache
 	 *
-	 * @param bool $Enabled
+	 * @param bool $enabled
 	 * @return void
 	 */
-	public function setEnabled( bool $Enabled ): void
+	public function setEnabled( bool $enabled ): void
 	{
-		$this->_Enabled = $Enabled;
+		$this->_enabled = $enabled;
 	}
 
 	/**
@@ -170,36 +170,36 @@ class ViewCache
 	public function gc(): int
 	{
 		Log::debug( "Cache gc" );
-		return $this->_Storage->gc();
+		return $this->_storage->gc();
 	}
 
 	/**
 	 * Hash data array for cache key
 	 *
-	 * @param array $Data
+	 * @param array $data
 	 * @return string
 	 */
-	private function hashData( array $Data ): string
+	private function hashData( array $data ): string
 	{
 		// Filter out non-serializable objects (like UrlHelper)
-		$serializableData = $this->filterSerializableData( $Data );
-		
+		$serializableData = $this->filterSerializableData( $data );
+
 		ksort( $serializableData );
-		
+
 		return md5( serialize( $serializableData ) );
 	}
 
 	/**
 	 * Filter out non-serializable data from array
 	 *
-	 * @param array $Data
+	 * @param array $data
 	 * @return array
 	 */
-	private function filterSerializableData( array $Data ): array
+	private function filterSerializableData( array $data ): array
 	{
 		$filtered = [];
-		
-		foreach( $Data as $key => $value )
+
+		foreach( $data as $key => $value )
 		{
 			// Skip objects that are likely to contain non-serializable content
 			if( is_object( $value ) )
@@ -210,7 +210,7 @@ class ViewCache
 				{
 					continue;
 				}
-				
+
 				// Try to serialize other objects, skip if it fails
 				try
 				{
@@ -221,10 +221,10 @@ class ViewCache
 					continue;
 				}
 			}
-			
+
 			$filtered[$key] = $value;
 		}
-		
+
 		return $filtered;
 	}
 
@@ -235,29 +235,29 @@ class ViewCache
 	 */
 	private function shouldRunGc(): bool
 	{
-		if( !$this->_Config )
+		if( !$this->_config )
 		{
 			// If no config, use default 1% probability
 			return mt_rand( 1, 100 ) === 1;
 		}
-		
-		$Probability = $this->_Config->getGcProbability();
-		
+
+		$probability = $this->_config->getGcProbability();
+
 		// If probability is 0, GC is disabled
-		if( $Probability <= 0 )
+		if( $probability <= 0 )
 		{
 			return false;
 		}
-		
+
 		// If probability is 1 or higher, always run
-		if( $Probability >= 1 )
+		if( $probability >= 1 )
 		{
 			return true;
 		}
-		
-		$Divisor = $this->_Config->getGcDivisor();
-		
+
+		$divisor = $this->_config->getGcDivisor();
+
 		// Roll the dice
-		return mt_rand( 1, $Divisor ) <= ( $Probability * $Divisor );
+		return mt_rand( 1, $divisor ) <= ( $probability * $divisor );
 	}
 }

@@ -9,138 +9,138 @@ use Neuron\Patterns\Registry;
 
 trait CacheableView
 {
-	private ?ViewCache $_Cache = null;
+	private ?ViewCache $_cache = null;
 
 	/**
 	 * Get cache key for current view
 	 *
-	 * @param array $Data
+	 * @param array $data
 	 * @return string
 	 */
-	protected function getCacheKey( array $Data ): string
+	protected function getCacheKey( array $data ): string
 	{
 		// Check view-level cache setting first
 		if( $this->getCacheEnabled() === false )
 		{
 			return '';
 		}
-		
-		$Cache = $this->getCache();
-		
-		if( !$Cache )
+
+		$cache = $this->getCache();
+
+		if( !$cache )
 		{
 			return '';
 		}
-		
+
 		// If cache is explicitly enabled at view level, generate key even if globally disabled
-		if( $this->getCacheEnabled() === true || $Cache->isEnabled() )
+		if( $this->getCacheEnabled() === true || $cache->isEnabled() )
 		{
-			return $Cache->generateKey( 
-				$this->getController(), 
-				$this->getPage(), 
-				$Data 
+			return $cache->generateKey(
+				$this->getController(),
+				$this->getPage(),
+				$data
 			);
 		}
-		
+
 		return '';
 	}
 
 	/**
 	 * Get cached content
 	 *
-	 * @param string $Key
+	 * @param string $key
 	 * @return string|null
 	 */
-	protected function getCachedContent( string $Key ): ?string
+	protected function getCachedContent( string $key ): ?string
 	{
 		// Check view-level cache setting first
 		if( $this->getCacheEnabled() === false )
 		{
 			return null;
 		}
-		
-		$Cache = $this->getCache();
-		
-		if( !$Cache )
+
+		$cache = $this->getCache();
+
+		if( !$cache )
 		{
 			return null;
 		}
-		
+
 		// If cache is explicitly enabled at view level, bypass global check
 		if( $this->getCacheEnabled() === true )
 		{
 			// When explicitly enabled, bypass global check
 			// We temporarily enable cache to retrieve content
-			$WasEnabled = $Cache->isEnabled();
-			if( !$WasEnabled )
+			$wasEnabled = $cache->isEnabled();
+			if( !$wasEnabled )
 			{
 				// Use reflection to temporarily enable cache
-				$Reflection = new \ReflectionObject( $Cache );
-				$EnabledProperty = $Reflection->getProperty( '_Enabled' );
-				$EnabledProperty->setAccessible( true );
-				$EnabledProperty->setValue( $Cache, true );
+				$reflection = new \ReflectionObject( $cache );
+				$enabledProperty = $reflection->getProperty( '_enabled' );
+				$enabledProperty->setAccessible( true );
+				$enabledProperty->setValue( $cache, true );
 			}
-			
+
 			try
 			{
-				$Content = $Cache->get( $Key );
+				$content = $cache->get( $key );
 			}
 			finally
 			{
-				if( !$WasEnabled )
+				if( !$wasEnabled )
 				{
 					// Restore original state
-					$EnabledProperty->setValue( $Cache, false );
+					$enabledProperty->setValue( $cache, false );
 				}
 			}
-			
-			return $Content;
+
+			return $content;
 		}
-		
+
 		// Otherwise use normal cache method which checks global setting
-		return $Cache->get( $Key );
+		return $cache->get( $key );
 	}
 
 	/**
 	 * Set cached content
 	 *
-	 * @param string $Key
-	 * @param string $Content
+	 * @param string $key
+	 * @param string $content
 	 * @return void
 	 */
-	protected function setCachedContent( string $Key, string $Content ): void
+	protected function setCachedContent( string $key, string $content ): void
 	{
 		// Check view-level cache setting first
 		if( $this->getCacheEnabled() === false )
 		{
 			return;
 		}
-		
-		$Cache = $this->getCache();
-		
-		if( !$Cache )
+
+		$cache = $this->getCache();
+
+		if( !$cache )
 		{
 			return;
 		}
-		
+
 		// If cache is explicitly enabled at view level, use it even if globally disabled
 		if( $this->getCacheEnabled() === true )
 		{
 			// When explicitly enabled, bypass global check
 			// We can't directly access storage, so we temporarily enable cache
-			$WasEnabled = $Cache->isEnabled();
-			if( !$WasEnabled )
+			$wasEnabled = $cache->isEnabled();
+			if( !$wasEnabled )
 			{
 				// Use reflection to temporarily enable cache
-				$Reflection = new \ReflectionObject( $Cache );
-				$EnabledProperty = $Reflection->getProperty( '_Enabled' );
-				$EnabledProperty->setAccessible( true );
-				$EnabledProperty->setValue( $Cache, true );
+				$reflection = new \ReflectionObject( $cache );
+				$enabledProperty = $reflection->getProperty( '_enabled' );
+				$enabledProperty->setAccessible( true );
+				$enabledProperty->setValue( $cache, true );
 			}
-			
+
 			try
 			{
-				$Cache->set( $Key, $Content );
+				$cache->set( $key, $content );
 			}
 			catch( CacheException $e )
 			{
@@ -148,22 +148,22 @@ trait CacheableView
 			}
 			finally
 			{
-				if( !$WasEnabled )
+				if( !$wasEnabled )
 				{
 					// Restore original state
-					$EnabledProperty->setValue( $Cache, false );
+					$enabledProperty->setValue( $cache, false );
 				}
 			}
 		}
-		elseif( $Cache->isEnabled() )
+		elseif( $cache->isEnabled() )
 		{
 			try
 			{
-				$Cache->set( $Key, $Content );
+				$cache->set( $key, $content );
 			}
 			catch( CacheException $e )
 			{
-				// Silently fail on cache write errors  
+				// Silently fail on cache write errors
 			}
 		}
 	}
@@ -176,16 +176,16 @@ trait CacheableView
 	protected function isCacheEnabled(): bool
 	{
 		// Check view-level cache setting first
-		$ViewCacheSetting = $this->getCacheEnabled();
-		if( $ViewCacheSetting !== null )
+		$viewCacheSetting = $this->getCacheEnabled();
+		if( $viewCacheSetting !== null )
 		{
-			return $ViewCacheSetting;
+			return $viewCacheSetting;
 		}
-		
+
 		// Fall back to global cache setting
-		$Cache = $this->getCache();
-		
-		return $Cache && $Cache->isEnabled();
+		$cache = $this->getCache();
+
+		return $cache && $cache->isEnabled();
 	}
 
 	/**
@@ -195,12 +195,12 @@ trait CacheableView
 	 */
 	private function getCache(): ?ViewCache
 	{
-		if( $this->_Cache === null )
+		if( $this->_cache === null )
 		{
-			$this->_Cache = $this->initializeCache();
+			$this->_cache = $this->initializeCache();
 		}
-		
-		return $this->_Cache;
+
+		return $this->_cache;
 	}
 
 	/**
@@ -210,50 +210,50 @@ trait CacheableView
 	 */
 	private function initializeCache(): ?ViewCache
 	{
-		$Registry = Registry::getInstance();
-		
+		$registry = Registry::getInstance();
+
 		// Check if cache is already in registry
-		$ViewCache = $Registry->get( 'ViewCache' );
-		if( $ViewCache !== null )
+		$viewCache = $registry->get( 'ViewCache' );
+		if( $viewCache !== null )
 		{
-			return $ViewCache;
+			return $viewCache;
 		}
-		
+
 		// Try to create cache from settings
-		$Settings = $Registry->get( 'Settings' );
-		if( $Settings !== null )
+		$settings = $registry->get( 'Settings' );
+		if( $settings !== null )
 		{
 			// Handle both SettingManager and ISettingSource
-			if( $Settings instanceof \Neuron\Data\Setting\SettingManager )
+			if( $settings instanceof \Neuron\Data\Setting\SettingManager )
 			{
-				$SettingSource = $Settings->getSource();
+				$settingSource = $settings->getSource();
 			}
 			else
 			{
-				$SettingSource = $Settings;
+				$settingSource = $settings;
 			}
-			
-			$Config = CacheConfig::fromSettings( $SettingSource );
-			
-			if( $Config->isEnabled() )
+
+			$config = CacheConfig::fromSettings( $settingSource );
+
+			if( $config->isEnabled() )
 			{
-				$ViewType = strtolower( (new \ReflectionClass( $this ))->getShortName() );
-				
-				if( !$Config->isViewTypeEnabled( $ViewType ) )
+				$viewType = strtolower( (new \ReflectionClass( $this ))->getShortName() );
+
+				if( !$config->isViewTypeEnabled( $viewType ) )
 				{
 					return null;
 				}
-				
+
 				try
 				{
-					$BasePath = $Registry->get( 'Base.Path' ) ?? '.';
+					$basePath = $registry->get( 'Base.Path' ) ?? '.';
 
-					$Storage = CacheStorageFactory::createFromConfig( $Config, $BasePath );
-					$Cache = new ViewCache( $Storage, true, $Config->getDefaultTtl(), $Config );
+					$storage = CacheStorageFactory::createFromConfig( $config, $basePath );
+					$cache = new ViewCache( $storage, true, $config->getDefaultTtl(), $config );
 
-					$Registry->set( 'ViewCache', $Cache );
+					$registry->set( 'ViewCache', $cache );
 
-					return $Cache;
+					return $cache;
 				}
 				catch( CacheException $e )
 				{
@@ -262,7 +262,7 @@ trait CacheableView
 				}
 			}
 		}
-		
+
 		return null;
 	}
 }

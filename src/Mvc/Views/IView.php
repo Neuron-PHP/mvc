@@ -57,9 +57,9 @@ interface IView
 {
 	/**
 	 * Render data array into formatted output string.
-	 * 
-	 * @param array $Data Associative array of data to render
+	 *
+	 * @param array $data Associative array of data to render
 	 * @return string Formatted output ready for response
 	 */
-	public function render( array $Data ) : string;
+	public function render( array $data ) : string;
 }

@@ -20,7 +20,7 @@ interface IController
 {
 	public function __construct( ?Application $app );
 
-	public function renderHtml(  HttpResponseStatus $ResponseCode, array $Data = [], string $Page = "index", string $Layout = "default", ?bool $CacheEnabled = null ) : string;
-	public function renderJson( HttpResponseStatus $ResponseCode, array $Data = [] ) : string;
-	public function renderXml( HttpResponseStatus $ResponseCode, array $Data = [] ) : string;
+	public function renderHtml(  HttpResponseStatus $responseCode, array $data = [], string $page = "index", string $layout = "default", ?bool $cacheEnabled = null ) : string;
+	public function renderJson( HttpResponseStatus $responseCode, array $data = [] ) : string;
+	public function renderXml( HttpResponseStatus $responseCode, array $data = [] ) : string;
 }

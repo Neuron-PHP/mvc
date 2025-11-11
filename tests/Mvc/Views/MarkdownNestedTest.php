@@ -28,7 +28,7 @@ class MarkdownNestedTest extends TestCase
 				]
 			],
 			'layouts' => [
-				'default.php' => '<html><body><?= $Content ?></body></html>'
+				'default.php' => '<html><body><?= $content ?></body></html>'
 			]
 		]);
 

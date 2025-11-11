@@ -21,35 +21,35 @@ use Neuron\Validation\IsUuid;
 
 class Parameter
 {
-	private array  $_Errors;
-	private string $_Name;
-	private bool   $_Required;
-	private string $_Type;
-	private int    $_MinLength;
-	private int    $_MaxLength;
-	private int    $_MinValue;
-	private int    $_MaxValue;
-	private string $_Pattern;
-	private mixed  $_Value = '';
-	private array  $_Validators;
+	private array  $_errors;
+	private string $_name;
+	private bool   $_required;
+	private string $_type;
+	private int    $_minLength;
+	private int    $_maxLength;
+	private int    $_minValue;
+	private int    $_maxValue;
+	private string $_pattern;
+	private mixed  $_value = '';
+	private array  $_validators;
 
 
 	public function __construct()
 	{
-		$this->_Errors		= [];
-		$this->_Name		= '';
-		$this->_Required	= false;
-		$this->_Type		= '';
-		$this->_MinLength	= 0;
-		$this->_MaxLength	= 0;
-		$this->_MinValue	= 0;
-		$this->_MaxValue	= 0;
-		$this->_Pattern	= '';
+		$this->_errors		= [];
+		$this->_name		= '';
+		$this->_required	= false;
+		$this->_type		= '';
+		$this->_minLength	= 0;
+		$this->_maxLength	= 0;
+		$this->_minValue	= 0;
+		$this->_maxValue	= 0;
+		$this->_pattern	= '';
 
-		$IntlPhoneNumber = new IsPhoneNumber();
-		$IntlPhoneNumber->setType( IsPhoneNumber::INTERNATIONAL );
+		$intlPhoneNumber = new IsPhoneNumber();
+		$intlPhoneNumber->setType( IsPhoneNumber::INTERNATIONAL );
 		
-		$this->_Validators = [
+		$this->_validators = [
 			'array'					=> new IsArray(),
 			'boolean'				=> new IsBoolean(),
 			'currency'				=> new IsCurrency(),
@@ -69,7 +69,7 @@ class Parameter
 			'uuid'					=> new IsUuid(),
 			'url'						=> new IsUrl(),
 			'us_phone_number'		=> new IsPhoneNumber(),
-			'intl_phone_number' 	=> $IntlPhoneNumber
+			'intl_phone_number' 	=> $intlPhoneNumber
 		];
 	}
 
@@ -78,16 +78,16 @@ class Parameter
 	 */
 	public function getName(): string
 	{
-		return $this->_Name;
+		return $this->_name;
 	}
 
 	/**
-	 * @param string $Name
+	 * @param string $name
 	 * @return Parameter
 	 */
-	public function setName( string $Name ): Parameter
+	public function setName( string $name ): Parameter
 	{
-		$this->_Name = $Name;
+		$this->_name = $name;
 		return $this;
 	}
 
@@ -96,16 +96,16 @@ class Parameter
 	 */
 	public function isRequired(): bool
 	{
-		return $this->_Required;
+		return $this->_required;
 	}
 
 	/**
-	 * @param bool $Required
+	 * @param bool $required
 	 * @return Parameter
 	 */
-	public function setRequired( bool $Required ): Parameter
+	public function setRequired( bool $required ): Parameter
 	{
-		$this->_Required = $Required;
+		$this->_required = $required;
 		return $this;
 	}
 
@@ -114,16 +114,16 @@ class Parameter
 	 */
 	public function getType(): string
 	{
-		return $this->_Type;
+		return $this->_type;
 	}
 
 	/**
-	 * @param string $Type
+	 * @param string $type
 	 * @return Parameter
 	 */
-	public function setType( string $Type ): Parameter
+	public function setType( string $type ): Parameter
 	{
-		$this->_Type = $Type;
+		$this->_type = $type;
 		return $this;
 	}
 
@@ -132,16 +132,16 @@ class Parameter
 	 */
 	public function getMinLength(): int
 	{
-		return $this->_MinLength;
+		return $this->_minLength;
 	}
 
 	/**
-	 * @param int $MinLength
+	 * @param int $minLength
 	 * @return Parameter
 	 */
-	public function setMinLength( int $MinLength ): Parameter
+	public function setMinLength( int $minLength ): Parameter
 	{
-		$this->_MinLength = $MinLength;
+		$this->_minLength = $minLength;
 		return $this;
 	}
 
@@ -150,16 +150,16 @@ class Parameter
 	 */
 	public function getMaxLength(): int
 	{
-		return $this->_MaxLength;
+		return $this->_maxLength;
 	}
 
 	/**
-	 * @param int $MaxLength
+	 * @param int $maxLength
 	 * @return Parameter
 	 */
-	public function setMaxLength( int $MaxLength ): Parameter
+	public function setMaxLength( int $maxLength ): Parameter
 	{
-		$this->_MaxLength = $MaxLength;
+		$this->_maxLength = $maxLength;
 		return $this;
 	}
 
@@ -168,16 +168,16 @@ class Parameter
 	 */
 	public function getMinValue(): int
 	{
-		return $this->_MinValue;
+		return $this->_minValue;
 	}
 
 	/**
-	 * @param int $MinValue
+	 * @param int $minValue
 	 * @return Parameter
 	 */
-	public function setMinValue( int $MinValue ): Parameter
+	public function setMinValue( int $minValue ): Parameter
 	{
-		$this->_MinValue = $MinValue;
+		$this->_minValue = $minValue;
 		return $this;
 	}
 
@@ -186,16 +186,16 @@ class Parameter
 	 */
 	public function getMaxValue(): int
 	{
-		return $this->_MaxValue;
+		return $this->_maxValue;
 	}
 
 	/**
-	 * @param int $MaxValue
+	 * @param int $maxValue
 	 * @return Parameter
 	 */
-	public function setMaxValue( int $MaxValue ): Parameter
+	public function setMaxValue( int $maxValue ): Parameter
 	{
-		$this->_MaxValue = $MaxValue;
+		$this->_maxValue = $maxValue;
 		return $this;
 	}
 
@@ -204,16 +204,16 @@ class Parameter
 	 */
 	public function getPattern(): string
 	{
-		return $this->_Pattern;
+		return $this->_pattern;
 	}
 
 	/**
-	 * @param string $Pattern
+	 * @param string $pattern
 	 * @return Parameter
 	 */
-	public function setPattern( string $Pattern ): Parameter
+	public function setPattern( string $pattern ): Parameter
 	{
-		$this->_Pattern = $Pattern;
+		$this->_pattern = $pattern;
 		return $this;
 	}
 
@@ -222,16 +222,16 @@ class Parameter
 	 */
 	public function getValue(): mixed
 	{
-		return $this->_Value;
+		return $this->_value;
 	}
 
 	/**
-	 * @param mixed $Value
+	 * @param mixed $value
 	 * @return Parameter
 	 */
-	public function setValue( mixed $Value ): Parameter
+	public function setValue( mixed $value ): Parameter
 	{
-		$this->_Value = $Value;
+		$this->_value = $value;
 		return $this;
 	}
 
@@ -240,7 +240,7 @@ class Parameter
 	 */
 	public function validate(): void
 	{
-		if( $this->validateRequired() && $this->_Value )
+		if( $this->validateRequired() && $this->_value )
 		{
 			$this->validateType();
 			$this->validateLength();
@@ -248,21 +248,21 @@ class Parameter
 			$this->validatePattern();
 		}
 
-		if( $this->_Errors )
+		if( $this->_errors )
 		{
-			foreach( $this->_Errors as $Error )
+			foreach( $this->_errors as $error )
 			{
-				Log::warning( $Error );
+				Log::warning( $error );
 			}
-			throw new Validation( $this->_Name, $this->_Errors );
+			throw new Validation( $this->_name, $this->_errors );
 		}
 	}
 
 	private function validateRequired(): bool
 	{
-		if( $this->_Required && !$this->_Value )
+		if( $this->_required && !$this->_value )
 		{
-			$this->_Errors[] = 'Missing required parameter: ' . $this->_Name;
+			$this->_errors[] = 'Missing required parameter: ' . $this->_name;
 			return false;
 		}
 
@@ -271,20 +271,19 @@ class Parameter
 
 	private function validateType(): bool
 	{
-		$Validator = $this->_Validators[ $this->_Type ];
+		$validator = $this->_validators[ $this->_type ];
 
-		if( !$Validator )
+		if( !$validator )
 		{
-			$this->_Errors[] = $this->_Name.':'.$this->_Type.' Invalid type specified '.$this->getType();
+			$this->_errors[] = $this->_name.':'.$this->_type.' Invalid type specified '.$this->getType();
 			return false;
 		}
 
-		if( !$Validator->isValid( $this->_Value ) )
+		if( !$validator->isValid( $this->_value ) )
 		{
-			$Value = is_string( $this->_Value ) ? $this->_Value : gettype( $this->_Value );
-			$Message = $this->_Name.':'.$this->_Type.' Invalid value '.$Value;
-			$this->_Errors[] = $Message;
-			//fprintf( STDERR, "%s\n", $Message );
+			$value = is_string( $this->_value ) ? $this->_value : gettype( $this->_value );
+			$message = $this->_name.':'.$this->_type.' Invalid value '.$value;
+			$this->_errors[] = $message;
 			return false;
 		}
 
@@ -293,15 +292,15 @@ class Parameter
 
 	private function validateLength(): bool
 	{
-		if( $this->_MinLength > 0 && strlen( $this->_Value ) < $this->_MinLength )
+		if( $this->_minLength > 0 && strlen( $this->_value ) < $this->_minLength )
 		{
-			$this->_Errors[] = $this->_Name.':'.$this->_MinLength.' Invalid min length '.strlen( $this->_Value );
+			$this->_errors[] = $this->_name.':'.$this->_minLength.' Invalid min length '.strlen( $this->_value );
 			return false;
 		}
 
-		if( $this->_MaxLength > 0 && strlen( $this->_Value ) > $this->_MaxLength )
+		if( $this->_maxLength > 0 && strlen( $this->_value ) > $this->_maxLength )
 		{
-			$this->_Errors[] = $this->_Name.':'.$this->_MaxLength.' Invalid max length '.strlen( $this->_Value );
+			$this->_errors[] = $this->_name.':'.$this->_maxLength.' Invalid max length '.strlen( $this->_value );
 			return false;
 		}
 
@@ -310,14 +309,14 @@ class Parameter
 
 	private function validateRange(): bool
 	{
-		if( $this->_MinValue > 0 && $this->_Value < $this->_MinValue )
+		if( $this->_minValue > 0 && $this->_value < $this->_minValue )
 		{
-			$this->_Errors[] = $this->_Name.':'.$this->_MinValue.' Invalid min value '.$this->_Value;
+			$this->_errors[] = $this->_name.':'.$this->_minValue.' Invalid min value '.$this->_value;
 			return false;
 		}
-		elseif( $this->_MaxValue > 0 && $this->_Value > $this->_MaxValue )
+		elseif( $this->_maxValue > 0 && $this->_value > $this->_maxValue )
 		{
-			$this->_Errors[] = $this->_Name.':'.$this->_MaxValue.' Invalid max value '.$this->_Value;
+			$this->_errors[] = $this->_name.':'.$this->_maxValue.' Invalid max value '.$this->_value;
 			return false;
 		}
 
@@ -326,9 +325,9 @@ class Parameter
 
 	private function validatePattern(): bool
 	{
-		if( $this->_Pattern && !preg_match( $this->_Pattern, $this->_Value ) )
+		if( $this->_pattern && !preg_match( $this->_pattern, $this->_value ) )
 		{
-			$this->_Errors[] = $this->_Name.':'.$this->_Pattern.' Invalid pattern '.$this->_Value;
+			$this->_errors[] = $this->_name.':'.$this->_pattern.' Invalid pattern '.$this->_value;
 			return false;
 		}
 

@@ -50,8 +50,8 @@ namespace Neuron\Mvc\Views;
  */
 class Json implements IView
 {
-	public function render( array $Data ): string
+	public function render( array $data ): string
 	{
-		return json_encode( $Data );
+		return json_encode( $data );
 	}
 }

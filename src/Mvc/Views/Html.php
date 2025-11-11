@@ -17,28 +17,28 @@ class Html extends Base implements IView
 	use CacheableView;
 
 	/**
-	 * @param array $Data
+	 * @param array $data
 	 * @return string html output
 	 * @throws NotFound
 	 *
 	 * Outputs the html data from the layout and view.
 	 */
-	public function render( array $Data ): string
+	public function render( array $data ): string
 	{
-		$CacheKey = $this->getCacheKey( $Data );
+		$cacheKey = $this->getCacheKey( $data );
 
-		if( $CacheKey && $CachedContent = $this->getCachedContent( $CacheKey ) )
+		if( $cacheKey && $cachedContent = $this->getCachedContent( $cacheKey ) )
 		{
-			return $CachedContent;
+			return $cachedContent;
 		}
 
-		$Path = Registry::getInstance()
+		$path = Registry::getInstance()
 									->get( "Views.Path" );
 
-		if( !$Path )
+		if( !$path )
 		{
-			$BasePath = Registry::getInstance()->get( "Base.Path" );
-			$Path = "$BasePath/resources/views";
+			$basePath = Registry::getInstance()->get( "Base.Path" );
+			$path = "$basePath/resources/views";
 		}
 
 		// Convert controller name to snake_case, preserving directory separators
@@ -47,39 +47,39 @@ class Html extends Base implements IView
 			fn( $part ) => ( new NString( $part ) )->toSnakeCase(),
 			$controllerParts
 		);
-		$ControllerName = implode( '/', $snakeCaseParts );
+		$controllerName = implode( '/', $snakeCaseParts );
 
-		$View = "$Path/$ControllerName/{$this->getPage()}.php";
+		$view = "$path/$controllerName/{$this->getPage()}.php";
 
-		if( !file_exists( $View ) )
+		if( !file_exists( $view ) )
 		{
-			throw new NotFound( "View notfound: $View" );
+			throw new NotFound( "View notfound: $view" );
 		}
 
-		extract( $Data );
+		extract( $data );
 
-		$Layout = "$Path/layouts/{$this->getLayout()}.php";
+		$layout = "$path/layouts/{$this->getLayout()}.php";
 
-		if( !file_exists( $Layout ) )
+		if( !file_exists( $layout ) )
 		{
-			throw new NotFound( "View notfound: $Layout" );
+			throw new NotFound( "View notfound: $layout" );
 		}
 
 		ob_start();
-		require( $View );
-		$Content = ob_get_contents();
+		require( $view );
+		$content = ob_get_contents();
 		ob_end_clean();
 
 		ob_start();
-		require( $Layout );
-		$Page = ob_get_contents();
+		require( $layout );
+		$page = ob_get_contents();
 		ob_end_clean();
 
-		if( $CacheKey )
+		if( $cacheKey )
 		{
-			$this->setCachedContent( $CacheKey, $Page );
+			$this->setCachedContent( $cacheKey, $page );
 		}
 
-		return $Page;
+		return $page;
 	}
 }

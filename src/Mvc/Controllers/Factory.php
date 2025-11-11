@@ -11,25 +11,25 @@ use Neuron\Mvc\Application;
 class Factory
 {
 	/**
-	 * @param Application $App
-	 * @param string $Class
+	 * @param Application $app
+	 * @param string $class
 	 * @return IController
 	 * @throws NotFound
 	 */
-	static function create( Application $App, string $Class ) : IController
+	static function create( Application $app, string $class ) : IController
 	{
-		if( !class_exists( $Class ) )
+		if( !class_exists( $class ) )
 		{
-			throw new NotFound( "Controller $Class not found.");
+			throw new NotFound( "Controller $class not found.");
 		}
 
-		$Implements = class_implements( $Class );
+		$implements = class_implements( $class );
 
-		if( !in_array(IController::class, $Implements ) )
+		if( !in_array(IController::class, $implements ) )
 		{
-			throw new NotFound( "$Class does not implement IController.");
+			throw new NotFound( "$class does not implement IController.");
 		}
 
-		return new $Class( $App );
+		return new $class( $app );
 	}
 }
