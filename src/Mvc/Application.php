@@ -323,18 +323,19 @@ class Application extends Base
 			throw new Validation( $exception->getMessage(), [] );
 		}
 
-		foreach( $Data[ 'routes' ] as $Route )
+		foreach( $Data[ 'routes' ] as $RouteName => $Route )
 		{
 			$Request = $Route[ 'request' ] ?? '';
 			$Filter = $Route[ 'filter' ] ?? '';
 
-			$this->addRoute(
+			$RouteMap = $this->addRoute(
 				$Route[ 'method' ],
 				$Route[ 'route' ],
 				$Route[ 'controller' ],
 				$Request,
 				$Filter
 			);
+			$RouteMap->setName( $RouteName );
 		}
 	}
 
