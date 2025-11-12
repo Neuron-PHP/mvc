@@ -1,3 +1,5 @@
+## 0.8.13
+
 ## 0.8.12 2025-11-12
 * Added ViewDataProvider interface for injecting data into views globally.
 
