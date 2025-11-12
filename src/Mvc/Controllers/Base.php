@@ -83,17 +83,33 @@ class Base implements IController
 
 	/**
 	 * Inject URL helpers and other view helpers into view data.
-	 * 
+	 *
+	 * This method:
+	 * 1. Merges global view data from ViewDataProvider (if registered)
+	 * 2. Injects UrlHelper for route generation (if router available)
+	 * 3. Controller-specific data takes precedence over global data
+	 *
 	 * @param array $data The view data array
-	 * @return array Data array with helpers injected
+	 * @return array Data array with helpers and global data injected
 	 */
 	protected function injectHelpers( array $data ): array
 	{
+		$registry = \Neuron\Patterns\Registry::getInstance();
+
+		// Merge global view data from ViewDataProvider if available
+		$viewDataProvider = $registry->get( 'ViewDataProvider' );
+		if( $viewDataProvider instanceof \Neuron\Mvc\Views\ViewDataProvider )
+		{
+			// Global data first, then controller data (controller data wins)
+			$data = array_merge( $viewDataProvider->all(), $data );
+		}
+
 		// Only inject UrlHelper if router is available
 		if( isset( $this->_router ) )
 		{
 			$data['urlHelper'] = new UrlHelper( $this->_router );
 		}
+
 		return $data;
 	}
 
