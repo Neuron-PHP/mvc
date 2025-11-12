@@ -1,3 +1,6 @@
+## 0.8.12 2025-11-12
+* Added ViewDataProvider interface for injecting data into views globally.
+
 ## 0.8.11 2025-11-12
 * Renamed config.yaml to neuron.yaml
 
