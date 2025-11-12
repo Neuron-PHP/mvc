@@ -1,3 +1,5 @@
+## 0.8.11
+
 ## 0.8.10 2025-11-11
 * View paths are now mapped to the namespace structure.
 
