@@ -1,4 +1,5 @@
 ## 0.8.11
+* Renamed config.yaml to neuron.yaml
 
 ## 0.8.10 2025-11-11
 * View paths are now mapped to the namespace structure.
@@ -41,7 +42,7 @@
 
 * Added integrated rate limiting support via routing component.
 * Rate limiting configuration with rate_limit and api_limit categories.
-* Automatic rate limit filter registration from config.yaml
+* Automatic rate limit filter registration from neuron.yaml
 * Support for global and per-route rate limiting.
 * Filter parameter support in routes.yaml for per-route middleware.
 * Added RedisCacheStorage for high-performance Redis-based view caching.

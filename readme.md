@@ -80,7 +80,7 @@ location / {
 
 ### 3. Minimal Configuration
 
-Create a `config/config.yaml` file:
+Create a `config/neuron.yaml` file:
 
 ```yaml
 system:
@@ -364,7 +364,7 @@ $customHelper = new UrlHelper($customRouter);
 All YAML config file parameters can be overridden by environment variables in the form of `<CATEGORY>_<KEY>`, e.g.
 `SYSTEM_BASE_PATH`.
 
-### Main Configuration (config.yaml)
+### Main Configuration (neuron.yaml)
 
 ```yaml
 # System settings
@@ -756,7 +756,7 @@ The MVC component includes integrated rate limiting support through the routing 
 
 ### Configuration
 
-Rate limiting is configured in your `config.yaml` file using two categories:
+Rate limiting is configured in your `neuron.yaml` file using two categories:
 
 #### Standard Rate Limiting
 ```yaml
@@ -871,7 +871,7 @@ When limit is exceeded (HTTP 429):
 
 ### Example Implementation
 
-1. Enable rate limiting in `config.yaml`:
+1. Enable rate limiting in `neuron.yaml`:
 ```yaml
 rate_limit:
   enabled: true
