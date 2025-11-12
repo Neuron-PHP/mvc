@@ -21,99 +21,99 @@ class Markdown extends Base implements IView
 {
 	use CacheableView;
 	/**
-	 * @param array $Data
+	 * @param array $data
 	 * @return string markdown output
 	 * @throws NotFound
 	 * @throws CommonMarkException
 	 *
 	 * Outputs the html data from the layout and view.
 	 */
-	public function render( array $Data ): string
+	public function render( array $data ): string
 	{
-		$CacheKey = $this->getCacheKey( $Data );
+		$cacheKey = $this->getCacheKey( $data );
 
-		if( $CacheKey && $CachedContent = $this->getCachedContent( $CacheKey ) )
+		if( $cacheKey && $cachedContent = $this->getCachedContent( $cacheKey ) )
 		{
-			return $CachedContent;
+			return $cachedContent;
 		}
 
-		$Path = Registry::getInstance()
+		$path = Registry::getInstance()
 							 ->get( "Views.Path" );
 
-		if( !$Path )
+		if( !$path )
 		{
-			$BasePath = Registry::getInstance()->get( "Base.Path" );
-			$Path = "$BasePath/resources/views";
+			$basePath = Registry::getInstance()->get( "Base.Path" );
+			$path = "$basePath/resources/views";
 		}
 
-		$ControllerName = new NString( $this->getController() )->toSnakeCase();
-		$ControllerPath = "$Path/$ControllerName";
-		$View = $this->findMarkdownFile( $ControllerPath, $this->getPage() );
+		$controllerName = new NString( $this->getController() )->toSnakeCase();
+		$controllerPath = "$path/$controllerName";
+		$view = $this->findMarkdownFile( $controllerPath, $this->getPage() );
 
-		if( !$View )
+		if( !$view )
 		{
-			throw new NotFound( "View notfound: {$this->getPage()}.md in $ControllerPath" );
+			throw new NotFound( "View notfound: {$this->getPage()}.md in $controllerPath" );
 		}
 
-		extract( $Data );
+		extract( $data );
 
-		$Layout = "$Path/layouts/{$this->getLayout()}.php";
+		$layout = "$path/layouts/{$this->getLayout()}.php";
 
-		if( !file_exists( $Layout ) )
+		if( !file_exists( $layout ) )
 		{
-			throw new NotFound( "View notfound: $Layout" );
+			throw new NotFound( "View notfound: $layout" );
 		}
 
-		$Content = $this->getCommonmarkConverter()->convert( file_get_contents( $View ) );
+		$content = $this->getCommonmarkConverter()->convert( file_get_contents( $view ) );
 
 		ob_start();
-		require( $Layout );
-		$Page = ob_get_contents();
+		require( $layout );
+		$page = ob_get_contents();
 		ob_end_clean();
 
-		if( $CacheKey )
+		if( $cacheKey )
 		{
-			$this->setCachedContent( $CacheKey, $Page );
+			$this->setCachedContent( $cacheKey, $page );
 		}
 
-		return $Page;
+		return $page;
 	}
 
 	/**
 	 * Find markdown file in controller directory or nested subdirectories
 	 *
-	 * @param string $BasePath
-	 * @param string $PageName
+	 * @param string $basePath
+	 * @param string $pageName
 	 * @return string|null
 	 */
-	protected function findMarkdownFile( string $BasePath, string $PageName ): ?string
+	protected function findMarkdownFile( string $basePath, string $pageName ): ?string
 	{
-		if( !is_dir( $BasePath ) )
+		if( !is_dir( $basePath ) )
 		{
 			return null;
 		}
 
 		// First check direct path
-		$DirectPath = "$BasePath/$PageName.md";
-		if( file_exists( $DirectPath ) )
+		$directPath = "$basePath/$pageName.md";
+		if( file_exists( $directPath ) )
 		{
-			return $DirectPath;
+			return $directPath;
 		}
 
 		// Search recursively in subdirectories
-		$Iterator = new \RecursiveIteratorIterator(
-			new \RecursiveDirectoryIterator( $BasePath, \RecursiveDirectoryIterator::SKIP_DOTS ),
+		$iterator = new \RecursiveIteratorIterator(
+			new \RecursiveDirectoryIterator( $basePath, \RecursiveDirectoryIterator::SKIP_DOTS ),
 			\RecursiveIteratorIterator::SELF_FIRST
 		);
 
-		foreach( $Iterator as $File )
+		foreach( $iterator as $file )
 		{
-			if( $File->isFile() && $File->getExtension() === 'md' )
+			if( $file->isFile() && $file->getExtension() === 'md' )
 			{
-				$FileName = $File->getBasename( '.md' );
-				if( $FileName === $PageName )
+				$fileName = $file->getBasename( '.md' );
+				if( $fileName === $pageName )
 				{
-					return $File->getPathname();
+					return $file->getPathname();
 				}
 			}
 		}

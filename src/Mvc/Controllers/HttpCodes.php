@@ -6,14 +6,14 @@ use Neuron\Mvc\Responses\HttpResponseStatus;
 
 class HttpCodes extends Base
 {
-	public function code404( array $Parameters ) : string
+	public function code404( array $parameters ) : string
 	{
 		return $this->renderHtml(
 			HttpResponseStatus::NOT_FOUND,
 			array_merge(
-				$Parameters,
+				$parameters,
 				[
-					"Title" => "Resource Not Found",
+					"title" => "Resource Not Found",
 				]
 			),
 			'404'

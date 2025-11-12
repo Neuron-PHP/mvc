@@ -11,32 +11,32 @@ use Neuron\Patterns\Registry;
 /**
  * Initialize the application.
  *
- * @param string $ConfigPath
+ * @param string $configPath
  * @return Application
  * @throws \Exception
  */
 
-function boot( string $ConfigPath ) : Application
+function boot( string $configPath ) : Application
 {
-	/** @var Neuron\Data\Setting\Source\ISettingSource $Settings */
+	/** @var Neuron\Data\Setting\Source\ISettingSource $settings */
 
 	try
 	{
-		$Settings = new Yaml( "$ConfigPath/config.yaml" );
-		$BasePath = $Settings->get( 'system', 'base_path' );
+		$settings = new Yaml( "$configPath/config.yaml" );
+		$basePath = $settings->get( 'system', 'base_path' );
 	}
 	catch( \Exception $e )
 	{
-		$Settings = null;
-		$BasePath = getenv( 'SYSTEM_BASE_PATH' ) ? : '.';
+		$settings = null;
+		$basePath = getenv( 'SYSTEM_BASE_PATH' ) ? : '.';
 	}
 
-	$Version = new Version();
-	$Version->loadFromFile( "$BasePath/.version.json" );
+	$version = new Version();
+	$version->loadFromFile( "$basePath/.version.json" );
 
 	try
 	{
-		$App = new Application( $Version->getAsString(), $Settings );
+		$app = new Application( $version->getAsString(), $settings );
 	}
 	catch( \Throwable $e )
 	{
@@ -44,92 +44,92 @@ function boot( string $ConfigPath ) : Application
 		exit( 1 );
 	}
 
-	return $App;
+	return $app;
 }
 
 /**
  * Dispatches the current route mapped in the 'route' GET variable.
  *
- * @param Application $App
+ * @param Application $app
  */
 
-function dispatch( Application $App ) : void
+function dispatch( Application $app ) : void
 {
-	$Route = Get::filterScalar( 'route' ) ?? "";
+	$route = Get::filterScalar( 'route' ) ?? "";
 
 	try
 	{
-		$Type = Server::filterScalar( 'REQUEST_METHOD' ) ?? "GET";
+		$type = Server::filterScalar( 'REQUEST_METHOD' ) ?? "GET";
 
 		// Support HTML form method spoofing via _method field
 		// HTML forms can only submit GET/POST, so frameworks use a hidden _method field
 		// to indicate PUT/DELETE/PATCH requests
-		if( $Type === 'POST' && isset( $_POST['_method'] ) )
+		if( $type === 'POST' && isset( $_POST['_method'] ) )
 		{
-			$SpoofedMethod = strtoupper( $_POST['_method'] );
-			if( in_array( $SpoofedMethod, [ 'PUT', 'DELETE', 'PATCH' ] ) )
+			$spoofedMethod = strtoupper( $_POST['_method'] );
+			if( in_array( $spoofedMethod, [ 'PUT', 'DELETE', 'PATCH' ] ) )
 			{
-				$Type = $SpoofedMethod;
+				$type = $spoofedMethod;
 			}
 		}
 
-		$App->run(
+		$app->run(
 			[
-				"type"  => $Type,
-				"route" => $Route
+				"type"  => $type,
+				"route" => $route
 			]
 		);
 	}
 	catch( \Throwable $e )
 	{
-		echo $App->handleException( $e );
+		echo $app->handleException( $e );
 	}
 }
 
 /**
  * Clear expired cache entries
  *
- * @param Application $App
+ * @param Application $app
  * @return int Number of entries removed
  */
-function clearExpiredCache( Application $App ) : int
+function clearExpiredCache( Application $app ) : int
 {
-	return $App->clearExpiredCache();
+	return $app->clearExpiredCache();
 }
 
 /**
  * Render a partial view from the shared directory.
  * This function looks for a file named _{name}.php in the shared views directory.
  * @param string $name The name of the partial (without underscore prefix or .php extension)
- * @param array $Data Optional data array to pass to the partial as variables
+ * @param array $data Optional data array to pass to the partial as variables
  * @return void
  * @throws NotFound
  */
-function partial( string $name, array $Data = [] ) : void
+function partial( string $name, array $data = [] ) : void
 {
-	$Path = Registry::getInstance()
+	$path = Registry::getInstance()
 						 ->get( "Views.Path" );
 
-	if( !$Path )
+	if( !$path )
 	{
-		$BasePath = Registry::getInstance()->get( "Base.Path" );
-		$Path = "$BasePath/resources/views";
+		$basePath = Registry::getInstance()->get( "Base.Path" );
+		$path = "$basePath/resources/views";
 	}
 
-	$View = "$Path/shared/_$name.php";
+	$view = "$path/shared/_$name.php";
 
-	if( !file_exists( $View ) )
+	if( !file_exists( $view ) )
 	{
-		throw new NotFound( "Partial not found: $View" );
+		throw new NotFound( "Partial not found: $view" );
 	}
 
 	// Extract data array as variables in the partial's scope
-	extract( $Data );
+	extract( $data );
 
 	ob_start();
-	require( $View );
-	$Content = ob_get_contents();
+	require( $view );
+	$content = ob_get_contents();
 	ob_end_clean();
 
-	echo $Content;
+	echo $content;
 }

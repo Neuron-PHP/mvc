@@ -31,7 +31,7 @@ class HtmlTest extends TestCase
 			->withContent( $ViewContent );
 			
 		// Create the layout file
-		$LayoutContent = '<html><body><?php echo $Content; ?></body></html>';
+		$LayoutContent = '<html><body><?php echo $content; ?></body></html>';
 		vfsStream::newFile( 'default.php' )
 			->at( $LayoutsDir )
 			->withContent( $LayoutContent );
@@ -111,7 +111,7 @@ class HtmlTest extends TestCase
 			->withContent( $ViewContent );
 			
 		// Create the layout file
-		$LayoutContent = '<div><?php echo $Content; ?></div>';
+		$LayoutContent = '<div><?php echo $content; ?></div>';
 		vfsStream::newFile( 'simple.php' )
 			->at( $LayoutsDir )
 			->withContent( $LayoutContent );

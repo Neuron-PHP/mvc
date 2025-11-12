@@ -44,7 +44,7 @@ class CacheControlTest extends TestCase
 		
 		// Create test view files
 		$ViewContent = '<?php echo "Test Content"; ?>';
-		$LayoutContent = '<?php echo $Content; ?>';
+		$LayoutContent = '<?php echo $content; ?>';
 		
 		vfsStream::newFile( 'resources/views/test/index.php' )
 			->at( $this->Root )

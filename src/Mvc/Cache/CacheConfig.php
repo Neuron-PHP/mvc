@@ -5,16 +5,16 @@ use Neuron\Data\Setting\Source\ISettingSource;
 
 class CacheConfig
 {
-	private array $_Settings;
+	private array $_settings;
 
 	/**
 	 * CacheConfig constructor
 	 *
-	 * @param array $Settings
+	 * @param array $settings
 	 */
-	public function __construct( array $Settings )
+	public function __construct( array $settings )
 	{
-		$this->_Settings = $Settings;
+		$this->_settings = $settings;
 	}
 
 	/**
@@ -24,7 +24,7 @@ class CacheConfig
 	 */
 	public function isEnabled(): bool
 	{
-		return $this->_Settings['enabled'] ?? false;
+		return $this->_settings['enabled'] ?? false;
 	}
 
 	/**
@@ -34,7 +34,7 @@ class CacheConfig
 	 */
 	public function getCachePath(): string
 	{
-		return $this->_Settings['path'] ?? 'cache/views';
+		return $this->_settings['path'] ?? 'cache/views';
 	}
 
 	/**
@@ -44,7 +44,7 @@ class CacheConfig
 	 */
 	public function getDefaultTtl(): int
 	{
-		return $this->_Settings['ttl'] ?? 3600;
+		return $this->_settings['ttl'] ?? 3600;
 	}
 
 	/**
@@ -54,7 +54,7 @@ class CacheConfig
 	 */
 	public function getStorageType(): string
 	{
-		return $this->_Settings['storage'] ?? 'file';
+		return $this->_settings['storage'] ?? 'file';
 	}
 
 	/**
@@ -64,7 +64,7 @@ class CacheConfig
 	 */
 	public function getRedisHost(): string
 	{
-		return $this->_Settings['redis_host'] ?? '127.0.0.1';
+		return $this->_settings['redis_host'] ?? '127.0.0.1';
 	}
 
 	/**
@@ -74,7 +74,7 @@ class CacheConfig
 	 */
 	public function getRedisPort(): int
 	{
-		return (int) ($this->_Settings['redis_port'] ?? 6379);
+		return (int) ($this->_settings['redis_port'] ?? 6379);
 	}
 
 	/**
@@ -84,7 +84,7 @@ class CacheConfig
 	 */
 	public function getRedisDatabase(): int
 	{
-		return (int) ($this->_Settings['redis_database'] ?? 0);
+		return (int) ($this->_settings['redis_database'] ?? 0);
 	}
 
 	/**
@@ -94,7 +94,7 @@ class CacheConfig
 	 */
 	public function getRedisPrefix(): string
 	{
-		return $this->_Settings['redis_prefix'] ?? 'neuron_cache_';
+		return $this->_settings['redis_prefix'] ?? 'neuron_cache_';
 	}
 
 	/**
@@ -104,7 +104,7 @@ class CacheConfig
 	 */
 	public function getRedisTimeout(): float
 	{
-		return (float) ($this->_Settings['redis_timeout'] ?? 2.0);
+		return (float) ($this->_settings['redis_timeout'] ?? 2.0);
 	}
 
 	/**
@@ -114,7 +114,7 @@ class CacheConfig
 	 */
 	public function getRedisAuth(): ?string
 	{
-		return $this->_Settings['redis_auth'] ?? null;
+		return $this->_settings['redis_auth'] ?? null;
 	}
 
 	/**
@@ -124,7 +124,7 @@ class CacheConfig
 	 */
 	public function getRedisPersistent(): bool
 	{
-		$persistent = $this->_Settings['redis_persistent'] ?? false;
+		$persistent = $this->_settings['redis_persistent'] ?? false;
 		return $persistent === true || $persistent === 'true' || $persistent === '1';
 	}
 
@@ -149,50 +149,50 @@ class CacheConfig
 	/**
 	 * Check if specific view type caching is enabled
 	 *
-	 * @param string $ViewType
+	 * @param string $viewType
 	 * @return bool
 	 */
-	public function isViewTypeEnabled( string $ViewType ): bool
+	public function isViewTypeEnabled( string $viewType ): bool
 	{
-		return $this->_Settings[$ViewType] ?? true;
+		return $this->_settings[$viewType] ?? true;
 	}
 
 	/**
 	 * Create CacheConfig from settings source
 	 *
-	 * @param ISettingSource $Settings
+	 * @param ISettingSource $settings
 	 * @return self
 	 */
-	public static function fromSettings( ISettingSource $Settings ): self
+	public static function fromSettings( ISettingSource $settings ): self
 	{
-		$CacheSettings = [];
-		
-		$Enabled = $Settings->get( 'cache', 'enabled' );
-		if( $Enabled !== null )
+		$cacheSettings = [];
+
+		$enabled = $settings->get( 'cache', 'enabled' );
+		if( $enabled !== null )
 		{
-			$CacheSettings['enabled'] = $Enabled === 'true' || $Enabled === '1';
+			$cacheSettings['enabled'] = $enabled === 'true' || $enabled === '1';
 		}
-		
-		$Path = $Settings->get( 'cache', 'path' );
-		if( $Path !== null )
+
+		$path = $settings->get( 'cache', 'path' );
+		if( $path !== null )
 		{
-			$CacheSettings['path'] = $Path;
+			$cacheSettings['path'] = $path;
 		}
-		
-		$Ttl = $Settings->get( 'cache', 'ttl' );
-		if( $Ttl !== null )
+
+		$ttl = $settings->get( 'cache', 'ttl' );
+		if( $ttl !== null )
 		{
-			$CacheSettings['ttl'] = (int) $Ttl;
+			$cacheSettings['ttl'] = (int) $ttl;
 		}
-		
-		$Storage = $Settings->get( 'cache', 'storage' );
-		if( $Storage !== null )
+
+		$storage = $settings->get( 'cache', 'storage' );
+		if( $storage !== null )
 		{
-			$CacheSettings['storage'] = $Storage;
+			$cacheSettings['storage'] = $storage;
 		}
 
 		// Redis configuration parameters
-		$RedisParams = [
+		$redisParams = [
 			'redis_host',
 			'redis_port',
 			'redis_database',
@@ -202,41 +202,41 @@ class CacheConfig
 			'redis_persistent'
 		];
 
-		foreach( $RedisParams as $Param )
+		foreach( $redisParams as $param )
 		{
-			$Value = $Settings->get( 'cache', $Param );
-			if( $Value !== null )
+			$value = $settings->get( 'cache', $param );
+			if( $value !== null )
 			{
-				$CacheSettings[$Param] = $Value;
+				$cacheSettings[$param] = $value;
 			}
 		}
 
 		// For views settings, we need to check each view type
-		$ViewTypes = [ 'html', 'markdown', 'json', 'xml' ];
-		
-		foreach( $ViewTypes as $ViewType )
+		$viewTypes = [ 'html', 'markdown', 'json', 'xml' ];
+
+		foreach( $viewTypes as $viewType )
 		{
-			$ViewEnabled = $Settings->get( 'cache', $ViewType );
-			if( $ViewEnabled !== null )
+			$viewEnabled = $settings->get( 'cache', $viewType );
+			if( $viewEnabled !== null )
 			{
-				$CacheSettings[$ViewType] = $ViewEnabled === 'true' || $ViewEnabled === '1';
+				$cacheSettings[$viewType] = $viewEnabled === 'true' || $viewEnabled === '1';
 			}
 		}
-		
+
 		// Get GC settings if present
-		$GcProbability = $Settings->get( 'cache', 'gc_probability' );
-		if( $GcProbability !== null )
+		$gcProbability = $settings->get( 'cache', 'gc_probability' );
+		if( $gcProbability !== null )
 		{
-			$CacheSettings['gc_probability'] = (float) $GcProbability;
+			$cacheSettings['gc_probability'] = (float) $gcProbability;
 		}
-		
-		$GcDivisor = $Settings->get( 'cache', 'gc_divisor' );
-		if( $GcDivisor !== null )
+
+		$gcDivisor = $settings->get( 'cache', 'gc_divisor' );
+		if( $gcDivisor !== null )
 		{
-			$CacheSettings['gc_divisor'] = (int) $GcDivisor;
+			$cacheSettings['gc_divisor'] = (int) $gcDivisor;
 		}
-		
-		return new self( $CacheSettings );
+
+		return new self( $cacheSettings );
 	}
 
 	/**
@@ -247,7 +247,7 @@ class CacheConfig
 	public function getGcProbability(): float
 	{
 		// Default: 1% chance (0.01)
-		return (float) ( $this->_Settings['gc_probability'] ?? 0.01 );
+		return (float) ( $this->_settings['gc_probability'] ?? 0.01 );
 	}
 
 	/**
@@ -258,6 +258,6 @@ class CacheConfig
 	public function getGcDivisor(): int
 	{
 		// Default divisor for probability calculation
-		return (int) ( $this->_Settings['gc_divisor'] ?? 100 );
+		return (int) ( $this->_settings['gc_divisor'] ?? 100 );
 	}
 }

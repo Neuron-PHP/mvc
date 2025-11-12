@@ -10,10 +10,10 @@ use Neuron\Events\IEvent;
  */
 class Http404 implements IEvent
 {
-	public string $Route;
+	public string $route;
 
-	public function __construct( string $Route )
+	public function __construct( string $route )
 	{
-		$this->Route = $Route;
+		$this->route = $route;
 	}
 }

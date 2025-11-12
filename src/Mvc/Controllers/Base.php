@@ -23,7 +23,7 @@ use Neuron\Routing\Router;
 
 class Base implements IController
 {
-	private Router  $_Router;
+	private Router  $_router;
 	private Application $_app;
 
 	/**
@@ -57,96 +57,96 @@ class Base implements IController
 	}
 
 	/**
-	 * @param HttpResponseStatus $ResponseCode
-	 * @param array $Data
-	 * @param string $Page
-	 * @param string $Layout
-	 * @param bool|null $CacheEnabled
+	 * @param HttpResponseStatus $responseCode
+	 * @param array $data
+	 * @param string $page
+	 * @param string $layout
+	 * @param bool|null $cacheEnabled
 	 * @return string
 	 * @throws CommonMarkException
 	 * @throws \Neuron\Core\Exceptions\NotFound
 	 */
-	public function renderMarkdown( HttpResponseStatus $ResponseCode, array $Data = [], string $Page = "index", string $Layout = "default", ?bool $CacheEnabled = null ) : string
+	public function renderMarkdown( HttpResponseStatus $responseCode, array $data = [], string $page = "index", string $layout = "default", ?bool $cacheEnabled = null ) : string
 	{
-		@http_response_code( $ResponseCode->value );
+		@http_response_code( $responseCode->value );
 
-		$View = new Markdown()
-			->setController( new \ReflectionClass( static::class )->getShortName() )
-			->setLayout( $Layout )
-			->setPage( $Page )
-			->setCacheEnabled( $CacheEnabled );
+		$view = new Markdown()
+			->setController( $this->getControllerViewPath() )
+			->setLayout( $layout )
+			->setPage( $page )
+			->setCacheEnabled( $cacheEnabled );
 
-		$DataWithHelpers = $this->injectHelpers( $Data );
+		$dataWithHelpers = $this->injectHelpers( $data );
 
-		return $View->render( $DataWithHelpers );
+		return $view->render( $dataWithHelpers );
 	}
 
 	/**
 	 * Inject URL helpers and other view helpers into view data.
 	 * 
-	 * @param array $Data The view data array
+	 * @param array $data The view data array
 	 * @return array Data array with helpers injected
 	 */
-	protected function injectHelpers( array $Data ): array
+	protected function injectHelpers( array $data ): array
 	{
 		// Only inject UrlHelper if router is available
-		if( isset( $this->_Router ) )
+		if( isset( $this->_router ) )
 		{
-			$Data['urlHelper'] = new UrlHelper( $this->_Router );
+			$data['urlHelper'] = new UrlHelper( $this->_router );
 		}
-		return $Data;
+		return $data;
 	}
 
 	/**
-	 * @param HttpResponseStatus $ResponseCode
-	 * @param array $Data
-	 * @param string $Page
-	 * @param string $Layout
-	 * @param bool|null $CacheEnabled
+	 * @param HttpResponseStatus $responseCode
+	 * @param array $data
+	 * @param string $page
+	 * @param string $layout
+	 * @param bool|null $cacheEnabled
 	 * @return string
 	 * @throws \Neuron\Core\Exceptions\NotFound
 	 */
-	public function renderHtml( HttpResponseStatus $ResponseCode, array $Data = [], string $Page = "index", string $Layout = "default", ?bool $CacheEnabled = null ) : string
+	public function renderHtml( HttpResponseStatus $responseCode, array $data = [], string $page = "index", string $layout = "default", ?bool $cacheEnabled = null ) : string
 	{
-		@http_response_code( $ResponseCode->value );
+		@http_response_code( $responseCode->value );
 
-		$View = new Html()
-			->setController( new \ReflectionClass( static::class )->getShortName() )
-			->setLayout( $Layout )
-			->setPage( $Page )
-			->setCacheEnabled( $CacheEnabled );
+		$view = new Html()
+			->setController( $this->getControllerViewPath() )
+			->setLayout( $layout )
+			->setPage( $page )
+			->setCacheEnabled( $cacheEnabled );
 
-		$DataWithHelpers = $this->injectHelpers( $Data );
+		$dataWithHelpers = $this->injectHelpers( $data );
 
-		return $View->render( $DataWithHelpers );
+		return $view->render( $dataWithHelpers );
 	}
 
 	/**
-	 * @param HttpResponseStatus $ResponseCode
-	 * @param array $Data
+	 * @param HttpResponseStatus $responseCode
+	 * @param array $data
 	 * @return string
 	 */
-	public function renderJson( HttpResponseStatus $ResponseCode, array $Data = [] ): string
+	public function renderJson( HttpResponseStatus $responseCode, array $data = [] ): string
 	{
-		@http_response_code( $ResponseCode->value );
+		@http_response_code( $responseCode->value );
 
-		$View = new Json();
+		$view = new Json();
 
-		return $View->render( $Data );
+		return $view->render( $data );
 	}
 
 	/**
-	 * @param HttpResponseStatus $ResponseCode
-	 * @param array $Data
+	 * @param HttpResponseStatus $responseCode
+	 * @param array $data
 	 * @return string
 	 */
-	public function renderXml( HttpResponseStatus $ResponseCode, array $Data = [] ): string
+	public function renderXml( HttpResponseStatus $responseCode, array $data = [] ): string
 	{
-		@http_response_code( $ResponseCode->value );
+		@http_response_code( $responseCode->value );
 
-		$View = new Xml();
+		$view = new Xml();
 
-		return $View->render( $Data );
+		return $view->render( $data );
 	}
 
 	/**
@@ -154,16 +154,16 @@ class Base implements IController
 	 */
 	public function getRouter(): Router
 	{
-		return $this->_Router;
+		return $this->_router;
 	}
 
 	/**
-	 * @param Router $Router
+	 * @param Router $router
 	 * @return Base
 	 */
-	public function setRouter( Router $Router ): Base
+	public function setRouter( Router $router ): Base
 	{
-		$this->_Router = $Router;
+		$this->_router = $router;
 		return $this;
 	}
 
@@ -171,7 +171,7 @@ class Base implements IController
 	 * Get the controller name for cache key generation.
 	 * Returns the short class name (without namespace).
 	 * This matches how the framework's render methods set the controller name.
-	 * 
+	 *
 	 * @return string The controller class name without namespace
 	 */
 	protected function getControllerName(): string
@@ -182,6 +182,51 @@ class Base implements IController
 	}
 
 	/**
+	 * Get the controller view path accounting for namespace hierarchy.
+	 * Converts controller namespace and class name to snake_case directory structure.
+	 *
+	 * Examples:
+	 * - Neuron\Cms\Controllers\Admin\Posts -> admin/posts
+	 * - Neuron\Cms\Controllers\PostController -> post (backwards compatible with "Controller" suffix)
+	 * - Neuron\Cms\Controllers\Dashboard -> dashboard
+	 *
+	 * @return string The view path (e.g., "admin/posts", "dashboard")
+	 */
+	protected function getControllerViewPath(): string
+	{
+		$reflection = new \ReflectionClass( static::class );
+		$fullClassName = $reflection->getName();
+
+		// Find the position of "Controllers" in the namespace
+		$controllersPos = strrpos( $fullClassName, '\\Controllers\\' );
+
+		if( $controllersPos === false )
+		{
+			// No "Controllers" namespace found, fall back to short name
+			$shortName = $reflection->getShortName();
+			// Strip "Controller" suffix for backwards compatibility
+			$shortName = preg_replace( '/Controller$/', '', $shortName );
+			return ( new \Neuron\Core\NString( $shortName ) )->toSnakeCase();
+		}
+
+		// Extract everything after "Controllers\"
+		$afterControllers = substr( $fullClassName, $controllersPos + strlen( '\\Controllers\\' ) );
+
+		// Split by namespace separator
+		$parts = explode( '\\', $afterControllers );
+
+		// Convert each part to snake_case
+		$snakeCaseParts = array_map( function( $part ) {
+			// Strip "Controller" suffix for backwards compatibility
+			$part = preg_replace( '/Controller$/', '', $part );
+			return ( new \Neuron\Core\NString( $part ) )->toSnakeCase();
+		}, $parts );
+
+		// Join with forward slashes for directory path
+		return implode( '/', $snakeCaseParts );
+	}
+
+	/**
 	 * Initialize ViewCache if not already present in Registry.
 	 * This allows controllers to check cache before making expensive API calls.
 	 * 
@@ -189,54 +234,54 @@ class Base implements IController
 	 */
 	protected function initializeViewCache(): ?ViewCache
 	{
-		$Registry = \Neuron\Patterns\Registry::getInstance();
+		$registry = \Neuron\Patterns\Registry::getInstance();
 		
 		// Check if cache is already initialized
-		$ViewCache = $Registry->get( 'ViewCache' );
-		if( $ViewCache !== null )
+		$viewCache = $registry->get( 'ViewCache' );
+		if( $viewCache !== null )
 		{
-			return $ViewCache;
+			return $viewCache;
 		}
 		
 		// Try to create cache from settings
-		$Settings = $Registry->get( 'Settings' );
-		if( $Settings === null )
+		$settings = $registry->get( 'Settings' );
+		if( $settings === null )
 		{
 			return null;
 		}
 		
 		// Handle both SettingManager and ISettingSource
-		if( $Settings instanceof SettingManager )
+		if( $settings instanceof SettingManager )
 		{
-			$SettingSource = $Settings->getSource();
+			$settingSource = $settings->getSource();
 		}
 		else
 		{
-			$SettingSource = $Settings;
+			$settingSource = $settings;
 		}
 		
-		$Config = CacheConfig::fromSettings( $SettingSource );
+		$config = CacheConfig::fromSettings( $settingSource );
 		
-		if( !$Config->isEnabled() )
+		if( !$config->isEnabled() )
 		{
 			return null;
 		}
 		
 		try
 		{
-			$BasePath = $Registry->get( 'Base.Path' ) ?? '.';
+			$basePath = $registry->get( 'Base.Path' ) ?? '.';
 
-			$Storage = CacheStorageFactory::createFromConfig( $Config, $BasePath );
-			$ViewCache = new ViewCache(
-				$Storage,
+			$storage = CacheStorageFactory::createFromConfig( $config, $basePath );
+			$viewCache = new ViewCache(
+				$storage,
 				true,
-				$Config->getDefaultTtl(),
-				$Config
+				$config->getDefaultTtl(),
+				$config
 			);
 
-			$Registry->set( 'ViewCache', $ViewCache );
+			$registry->set( 'ViewCache', $viewCache );
 
-			return $ViewCache;
+			return $viewCache;
 		}
 		catch( CacheException $e )
 		{
@@ -249,52 +294,52 @@ class Base implements IController
 	 * Check if view cache exists for the given page and data.
 	 * Initializes ViewCache if needed.
 	 * 
-	 * @param string $Page The page/view name
-	 * @param array $Data The data that affects cache key generation
+	 * @param string $page The page/view name
+	 * @param array $data The data that affects cache key generation
 	 * @return bool True if cache exists, false otherwise
 	 */
-	protected function hasViewCache( string $Page, array $Data = [] ): bool
+	protected function hasViewCache( string $page, array $data = [] ): bool
 	{
-		$ViewCache = $this->initializeViewCache();
+		$viewCache = $this->initializeViewCache();
 		
-		if( !$ViewCache || !$ViewCache->isEnabled() )
+		if( !$viewCache || !$viewCache->isEnabled() )
 		{
 			return false;
 		}
 		
-		$CacheKey = $ViewCache->generateKey(
+		$cacheKey = $viewCache->generateKey(
 			$this->getControllerName(),
-			$Page,
-			$Data
+			$page,
+			$data
 		);
 		
-		return $ViewCache->exists( $CacheKey );
+		return $viewCache->exists( $cacheKey );
 	}
 
 	/**
 	 * Get cached view content if available.
 	 * Initializes ViewCache if needed.
 	 * 
-	 * @param string $Page The page/view name
-	 * @param array $Data The data that affects cache key generation
+	 * @param string $page The page/view name
+	 * @param array $data The data that affects cache key generation
 	 * @return string|null The cached content or null if not found
 	 */
-	protected function getViewCache( string $Page, array $Data = [] ): ?string
+	protected function getViewCache( string $page, array $data = [] ): ?string
 	{
-		$ViewCache = $this->initializeViewCache();
+		$viewCache = $this->initializeViewCache();
 		
-		if( !$ViewCache || !$ViewCache->isEnabled() )
+		if( !$viewCache || !$viewCache->isEnabled() )
 		{
 			return null;
 		}
 		
-		$CacheKey = $ViewCache->generateKey(
+		$cacheKey = $viewCache->generateKey(
 			$this->getControllerName(),
-			$Page,
-			$Data
+			$page,
+			$data
 		);
 		
-		return $ViewCache->get( $CacheKey );
+		return $viewCache->get( $cacheKey );
 	}
 
 	/**
@@ -304,141 +349,141 @@ class Base implements IController
 	 */
 	protected function isCacheEnabledByDefault(): bool
 	{
-		$ViewCache = $this->initializeViewCache();
-		return $ViewCache && $ViewCache->isEnabled();
+		$viewCache = $this->initializeViewCache();
+		return $viewCache && $viewCache->isEnabled();
 	}
 
 	/**
 	 * Check if view cache exists using only cache key data.
 	 * This allows checking cache without fetching full view data.
 	 * 
-	 * @param string $Page The page/view name
-	 * @param array $CacheKeyData The minimal data that determines cache uniqueness
+	 * @param string $page The page/view name
+	 * @param array $cacheKeyData The minimal data that determines cache uniqueness
 	 * @return bool True if cache exists, false otherwise
 	 */
-	protected function hasViewCacheByKey( string $Page, array $CacheKeyData = [] ): bool
+	protected function hasViewCacheByKey( string $page, array $cacheKeyData = [] ): bool
 	{
-		$ViewCache = $this->initializeViewCache();
+		$viewCache = $this->initializeViewCache();
 		
-		if( !$ViewCache || !$ViewCache->isEnabled() )
+		if( !$viewCache || !$viewCache->isEnabled() )
 		{
 			return false;
 		}
 		
-		$CacheKey = $ViewCache->generateKey(
+		$cacheKey = $viewCache->generateKey(
 			$this->getControllerName(),
-			$Page,
-			$CacheKeyData
+			$page,
+			$cacheKeyData
 		);
 		
-		return $ViewCache->exists( $CacheKey );
+		return $viewCache->exists( $cacheKey );
 	}
 
 	/**
 	 * Get cached view content using only cache key data.
 	 * This allows retrieving cache without fetching full view data.
 	 * 
-	 * @param string $Page The page/view name
-	 * @param array $CacheKeyData The minimal data that determines cache uniqueness
+	 * @param string $page The page/view name
+	 * @param array $cacheKeyData The minimal data that determines cache uniqueness
 	 * @return string|null The cached content or null if not found
 	 */
-	protected function getViewCacheByKey( string $Page, array $CacheKeyData = [] ): ?string
+	protected function getViewCacheByKey( string $page, array $cacheKeyData = [] ): ?string
 	{
-		$ViewCache = $this->initializeViewCache();
+		$viewCache = $this->initializeViewCache();
 		
-		if( !$ViewCache || !$ViewCache->isEnabled() )
+		if( !$viewCache || !$viewCache->isEnabled() )
 		{
 			return null;
 		}
 		
-		$CacheKey = $ViewCache->generateKey(
+		$cacheKey = $viewCache->generateKey(
 			$this->getControllerName(),
-			$Page,
-			$CacheKeyData
+			$page,
+			$cacheKeyData
 		);
 		
-		return $ViewCache->get( $CacheKey );
+		return $viewCache->get( $cacheKey );
 	}
 
 	/**
 	 * Render HTML with separate cache key data.
 	 * Allows checking/using cache without fetching full view data.
 	 * 
-	 * @param HttpResponseStatus $ResponseCode HTTP response status
-	 * @param array $ViewData Full data for rendering (can be empty if using cache)
-	 * @param array $CacheKeyData Minimal data for cache key generation
-	 * @param string $Page Page template name
-	 * @param string $Layout Layout template name
-	 * @param bool|null $CacheEnabled Whether to enable caching
+	 * @param HttpResponseStatus $responseCode HTTP response status
+	 * @param array $viewData Full data for rendering (can be empty if using cache)
+	 * @param array $cacheKeyData Minimal data for cache key generation
+	 * @param string $page Page template name
+	 * @param string $layout Layout template name
+	 * @param bool|null $cacheEnabled Whether to enable caching
 	 * @return string Rendered HTML content
 	 * @throws \Neuron\Core\Exceptions\NotFound
 	 */
 	public function renderHtmlWithCacheKey( 
-		HttpResponseStatus $ResponseCode, 
-		array $ViewData = [], 
-		array $CacheKeyData = [], 
-		string $Page = "index", 
-		string $Layout = "default", 
-		?bool $CacheEnabled = null 
+		HttpResponseStatus $responseCode, 
+		array $viewData = [], 
+		array $cacheKeyData = [], 
+		string $page = "index", 
+		string $layout = "default", 
+		?bool $cacheEnabled = null 
 	): string
 	{
-		@http_response_code( $ResponseCode->value );
+		@http_response_code( $responseCode->value );
 
 		// Determine if cache should be used based on explicit setting or system default
-		$ShouldUseCache = $CacheEnabled !== false && 
-		                  ( $CacheEnabled === true || $this->isCacheEnabledByDefault() );
+		$shouldUseCache = $cacheEnabled !== false && 
+		                  ( $cacheEnabled === true || $this->isCacheEnabledByDefault() );
 
 		// If view data is empty and cache should be used, try to get cached content
-		if( empty( $ViewData ) && $ShouldUseCache )
+		if( empty( $viewData ) && $shouldUseCache )
 		{
-			$CachedContent = $this->getViewCacheByKey( $Page, $CacheKeyData );
-			if( $CachedContent !== null )
+			$cachedContent = $this->getViewCacheByKey( $page, $cacheKeyData );
+			if( $cachedContent !== null )
 			{
-				return $CachedContent;
+				return $cachedContent;
 			}
 		}
 
 		// Create view and set up for rendering
-		$View = new Html()
-			->setController( $this->getControllerName() )
-			->setLayout( $Layout )
-			->setPage( $Page )
-			->setCacheEnabled( $CacheEnabled );
+		$view = new Html()
+			->setController( $this->getControllerViewPath() )
+			->setLayout( $layout )
+			->setPage( $page )
+			->setCacheEnabled( $cacheEnabled );
 
 		// If we have view data, render normally
-		if( !empty( $ViewData ) )
+		if( !empty( $viewData ) )
 		{
-			$RenderedContent = $View->render( $ViewData );
+			$renderedContent = $view->render( $viewData );
 			
 			// Store in cache using cache key data if cache should be used
-			if( $ShouldUseCache )
+			if( $shouldUseCache )
 			{
-				$ViewCache = $this->initializeViewCache();
-				if( $ViewCache )
+				$viewCache = $this->initializeViewCache();
+				if( $viewCache )
 				{
 					// When cache is explicitly enabled, bypass global check
-					if( $CacheEnabled === true || $ViewCache->isEnabled() )
+					if( $cacheEnabled === true || $viewCache->isEnabled() )
 					{
-						$CacheKey = $ViewCache->generateKey(
+						$cacheKey = $viewCache->generateKey(
 							$this->getControllerName(),
-							$Page,
-							$CacheKeyData
+							$page,
+							$cacheKeyData
 						);
 						try
 						{
 							// Temporarily enable cache if needed for storage
-							$WasEnabled = $ViewCache->isEnabled();
-							if( $CacheEnabled === true && !$WasEnabled )
+							$wasEnabled = $viewCache->isEnabled();
+							if( $cacheEnabled === true && !$wasEnabled )
 							{
-								$ViewCache->setEnabled( true );
+								$viewCache->setEnabled( true );
 							}
 							
-							$ViewCache->set( $CacheKey, $RenderedContent );
+							$viewCache->set( $cacheKey, $renderedContent );
 							
 							// Restore original state
-							if( $CacheEnabled === true && !$WasEnabled )
+							if( $cacheEnabled === true && !$wasEnabled )
 							{
-								$ViewCache->setEnabled( false );
+								$viewCache->setEnabled( false );
 							}
 						}
 						catch( CacheException $e )
@@ -449,94 +494,94 @@ class Base implements IController
 				}
 			}
 			
-			return $RenderedContent;
+			return $renderedContent;
 		}
 
 		// No view data and no cache - this shouldn't happen in normal use
 		// but render with cache key data as fallback
-		return $View->render( $CacheKeyData );
+		return $view->render( $cacheKeyData );
 	}
 
 	/**
 	 * Render Markdown with separate cache key data.
 	 * Allows checking/using cache without fetching full view data.
 	 * 
-	 * @param HttpResponseStatus $ResponseCode HTTP response status
-	 * @param array $ViewData Full data for rendering (can be empty if using cache)
-	 * @param array $CacheKeyData Minimal data for cache key generation
-	 * @param string $Page Page template name
-	 * @param string $Layout Layout template name
-	 * @param bool|null $CacheEnabled Whether to enable caching
+	 * @param HttpResponseStatus $responseCode HTTP response status
+	 * @param array $viewData Full data for rendering (can be empty if using cache)
+	 * @param array $cacheKeyData Minimal data for cache key generation
+	 * @param string $page Page template name
+	 * @param string $layout Layout template name
+	 * @param bool|null $cacheEnabled Whether to enable caching
 	 * @return string Rendered Markdown content
 	 * @throws \Neuron\Core\Exceptions\NotFound
 	 * @throws CommonMarkException
 	 */
 	public function renderMarkdownWithCacheKey( 
-		HttpResponseStatus $ResponseCode, 
-		array $ViewData = [], 
-		array $CacheKeyData = [], 
-		string $Page = "index", 
-		string $Layout = "default", 
-		?bool $CacheEnabled = null 
+		HttpResponseStatus $responseCode, 
+		array $viewData = [], 
+		array $cacheKeyData = [], 
+		string $page = "index", 
+		string $layout = "default", 
+		?bool $cacheEnabled = null 
 	): string
 	{
-		@http_response_code( $ResponseCode->value );
+		@http_response_code( $responseCode->value );
 
 		// Determine if cache should be used based on explicit setting or system default
-		$ShouldUseCache = $CacheEnabled !== false && 
-		                  ( $CacheEnabled === true || $this->isCacheEnabledByDefault() );
+		$shouldUseCache = $cacheEnabled !== false && 
+		                  ( $cacheEnabled === true || $this->isCacheEnabledByDefault() );
 
 		// If view data is empty and cache should be used, try to get cached content
-		if( empty( $ViewData ) && $ShouldUseCache )
+		if( empty( $viewData ) && $shouldUseCache )
 		{
-			$CachedContent = $this->getViewCacheByKey( $Page, $CacheKeyData );
-			if( $CachedContent !== null )
+			$cachedContent = $this->getViewCacheByKey( $page, $cacheKeyData );
+			if( $cachedContent !== null )
 			{
-				return $CachedContent;
+				return $cachedContent;
 			}
 		}
 
 		// Create view and set up for rendering
-		$View = new Markdown()
-			->setController( $this->getControllerName() )
-			->setLayout( $Layout )
-			->setPage( $Page )
-			->setCacheEnabled( $CacheEnabled );
+		$view = new Markdown()
+			->setController( $this->getControllerViewPath() )
+			->setLayout( $layout )
+			->setPage( $page )
+			->setCacheEnabled( $cacheEnabled );
 
 		// If we have view data, render normally
-		if( !empty( $ViewData ) )
+		if( !empty( $viewData ) )
 		{
-			$RenderedContent = $View->render( $ViewData );
+			$renderedContent = $view->render( $viewData );
 			
 			// Store in cache using cache key data if cache should be used
-			if( $ShouldUseCache )
+			if( $shouldUseCache )
 			{
-				$ViewCache = $this->initializeViewCache();
-				if( $ViewCache )
+				$viewCache = $this->initializeViewCache();
+				if( $viewCache )
 				{
 					// When cache is explicitly enabled, bypass global check
-					if( $CacheEnabled === true || $ViewCache->isEnabled() )
+					if( $cacheEnabled === true || $viewCache->isEnabled() )
 					{
-						$CacheKey = $ViewCache->generateKey(
+						$cacheKey = $viewCache->generateKey(
 							$this->getControllerName(),
-							$Page,
-							$CacheKeyData
+							$page,
+							$cacheKeyData
 						);
 						try
 						{
 							// Temporarily enable cache if needed for storage
-							$WasEnabled = $ViewCache->isEnabled();
-							if( $CacheEnabled === true && !$WasEnabled )
+							$wasEnabled = $viewCache->isEnabled();
+							if( $cacheEnabled === true && !$wasEnabled )
 							{
-								$ViewCache->setEnabled( true );
+								$viewCache->setEnabled( true );
 							}
 							
-							$ViewCache->set( $CacheKey, $RenderedContent );
+							$viewCache->set( $cacheKey, $renderedContent );
 							
 							// Restore original state
-							if( $CacheEnabled === true && !$WasEnabled )
+							if( $cacheEnabled === true && !$wasEnabled )
 							{
-								$ViewCache->setEnabled( false );
+								$viewCache->setEnabled( false );
 							}
 						}
 						catch( CacheException $e )
@@ -547,12 +592,12 @@ class Base implements IController
 				}
 			}
 			
-			return $RenderedContent;
+			return $renderedContent;
 		}
 
 		// No view data and no cache - this shouldn't happen in normal use
 		// but render with cache key data as fallback
-		return $View->render( $CacheKeyData );
+		return $view->render( $cacheKeyData );
 	}
 
 	/**
@@ -566,155 +611,155 @@ class Base implements IController
 	 * Update
 	 * Delete
 	 *
-	 * @param Application $App
-	 * @param string $Route
+	 * @param Application $app
+	 * @param string $route
 	 * @throws BadRequestMethod
 	 */
-	public static function register( Application $App, string $Route = '' ): void
+	public static function register( Application $app, string $route = '' ): void
 	{
-		if( $Route == '' )
+		if( $route == '' )
 		{
-			$Route = strtolower( static::class );
+			$route = strtolower( static::class );
 		}
 
-		self::registerIndex(  $App,static::class, $Route );
-		self::registerAdd(    $App,static::class, $Route );
-		self::registerShow(   $App,static::class, $Route );
-		self::registerCreate( $App,static::class, $Route );
-		self::registerEdit(   $App,static::class, $Route );
-		self::registerUpdate( $App,static::class, $Route );
-		self::registerDelete( $App,static::class, $Route );
+		self::registerIndex(  $app,static::class, $route );
+		self::registerAdd(    $app,static::class, $route );
+		self::registerShow(   $app,static::class, $route );
+		self::registerCreate( $app,static::class, $route );
+		self::registerEdit(   $app,static::class, $route );
+		self::registerUpdate( $app,static::class, $route );
+		self::registerDelete( $app,static::class, $route );
 	}
 
 	/**
-	 * @param Application $App
-	 * @param string $Controller
-	 * @param string $Route
+	 * @param Application $app
+	 * @param string $controller
+	 * @param string $route
 	 * @return void
 	 * @throws BadRequestMethod
 	 */
-	protected static function registerIndex( Application $App, string $Controller, string $Route ): void
+	protected static function registerIndex( Application $app, string $controller, string $route ): void
 	{
-		if( method_exists( $Controller, 'index' ) )
+		if( method_exists( $controller, 'index' ) )
 		{
-			$App->addRoute(
+			$app->addRoute(
 				"GET",
-				"/$Route",
-				"$Controller@index"
+				"/$route",
+				"$controller@index"
 			);
 		}
 	}
 
 	/**
-	 * @param Application $App
-	 * @param string $Controller
-	 * @param string $Route
+	 * @param Application $app
+	 * @param string $controller
+	 * @param string $route
 	 * @return void
 	 * @throws BadRequestMethod
 	 */
-	protected static function registerAdd( Application $App, string $Controller, string $Route ): void
+	protected static function registerAdd( Application $app, string $controller, string $route ): void
 	{
-		if( method_exists( $Controller, 'add' ) )
+		if( method_exists( $controller, 'add' ) )
 		{
-			$App->addRoute(
+			$app->addRoute(
 				"GET",
-				"/$Route/new",
-				"$Controller@add"
+				"/$route/new",
+				"$controller@add"
 			);
 		}
 	}
 
 	/**
-	 * @param Application $App
-	 * @param string $Controller
-	 * @param string $Route
+	 * @param Application $app
+	 * @param string $controller
+	 * @param string $route
 	 * @return void
 	 * @throws BadRequestMethod
 	 */
-	protected static function registerShow( Application $App, string $Controller, string $Route ): void
+	protected static function registerShow( Application $app, string $controller, string $route ): void
 	{
-		if( method_exists( $Controller, 'show' ) )
+		if( method_exists( $controller, 'show' ) )
 		{
-			$App->addRoute(
+			$app->addRoute(
 				"GET",
-				"/$Route/:id",
-				"$Controller@show"
+				"/$route/:id",
+				"$controller@show"
 			);
 		}
 	}
 
 	/**
-	 * @param Application $App
-	 * @param string $Controller
-	 * @param string $Route
+	 * @param Application $app
+	 * @param string $controller
+	 * @param string $route
 	 * @return void
 	 * @throws BadRequestMethod
 	 */
-	protected static function registerCreate( Application $App, string $Controller, string $Route ): void
+	protected static function registerCreate( Application $app, string $controller, string $route ): void
 	{
-		if( method_exists( $Controller, 'create' ) )
+		if( method_exists( $controller, 'create' ) )
 		{
-			$App->addRoute(
+			$app->addRoute(
 				"POST",
-				"/$Route/create",
-				"$Controller@create"
+				"/$route/create",
+				"$controller@create"
 			);
 		}
 	}
 
 	/**
-	 * @param Application $App
-	 * @param string $Controller
-	 * @param string $Route
+	 * @param Application $app
+	 * @param string $controller
+	 * @param string $route
 	 * @return void
 	 * @throws BadRequestMethod
 	 */
-	protected static function registerEdit( Application $App, string $Controller, string $Route ): void
+	protected static function registerEdit( Application $app, string $controller, string $route ): void
 	{
-		if( method_exists( $Controller, 'edit' ) )
+		if( method_exists( $controller, 'edit' ) )
 		{
-			$App->addRoute(
+			$app->addRoute(
 				"GET",
-				"/$Route/edit/:id",
-				"$Controller@edit"
+				"/$route/edit/:id",
+				"$controller@edit"
 			);
 		}
 	}
 
 	/**
-	 * @param Application $App
-	 * @param string $Controller
-	 * @param string $Route
+	 * @param Application $app
+	 * @param string $controller
+	 * @param string $route
 	 * @return void
 	 * @throws BadRequestMethod
 	 */
-	protected static function registerUpdate( Application $App, string $Controller, string $Route ): void
+	protected static function registerUpdate( Application $app, string $controller, string $route ): void
 	{
-		if( method_exists( $Controller, 'update' ) )
+		if( method_exists( $controller, 'update' ) )
 		{
-			$App->addRoute(
+			$app->addRoute(
 				"POST",
-				"/$Route/:id",
-				"$Controller@update"
+				"/$route/:id",
+				"$controller@update"
 			);
 		}
 	}
 
 	/**
-	 * @param Application $App
-	 * @param string $Controller
-	 * @param string $Route
+	 * @param Application $app
+	 * @param string $controller
+	 * @param string $route
 	 * @return void
 	 * @throws BadRequestMethod
 	 */
-	protected static function registerDelete( Application $App, string $Controller, string $Route ): void
+	protected static function registerDelete( Application $app, string $controller, string $route ): void
 	{
-		if( method_exists( $Controller, 'delete' ) )
+		if( method_exists( $controller, 'delete' ) )
 		{
-			$App->addRoute(
+			$app->addRoute(
 				"GET",
-				"/$Route/delete/:id",
-				"$Controller@delete"
+				"/$route/delete/:id",
+				"$controller@delete"
 			);
 		}
 	}
@@ -728,11 +773,11 @@ class Base implements IController
 	 */
 	protected function urlFor( string $routeName, array $parameters = [] ): ?string
 	{
-		if( !isset( $this->_Router ) || !method_exists( $this->_Router, 'generateUrl' ) )
+		if( !isset( $this->_router ) || !method_exists( $this->_router, 'generateUrl' ) )
 		{
 			return null;
 		}
-		return $this->_Router->generateUrl( $routeName, $parameters, false );
+		return $this->_router->generateUrl( $routeName, $parameters, false );
 	}
 
 	/**
@@ -744,11 +789,11 @@ class Base implements IController
 	 */
 	protected function urlForAbsolute( string $routeName, array $parameters = [] ): ?string
 	{
-		if( !isset( $this->_Router ) || !method_exists( $this->_Router, 'generateUrl' ) )
+		if( !isset( $this->_router ) || !method_exists( $this->_router, 'generateUrl' ) )
 		{
 			return null;
 		}
-		return $this->_Router->generateUrl( $routeName, $parameters, true );
+		return $this->_router->generateUrl( $routeName, $parameters, true );
 	}
 
 	/**
@@ -758,11 +803,11 @@ class Base implements IController
 	 */
 	protected function urlHelper(): ?UrlHelper
 	{
-		if( !isset( $this->_Router ) )
+		if( !isset( $this->_router ) )
 		{
 			return null;
 		}
-		return new UrlHelper( $this->_Router );
+		return new UrlHelper( $this->_router );
 	}
 
 	/**
@@ -773,11 +818,11 @@ class Base implements IController
 	 */
 	protected function routeExists( string $routeName ): bool
 	{
-		if( !isset( $this->_Router ) || !method_exists( $this->_Router, 'getRouteByName' ) )
+		if( !isset( $this->_router ) || !method_exists( $this->_router, 'getRouteByName' ) )
 		{
 			return false;
 		}
-		return $this->_Router->getRouteByName( $routeName ) !== null;
+		return $this->_router->getRouteByName( $routeName ) !== null;
 	}
 
 	/**

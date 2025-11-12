@@ -26,34 +26,34 @@ use Symfony\Component\Yaml\Yaml;
  */
 class Application extends Base
 {
-	private string $_RoutesPath;
-	private Router $_Router;
-	private array $_Requests = [];
-	private bool $_CaptureOutput = false;
-	private ?string $_Output = '';
+	private string $_routesPath;
+	private Router $_router;
+	private array $_requests = [];
+	private bool $_captureOutput = false;
+	private ?string $_output = '';
 
 	/**
 	 * Application constructor.
-	 * @param string $Version
-	 * @param ISettingSource|null $Source
+	 * @param string $version
+	 * @param ISettingSource|null $source
 	 * @throws Exception
 	 */
-	public function __construct( string $Version ="1.0.0", ?ISettingSource $Source = null )
+	public function __construct( string $version ="1.0.0", ?ISettingSource $source = null )
 	{
 		$this->setHandleFatal( true );
 		$this->setHandleErrors( true );
 
-		parent::__construct( $Version, $Source );
+		parent::__construct( $version, $source );
 
-		$this->_RoutesPath = '';
+		$this->_routesPath = '';
 
 		Registry::getInstance()->set( 'BasePath', $this->getBasePath() );
 		Registry::getInstance()->set( 'App', $this );
 
-		$RoutesPath = $this->getSetting( 'system', 'routes_path' );
-		if( $RoutesPath )
+		$routesPath = $this->getSetting( 'system', 'routes_path' );
+		if( $routesPath )
 		{
-			$this->setRoutesPath( $RoutesPath );
+			$this->setRoutesPath( $routesPath );
 		}
 
 		$this->loadRequests();
@@ -61,12 +61,12 @@ class Application extends Base
 	}
 
 	/**
-	 * @param bool $CaptureOutput
+	 * @param bool $captureOutput
 	 * @return $this
 	 */
-	public function setCaptureOutput( bool $CaptureOutput ): Application
+	public function setCaptureOutput( bool $captureOutput ): Application
 	{
-		$this->_CaptureOutput = $CaptureOutput;
+		$this->_captureOutput = $captureOutput;
 		return $this;
 	}
 
@@ -75,7 +75,7 @@ class Application extends Base
 	 */
 	public function getCaptureOutput(): bool
 	{
-		return $this->_CaptureOutput;
+		return $this->_captureOutput;
 	}
 
 	/**
@@ -83,7 +83,7 @@ class Application extends Base
 	 */
 	public function getOutput(): ?string
 	{
-		return $this->_Output;
+		return $this->_output;
 	}
 
 	/**
@@ -91,16 +91,16 @@ class Application extends Base
 	 */
 	public function getRoutesPath(): string
 	{
-		return $this->_RoutesPath;
+		return $this->_routesPath;
 	}
 
 	/**
-	 * @param string $RoutesPath
+	 * @param string $routesPath
 	 * @return Application
 	 */
-	public function setRoutesPath( string $RoutesPath ): Application
+	public function setRoutesPath( string $routesPath ): Application
 	{
-		$this->_RoutesPath = $RoutesPath;
+		$this->_routesPath = $routesPath;
 		return $this;
 	}
 
@@ -110,81 +110,81 @@ class Application extends Base
 	 */
 	protected function loadRequests(): void
 	{
-		$RequestPath = $this->getBasePath().'/config/requests';
+		$requestPath = $this->getBasePath().'/config/requests';
 
 		if( $this->getRegistryObject( 'Requests.Path' ) )
 		{
-			$RequestPath = $this->getRegistryObject( 'Requests.Path' );
+			$requestPath = $this->getRegistryObject( 'Requests.Path' );
 		}
 
-		foreach( glob($RequestPath . '/*.yaml') as $filename )
+		foreach( glob($requestPath . '/*.yaml') as $filename )
 		{
-			$Name = pathinfo( $filename )['filename'];
+			$name = pathinfo( $filename )['filename'];
 
-			$Request = new Request();
-			$Request->loadFile( $filename );
+			$request = new Request();
+			$request->loadFile( $filename );
 
-			$this->_Requests[ $Name ] = $Request;
+			$this->_requests[ $name ] = $request;
 		}
 	}
 
 	/**
-	 * @param string $Method
-	 * @param string $Route
-	 * @param string $ControllerMethod
-	 * @param string $Request
-	 * @param string $Filter
+	 * @param string $method
+	 * @param string $route
+	 * @param string $controllerMethod
+	 * @param string $request
+	 * @param string $filter
 	 * @return \Neuron\Routing\RouteMap
 	 *
 	 * @throws BadRequestMethod
 	 * @throws Exception
 	 */
-	public function addRoute( string $Method, string $Route, string $ControllerMethod, string $Request = '', string $Filter = '' ) : \Neuron\Routing\RouteMap
+	public function addRoute( string $method, string $route, string $controllerMethod, string $request = '', string $filter = '' ) : \Neuron\Routing\RouteMap
 	{
-		switch( RequestMethod::getType( $Method ) )
+		switch( RequestMethod::getType( $method ) )
 		{
 			case RequestMethod::PUT:
-				$RouteMap = $this->_Router->put(
-					$Route,
-					function( $Parameters ) use ( $Request )
+				$routeMap = $this->_router->put(
+					$route,
+					function( $parameters ) use ( $request )
 					{
-						return $this->executeController( $Parameters, $Request );
+						return $this->executeController( $parameters, $request );
 					},
-					$Filter
+					$filter
 				);
 
 				break;
 
 			case RequestMethod::GET:
-				$RouteMap = $this->_Router->get(
-					$Route,
-					function( $Parameters ) use ( $Request )
+				$routeMap = $this->_router->get(
+					$route,
+					function( $parameters ) use ( $request )
 					{
-						return $this->executeController( $Parameters, $Request );
+						return $this->executeController( $parameters, $request );
 					},
-					$Filter
+					$filter
 				);
 				break;
 
 			case RequestMethod::POST:
-				$RouteMap = $this->_Router->post(
-					$Route,
-					function( $Parameters ) use ( $Request )
+				$routeMap = $this->_router->post(
+					$route,
+					function( $parameters ) use ( $request )
 					{
-						return $this->executeController( $Parameters, $Request );
+						return $this->executeController( $parameters, $request );
 					},
-					$Filter
+					$filter
 				);
 				break;
 
 			case RequestMethod::DELETE:
-				$RouteMap = $this->_Router->delete(
-					$Route,
-					function( $Parameters ) use ( $Request )
+				$routeMap = $this->_router->delete(
+					$route,
+					function( $parameters ) use ( $request )
 					{
-						return $this->executeController( $Parameters, $Request );
+						return $this->executeController( $parameters, $request );
 					},
-					$Filter
+					$filter
 				);
 				break;
 
@@ -192,9 +192,9 @@ class Application extends Base
 				throw new BadRequestMethod();
 		}
 
-		$RouteMap->Payload = [ "Controller" => $ControllerMethod ];
+		$routeMap->Payload = [ "Controller" => $controllerMethod ];
 
-		return $RouteMap;
+		return $routeMap;
 	}
 
 	/**
@@ -202,7 +202,7 @@ class Application extends Base
 	 */
 	public function getRouter() : Router
 	{
-		return $this->_Router;
+		return $this->_router;
 	}
 
 	/**
@@ -211,11 +211,11 @@ class Application extends Base
 	 */
 	protected function onStart(): bool
 	{
-		$ViewPath = $this->getSetting( 'views', 'path' );
-		$BasePath = $this->getBasePath();
+		$viewPath = $this->getSetting( 'views', 'path' );
+		$basePath = $this->getBasePath();
 
-		if( $ViewPath )
-			Registry::getInstance()->set( "Views.Path", $BasePath.'/'.$ViewPath );
+		if( $viewPath )
+			Registry::getInstance()->set( "Views.Path", $basePath.'/'.$viewPath );
 
 		return parent::onStart();
 	}
@@ -229,15 +229,15 @@ class Application extends Base
 	 */
 	protected function onRun() : void
 	{
-		$Output = $this->_Router->run( $this->getParameters() );
+		$output = $this->_router->run( $this->getParameters() );
 
-		if( !$this->_CaptureOutput )
+		if( !$this->_captureOutput )
 		{
-			echo $Output;
+			echo $output;
 		}
 		else
 		{
-			$this->_Output = $Output;
+			$this->_output = $output;
 		}
 	}
 
@@ -245,35 +245,35 @@ class Application extends Base
 	 * This method is called by the route lambdas and handles
 	 * instantiating the required controller and calling the correct method.
 	 *
-	 * @param array $Parameters
-	 * @param string $RequestName
+	 * @param array $parameters
+	 * @param string $requestName
 	 * @return mixed
 	 * @throws MissingMethod
 	 * @throws NotFound
 	 */
-	public function executeController( array $Parameters, string $RequestName = '' ): mixed
+	public function executeController( array $parameters, string $requestName = '' ): mixed
 	{
-		$Parts = explode( '@', $Parameters[ "Controller" ] );
+		$parts = explode( '@', $parameters[ "Controller" ] );
 
-		$Controller = $Parts[ 0 ];
-		$Method     = $Parts[ 1 ];
+		$controller = $parts[ 0 ];
+		$method     = $parts[ 1 ];
 
-		$Controller = Factory::create( $this, $Controller );
+		$controller = Factory::create( $this, $controller );
 
-		if( !method_exists( $Controller, $Method ) )
+		if( !method_exists( $controller, $method ) )
 		{
-			throw new MissingMethod( "Method '$Method'' not found." );
+			throw new MissingMethod( "Method '$method'' not found." );
 		}
 
-		$Request = null;
+		$request = null;
 
-		if( !empty( $RequestName ) )
+		if( !empty( $requestName ) )
 		{
-			$Request = $this->getRequest( $RequestName );
+			$request = $this->getRequest( $requestName );
 
 			try
 			{
-				$Request->processPayload( $Request->getJsonPayload() );
+				$request->processPayload( $request->getJsonPayload() );
 			}
 			catch( Exception $e )
 			{
@@ -281,9 +281,9 @@ class Application extends Base
 			}
 		}
 
-		return $Controller->$Method(
-			$Parameters,
-			$Request
+		return $controller->$method(
+			$parameters,
+			$request
 		);
 	}
 
@@ -293,21 +293,21 @@ class Application extends Base
 	 */
 	protected function loadRoutes(): void
 	{
-		$this->_Router = new Router();
+		$this->_router = new Router();
 
 		// Configure rate limiting if enabled
 		$this->configureRateLimit();
 
 		$this->configure404Route();
 
-		$File = $this->getBasePath().'/config';
+		$file = $this->getBasePath().'/config';
 
 		if( $this->getRoutesPath() )
 		{
-			$File = $this->getRoutesPath();
+			$file = $this->getRoutesPath();
 		}
 
-		if( !file_exists( $File . '/routes.yaml' ) )
+		if( !file_exists( $file . '/routes.yaml' ) )
 		{
 			Log::debug( "routes.yaml not found." );
 			return;
@@ -315,7 +315,7 @@ class Application extends Base
 
 		try
 		{
-			$Data = Yaml::parseFile( $File . '/routes.yaml' );
+			$data = Yaml::parseFile( $file . '/routes.yaml' );
 		}
 		catch( ParseException $exception )
 		{
@@ -323,40 +323,40 @@ class Application extends Base
 			throw new Validation( $exception->getMessage(), [] );
 		}
 
-		foreach( $Data[ 'routes' ] as $RouteName => $Route )
+		foreach( $data[ 'routes' ] as $routeName => $route )
 		{
-			$Request = $Route[ 'request' ] ?? '';
-			$Filter = $Route[ 'filter' ] ?? '';
+			$request = $route[ 'request' ] ?? '';
+			$filter = $route[ 'filter' ] ?? '';
 
-			$RouteMap = $this->addRoute(
-				$Route[ 'method' ],
-				$Route[ 'route' ],
-				$Route[ 'controller' ],
-				$Request,
-				$Filter
+			$routeMap = $this->addRoute(
+				$route[ 'method' ],
+				$route[ 'route' ],
+				$route[ 'controller' ],
+				$request,
+				$filter
 			);
-			$RouteMap->setName( $RouteName );
+			$routeMap->setName( $routeName );
 		}
 	}
 
 	/**
-	 * @param string $Name
+	 * @param string $name
 	 * @return ?Request
 	 * @throws Exception
 	 */
-	public function getRequest( string $Name ): ?Request
+	public function getRequest( string $name ): ?Request
 	{
-		if( empty( $Name ) )
+		if( empty( $name ) )
 		{
 			return null;
 		}
 
-		if( !isset( $this->_Requests[ $Name ] ) )
+		if( !isset( $this->_requests[ $name ] ) )
 		{
-			throw new Exception( "Request not found: $Name" );
+			throw new Exception( "Request not found: $name" );
 		}
 
-		return $this->_Requests[ $Name ];
+		return $this->_requests[ $name ];
 	}
 
 	/**
@@ -365,14 +365,14 @@ class Application extends Base
 	 */
 	protected function configure404Route(): void
 	{
-		$this->_Router->get( "/404",
-			function( $Parameters )
+		$this->_router->get( "/404",
+			function( $parameters )
 			{
-				Event::emit( new Http404( $Parameters[ "route" ] ) );
+				Event::emit( new Http404( $parameters[ "route" ] ) );
 
 				return self::executeController(
 					array_merge(
-						$Parameters,
+						$parameters,
 						[
 							"Controller" => "Neuron\Mvc\Controllers\HttpCodes@code404",
 						]
@@ -389,9 +389,9 @@ class Application extends Base
 	 */
 	protected function configureRateLimit(): void
 	{
-		$Source = $this->getSettingManager()?->getSource();
+		$source = $this->getSettingManager()?->getSource();
 
-		if( !$Source )
+		if( !$source )
 		{
 			return;
 		}
@@ -403,18 +403,18 @@ class Application extends Base
 		}
 
 		// Configure standard rate_limit
-		if( $Source->get( 'rate_limit', 'enabled' ) )
+		if( $source->get( 'rate_limit', 'enabled' ) )
 		{
 			try
 			{
-				$Config = \Neuron\Routing\RateLimit\RateLimitConfig::fromSettings( $Source, 'rate_limit' );
-				$Filter = new \Neuron\Routing\Filters\RateLimitFilter( $Config );
-				$this->_Router->registerFilter( 'rate_limit', $Filter );
+				$config = \Neuron\Routing\RateLimit\RateLimitConfig::fromSettings( $source, 'rate_limit' );
+				$filter = new \Neuron\Routing\Filters\RateLimitFilter( $config );
+				$this->_router->registerFilter( 'rate_limit', $filter );
 
 				// Apply globally if configured
-				if( $Source->get( 'rate_limit', 'global' ) )
+				if( $source->get( 'rate_limit', 'global' ) )
 				{
-					$this->_Router->addFilter( 'rate_limit' );
+					$this->_router->addFilter( 'rate_limit' );
 				}
 
 				Log::debug( 'Rate limiting configured: rate_limit' );
@@ -426,13 +426,13 @@ class Application extends Base
 		}
 
 		// Configure api_limit
-		if( $Source->get( 'api_limit', 'enabled' ) )
+		if( $source->get( 'api_limit', 'enabled' ) )
 		{
 			try
 			{
-				$Config = \Neuron\Routing\RateLimit\RateLimitConfig::fromSettings( $Source, 'api_limit' );
-				$Filter = new \Neuron\Routing\Filters\RateLimitFilter( $Config );
-				$this->_Router->registerFilter( 'api_limit', $Filter );
+				$config = \Neuron\Routing\RateLimit\RateLimitConfig::fromSettings( $source, 'api_limit' );
+				$filter = new \Neuron\Routing\Filters\RateLimitFilter( $config );
+				$this->_router->registerFilter( 'api_limit', $filter );
 
 				Log::debug( 'Rate limiting configured: api_limit' );
 			}
@@ -450,29 +450,29 @@ class Application extends Base
 	 */
 	public function clearExpiredCache(): int
 	{
-		$Cache = Registry::getInstance()->get( 'ViewCache' );
-		
-		if( $Cache instanceof \Neuron\Mvc\Cache\ViewCache )
+		$cache = Registry::getInstance()->get( 'ViewCache' );
+
+		if( $cache instanceof \Neuron\Mvc\Cache\ViewCache )
 		{
-			return $Cache->gc();
+			return $cache->gc();
 		}
-		
+
 		// Try to initialize cache from settings if not already loaded
-		$Settings = $this->getSettingManager();
-		
-		if( $Settings )
+		$settings = $this->getSettingManager();
+
+		if( $settings )
 		{
 			try
 			{
-				$Config = \Neuron\Mvc\Cache\CacheConfig::fromSettings( $Settings->getSource() );
+				$config = \Neuron\Mvc\Cache\CacheConfig::fromSettings( $settings->getSource() );
 
-				if( $Config->isEnabled() )
+				if( $config->isEnabled() )
 				{
-					$BasePath = $this->getBasePath();
+					$basePath = $this->getBasePath();
 
-					$Storage = \Neuron\Mvc\Cache\Storage\CacheStorageFactory::createFromConfig( $Config, $BasePath );
+					$storage = \Neuron\Mvc\Cache\Storage\CacheStorageFactory::createFromConfig( $config, $basePath );
 
-					return $Storage->gc();
+					return $storage->gc();
 				}
 			}
 			catch( \Exception $e )
@@ -480,41 +480,41 @@ class Application extends Base
 				// Unable to initialize cache
 			}
 		}
-		
+
 		return 0;
 	}
 
 	public function beautifyException( \Throwable $e ): string
 	{
 		// this function should return a nicely formatted HTML representation of the exception
-		$ExceptionType = get_class( $e );
-		$Message = htmlspecialchars( $e->getMessage(), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' );
-		$File = htmlspecialchars( $e->getFile(), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' );
-		$Line = $e->getLine();
-		$Trace = nl2br( htmlspecialchars( $e->getTraceAsString(), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' ) );
-		$Html = "<html><head><title>Exception: $ExceptionType</title>
+		$exceptionType = get_class( $e );
+		$message = htmlspecialchars( $e->getMessage(), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' );
+		$file = htmlspecialchars( $e->getFile(), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' );
+		$line = $e->getLine();
+		$trace = nl2br( htmlspecialchars( $e->getTraceAsString(), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' ) );
+		$html = "<html><head><title>Exception: $exceptionType</title>
 		<style>
 		body { font-family: Arial, sans-serif; margin: 20px; }
 		h1 { color: #c00; }
 		pre { background-color: #f4f4f4; padding: 10px; border: 1px solid #ddd; }
 		</style>
 		</head><body>";
-		$Html .= "<h1>Exception: $ExceptionType</h1>";
-		$Html .= "<p><strong>Message:</strong> $Message</p>";
-		$Html .= "<p><strong>File:</strong> $File</p>";
-		$Html .= "<p><strong>Line:</strong> $Line</p>";
-		$Html .= "<h2>Stack Trace:</h2><pre>$Trace</pre>";
-		$Html .= "</body></html>";
+		$html .= "<h1>Exception: $exceptionType</h1>";
+		$html .= "<p><strong>Message:</strong> $message</p>";
+		$html .= "<p><strong>File:</strong> $file</p>";
+		$html .= "<p><strong>Line:</strong> $line</p>";
+		$html .= "<h2>Stack Trace:</h2><pre>$trace</pre>";
+		$html .= "</body></html>";
 
-		return $Html;
+		return $html;
 	}
 
 	public function handleException( \Throwable $e ) : string
 	{
 		if( $this->getCaptureOutput() )
 		{
-			$this->_Output .= $this->beautifyException( $e );
-			return $this->_Output;
+			$this->_output .= $this->beautifyException( $e );
+			return $this->_output;
 		}
 		else
 		{
