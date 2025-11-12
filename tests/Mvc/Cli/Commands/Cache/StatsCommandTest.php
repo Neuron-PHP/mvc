@@ -75,9 +75,9 @@ class StatsCommandTest extends TestCase
 		$tempDir = sys_get_temp_dir() . '/neuron_mvc_test_' . uniqid();
 		mkdir( $tempDir );
 		
-		// Create a minimal config.yaml
+		// Create a minimal neuron.yaml
 		$config = "cache:\n  enabled: false\n  path: cache/views\n  ttl: 3600\n";
-		file_put_contents( $tempDir . '/config.yaml', $config );
+		file_put_contents( $tempDir . '/neuron.yaml', $config );
 		
 		try
 		{
@@ -100,15 +100,15 @@ class StatsCommandTest extends TestCase
 			$this->assertEquals( 0, $result );
 			
 			// Clean up
-			unlink( $tempDir . '/config.yaml' );
+			unlink( $tempDir . '/neuron.yaml' );
 			rmdir( $tempDir );
 		}
 		catch( \Exception $e )
 		{
 			// Clean up on failure
-			if( file_exists( $tempDir . '/config.yaml' ) )
+			if( file_exists( $tempDir . '/neuron.yaml' ) )
 			{
-				unlink( $tempDir . '/config.yaml' );
+				unlink( $tempDir . '/neuron.yaml' );
 			}
 			if( is_dir( $tempDir ) )
 			{
@@ -125,9 +125,9 @@ class StatsCommandTest extends TestCase
 		$tempDir = sys_get_temp_dir() . '/neuron_mvc_test_' . uniqid();
 		mkdir( $tempDir );
 		
-		// Create a minimal config.yaml
+		// Create a minimal neuron.yaml
 		$config = "cache:\n  enabled: true\n  path: $tempDir/cache\n  ttl: 3600\n";
-		file_put_contents( $tempDir . '/config.yaml', $config );
+		file_put_contents( $tempDir . '/neuron.yaml', $config );
 		
 		// Create cache directory
 		mkdir( $tempDir . '/cache' );
@@ -153,7 +153,7 @@ class StatsCommandTest extends TestCase
 			
 			// Clean up
 			rmdir( $tempDir . '/cache' );
-			unlink( $tempDir . '/config.yaml' );
+			unlink( $tempDir . '/neuron.yaml' );
 			rmdir( $tempDir );
 		}
 		catch( \Exception $e )
@@ -163,9 +163,9 @@ class StatsCommandTest extends TestCase
 			{
 				rmdir( $tempDir . '/cache' );
 			}
-			if( file_exists( $tempDir . '/config.yaml' ) )
+			if( file_exists( $tempDir . '/neuron.yaml' ) )
 			{
-				unlink( $tempDir . '/config.yaml' );
+				unlink( $tempDir . '/neuron.yaml' );
 			}
 			if( is_dir( $tempDir ) )
 			{

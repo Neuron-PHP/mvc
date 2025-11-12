@@ -25,7 +25,7 @@ class ApplicationTest extends TestCase
 	{
 		parent::setUp();
 
-		$Ini = new Yaml( './examples/config/config.yaml' );
+		$Ini = new Yaml( './examples/config/neuron.yaml' );
 		$this->App = new Application( "1.0.0", $Ini );
 	}
 
@@ -375,7 +375,7 @@ class ApplicationTest extends TestCase
 	public function testBadRoutes()
 	{
 		$this->expectException( \Neuron\Core\Exceptions\Validation::class );
-		$Ini = new Yaml( './examples/bad/config.yaml' );
+		$Ini = new Yaml( './examples/bad/neuron.yaml' );
 		$App = new Application( "1.0.0", $Ini );
 	}
 

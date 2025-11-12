@@ -359,7 +359,7 @@ class StatsCommand extends Command
 	 */
 	private function loadCacheConfiguration( string $configPath ): ?CacheConfig
 	{
-		$configFile = $configPath . '/config.yaml';
+		$configFile = $configPath . '/neuron.yaml';
 		
 		if( !file_exists( $configFile ) )
 		{

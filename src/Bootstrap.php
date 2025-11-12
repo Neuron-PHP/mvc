@@ -22,7 +22,7 @@ function boot( string $configPath ) : Application
 
 	try
 	{
-		$settings = new Yaml( "$configPath/config.yaml" );
+		$settings = new Yaml( "$configPath/neuron.yaml" );
 		$basePath = $settings->get( 'system', 'base_path' );
 	}
 	catch( \Exception $e )

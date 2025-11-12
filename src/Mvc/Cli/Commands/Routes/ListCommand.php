@@ -96,9 +96,9 @@ class ListCommand extends Command
 		$routes = [];
 		
 		// Check for routes file location from config
-		$configFile = $configPath . '/config.yaml';
+		$configFile = $configPath . '/neuron.yaml';
 		$routesPath = $configPath;
-		
+
 		if( file_exists( $configFile ) )
 		{
 			try
@@ -121,7 +121,7 @@ class ListCommand extends Command
 			}
 			catch( \Exception $e )
 			{
-				$this->output->warning( 'Could not load config.yaml: ' . $e->getMessage() );
+				$this->output->warning( 'Could not load neuron.yaml: ' . $e->getMessage() );
 			}
 		}
 		
