@@ -33,7 +33,8 @@ class CacheKeyDataTest extends TestCase
 		mkdir( $this->TempViewsDir );
 		
 		// Set up views directory structure
-		$ControllerDir = $this->TempViewsDir . '/cache_key_test_controller';
+		// Note: Controller suffix is stripped by getControllerViewPath()
+		$ControllerDir = $this->TempViewsDir . '/cache_key_test';
 		mkdir( $ControllerDir );
 		
 		// Create layouts directory

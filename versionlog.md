@@ -1,4 +1,5 @@
 ## 0.8.10
+* View paths are now mapped to the namespace structure.
 
 ## 0.8.9 2025-11-11
 * Fixed named routes in controller scaffolding.

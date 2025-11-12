@@ -71,7 +71,7 @@ class Base implements IController
 		@http_response_code( $responseCode->value );
 
 		$view = new Markdown()
-			->setController( new \ReflectionClass( static::class )->getShortName() )
+			->setController( $this->getControllerViewPath() )
 			->setLayout( $layout )
 			->setPage( $page )
 			->setCacheEnabled( $cacheEnabled );
@@ -111,7 +111,7 @@ class Base implements IController
 		@http_response_code( $responseCode->value );
 
 		$view = new Html()
-			->setController( new \ReflectionClass( static::class )->getShortName() )
+			->setController( $this->getControllerViewPath() )
 			->setLayout( $layout )
 			->setPage( $page )
 			->setCacheEnabled( $cacheEnabled );
@@ -171,7 +171,7 @@ class Base implements IController
 	 * Get the controller name for cache key generation.
 	 * Returns the short class name (without namespace).
 	 * This matches how the framework's render methods set the controller name.
-	 * 
+	 *
 	 * @return string The controller class name without namespace
 	 */
 	protected function getControllerName(): string
@@ -179,6 +179,51 @@ class Base implements IController
 		// Using static::class ensures this returns the actual derived class name
 		// not "Base", even when called from this base class
 		return new \ReflectionClass( static::class )->getShortName();
+	}
+
+	/**
+	 * Get the controller view path accounting for namespace hierarchy.
+	 * Converts controller namespace and class name to snake_case directory structure.
+	 *
+	 * Examples:
+	 * - Neuron\Cms\Controllers\Admin\Posts -> admin/posts
+	 * - Neuron\Cms\Controllers\PostController -> post (backwards compatible with "Controller" suffix)
+	 * - Neuron\Cms\Controllers\Dashboard -> dashboard
+	 *
+	 * @return string The view path (e.g., "admin/posts", "dashboard")
+	 */
+	protected function getControllerViewPath(): string
+	{
+		$reflection = new \ReflectionClass( static::class );
+		$fullClassName = $reflection->getName();
+
+		// Find the position of "Controllers" in the namespace
+		$controllersPos = strrpos( $fullClassName, '\\Controllers\\' );
+
+		if( $controllersPos === false )
+		{
+			// No "Controllers" namespace found, fall back to short name
+			$shortName = $reflection->getShortName();
+			// Strip "Controller" suffix for backwards compatibility
+			$shortName = preg_replace( '/Controller$/', '', $shortName );
+			return ( new \Neuron\Core\NString( $shortName ) )->toSnakeCase();
+		}
+
+		// Extract everything after "Controllers\"
+		$afterControllers = substr( $fullClassName, $controllersPos + strlen( '\\Controllers\\' ) );
+
+		// Split by namespace separator
+		$parts = explode( '\\', $afterControllers );
+
+		// Convert each part to snake_case
+		$snakeCaseParts = array_map( function( $part ) {
+			// Strip "Controller" suffix for backwards compatibility
+			$part = preg_replace( '/Controller$/', '', $part );
+			return ( new \Neuron\Core\NString( $part ) )->toSnakeCase();
+		}, $parts );
+
+		// Join with forward slashes for directory path
+		return implode( '/', $snakeCaseParts );
 	}
 
 	/**
@@ -400,7 +445,7 @@ class Base implements IController
 
 		// Create view and set up for rendering
 		$view = new Html()
-			->setController( $this->getControllerName() )
+			->setController( $this->getControllerViewPath() )
 			->setLayout( $layout )
 			->setPage( $page )
 			->setCacheEnabled( $cacheEnabled );
@@ -498,7 +543,7 @@ class Base implements IController
 
 		// Create view and set up for rendering
 		$view = new Markdown()
-			->setController( $this->getControllerName() )
+			->setController( $this->getControllerViewPath() )
 			->setLayout( $layout )
 			->setPage( $page )
 			->setCacheEnabled( $cacheEnabled );
