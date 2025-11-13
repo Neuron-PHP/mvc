@@ -1,5 +1,14 @@
+## 0.8.13
+
 ## 0.8.12 2025-11-12
-* Added ViewDataProvider interface for injecting data into views globally.
+* Added ViewDataProvider for global view data injection
+  - Eliminates need for views to call Registry::getInstance()
+  - Supports both static values and lazy-evaluated callables
+  - Automatic injection into all views via Base::injectHelpers()
+  - Fluent API for configuration in initializers
+  - Comprehensive PHPUnit test coverage (19 tests)
+  - Template ViewDataInitializer in resources/app/Initializers/
+  - Full documentation in readme.md
 
 ## 0.8.11 2025-11-12
 * Renamed config.yaml to neuron.yaml
