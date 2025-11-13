@@ -892,11 +892,11 @@ class Base implements IController
 	 * @param mixed $default The default value if parameter is not present
 	 * @return mixed The filtered GET parameter value or default
 	 */
-	public function filterGet( string $paramName, $default = null )
+	public function filterGet( string $paramName, mixed $default = null ) : mixed
 	{
 		$get = new Get();
 
-		return $get->filterScalar( $paramName ) ? $_GET[ $paramName ] : $default;
+		return $get->filterScalar( $paramName ) ?? $default;
 	}
 
 	/**
@@ -906,11 +906,11 @@ class Base implements IController
 	 * @param mixed $default The default value if parameter is not present
 	 * @return mixed The filtered POST parameter value or default
 	 */
-	public function filterPost( string $paramName, $default = null )
+	public function filterPost( string $paramName, mixed $default = null ) : mixed
 	{
 		$post = new Post();
 
-		return $post->filterScalar( $paramName ) ? $_GET[ $paramName ] : $default;
+		return $post->filterScalar( $paramName ) ?? $default;
 	}
 
 	/**
@@ -920,10 +920,10 @@ class Base implements IController
 	 * @param mixed $default The default value if parameter is not present
 	 * @return mixed The filtered SERVER parameter value or default
 	 */
-	public function filterServer( string $paramName, $default = null )
+	public function filterServer( string $paramName, mixed $default = null ): mixed
 	{
 		$server = new \Neuron\Data\Filter\Server();
 
-		return $server->filterScalar( $paramName ) ? $_SERVER[ $paramName ] : $default;
+		return $server->filterScalar( $paramName ) ?? $default;
 	}
 }
