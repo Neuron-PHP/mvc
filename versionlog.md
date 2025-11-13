@@ -1,4 +1,5 @@
 ## 0.8.13
+* Added get/post/server filter wrappers to controller base.
 
 ## 0.8.12 2025-11-12
 * Added ViewDataProvider for global view data injection

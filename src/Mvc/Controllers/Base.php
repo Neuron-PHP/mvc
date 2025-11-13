@@ -6,6 +6,7 @@ use League\CommonMark\Exception\CommonMarkException;
 use Neuron\Core\Exceptions\BadRequestMethod;
 use Neuron\Data\Filter\Get;
 use Neuron\Data\Filter\Post;
+use Neuron\Data\Filter\Server;
 use Neuron\Data\Setting\SettingManager;
 use Neuron\Mvc\Application;
 use Neuron\Mvc\Cache\CacheConfig;
@@ -922,7 +923,7 @@ class Base implements IController
 	 */
 	public function filterServer( string $paramName, mixed $default = null ): mixed
 	{
-		$server = new \Neuron\Data\Filter\Server();
+		$server = new Server();
 
 		return $server->filterScalar( $paramName ) ?? $default;
 	}
