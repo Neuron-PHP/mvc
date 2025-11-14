@@ -4,9 +4,6 @@ namespace Neuron\Mvc\Controllers;
 
 use League\CommonMark\Exception\CommonMarkException;
 use Neuron\Core\Exceptions\BadRequestMethod;
-use Neuron\Data\Filter\Get;
-use Neuron\Data\Filter\Post;
-use Neuron\Data\Filter\Server;
 use Neuron\Data\Setting\SettingManager;
 use Neuron\Mvc\Application;
 use Neuron\Mvc\Cache\CacheConfig;
@@ -18,7 +15,6 @@ use Neuron\Mvc\Responses\HttpResponseStatus;
 use Neuron\Mvc\Views\Html;
 use Neuron\Mvc\Views\Json;
 use Neuron\Mvc\Views\Markdown;
-use Neuron\Mvc\Views\NotFound;
 use Neuron\Mvc\Views\Xml;
 use Neuron\Routing\Router;
 
