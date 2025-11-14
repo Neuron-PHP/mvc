@@ -265,9 +265,11 @@ class Application extends Base
 			throw new MissingMethod( "Method '$method'' not found." );
 		}
 
-		$request = null;
-
-		if( !empty( $requestName ) )
+		if( empty( $requestName ) )
+		{
+			$request = new Request();
+		}
+		else
 		{
 			$request = $this->getRequest( $requestName );
 
