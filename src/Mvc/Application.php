@@ -250,6 +250,7 @@ class Application extends Base
 	 * @return mixed
 	 * @throws MissingMethod
 	 * @throws NotFound
+	 * @throws Exception
 	 */
 	public function executeController( array $parameters, string $requestName = '' ): mixed
 	{
@@ -283,12 +284,9 @@ class Application extends Base
 			}
 		}
 
+		$request->setRouteParameters( $parameters );
 
-
-		return $controller->$method(
-			$parameters,
-			$request
-		);
+		return $controller->$method( $request );
 	}
 
 	/**

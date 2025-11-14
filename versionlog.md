@@ -1,4 +1,5 @@
-## 0.8.15
+## 0.9.0
+* Controller methods can now only receive request objects. Route parameters must be accessed via the request object.
 
 ## 0.8.14 2025-11-13
 * Dispatched controller methods now always receive request objects, even if empty.

@@ -17,10 +17,11 @@ use Symfony\Component\Yaml\Yaml;
  */
 class Request
 {
-	private string $_name;
+	private string $_name = '';
 	private int   $_requestMethod;
 	private array $_headers = [];
-	private array $_parameters;
+	private array $_parameters = [];
+	private array $_routeParameters = [];
 	private array $_errors = [];
 	private DefaultIpResolver $_ipResolver;
 	private Get $_get;
@@ -38,6 +39,38 @@ class Request
 		$this->_post = new Post();
 		$this->_server = new Server();
 		$this->_session = new Session();
+	}
+
+	/**
+	 * Set route parameters
+	 *
+	 * @param array $routeParameters
+	 * @return void
+	 */
+	public function setRouteParameters( array $routeParameters ): void
+	{
+		$this->_routeParameters = $routeParameters;
+	}
+
+	/**
+	 * Get all route parameters
+	 *
+	 * @return array
+	 */
+	public function getRouteParameters(): array
+	{
+		return $this->_routeParameters;
+	}
+
+	/**
+	 * Get a route parameter by key
+	 *
+	 * @param string $key
+	 * @return mixed
+	 */
+	public function getRouteParameter( string $key ): mixed
+	{
+		return $this->_routeParameters[ $key ] ?? null;
 	}
 
 	/**
