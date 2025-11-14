@@ -1,4 +1,4 @@
-## 0.9.1
+## 0.9.1 2025-11-14
 * Refactoring and test cleanup.
 
 ## 0.9.0 2025-11-14
