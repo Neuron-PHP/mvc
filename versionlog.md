@@ -1,3 +1,6 @@
+## 0.9.1 2025-11-14
+* Refactoring and test cleanup.
+
 ## 0.9.0 2025-11-14
 * Controller methods can now only receive request objects. Route parameters must be accessed via the request object.
 

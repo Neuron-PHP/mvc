@@ -4,7 +4,10 @@ namespace Neuron\Mvc\Controllers;
 
 use League\CommonMark\Exception\CommonMarkException;
 use Neuron\Core\Exceptions\BadRequestMethod;
+use Neuron\Core\Exceptions\NotFound;
+use Neuron\Core\NString;
 use Neuron\Data\Setting\SettingManager;
+use Neuron\Log\Log;
 use Neuron\Mvc\Application;
 use Neuron\Mvc\Cache\CacheConfig;
 use Neuron\Mvc\Cache\Exceptions\CacheException;
@@ -15,7 +18,9 @@ use Neuron\Mvc\Responses\HttpResponseStatus;
 use Neuron\Mvc\Views\Html;
 use Neuron\Mvc\Views\Json;
 use Neuron\Mvc\Views\Markdown;
+use Neuron\Mvc\Views\ViewDataProvider;
 use Neuron\Mvc\Views\Xml;
+use Neuron\Patterns\Registry;
 use Neuron\Routing\Router;
 
 class Base implements IController
@@ -42,7 +47,7 @@ class Base implements IController
 	}
 
 	/**
-	 * @param Application $app
+	 * @param Application|null $app
 	 */
 	public function __construct( ?Application $app = null )
 	{
@@ -61,7 +66,7 @@ class Base implements IController
 	 * @param bool|null $cacheEnabled
 	 * @return string
 	 * @throws CommonMarkException
-	 * @throws \Neuron\Core\Exceptions\NotFound
+	 * @throws NotFound
 	 */
 	public function renderMarkdown( HttpResponseStatus $responseCode, array $data = [], string $page = "index", string $layout = "default", ?bool $cacheEnabled = null ) : string
 	{
@@ -91,11 +96,11 @@ class Base implements IController
 	 */
 	protected function injectHelpers( array $data ): array
 	{
-		$registry = \Neuron\Patterns\Registry::getInstance();
+		$registry = Registry::getInstance();
 
 		// Merge global view data from ViewDataProvider if available
 		$viewDataProvider = $registry->get( 'ViewDataProvider' );
-		if( $viewDataProvider instanceof \Neuron\Mvc\Views\ViewDataProvider )
+		if( $viewDataProvider instanceof ViewDataProvider )
 		{
 			// Global data first, then controller data (controller data wins)
 			$data = array_merge( $viewDataProvider->all(), $data );
@@ -117,7 +122,7 @@ class Base implements IController
 	 * @param string $layout
 	 * @param bool|null $cacheEnabled
 	 * @return string
-	 * @throws \Neuron\Core\Exceptions\NotFound
+	 * @throws NotFound
 	 */
 	public function renderHtml( HttpResponseStatus $responseCode, array $data = [], string $page = "index", string $layout = "default", ?bool $cacheEnabled = null ) : string
 	{
@@ -219,7 +224,7 @@ class Base implements IController
 			$shortName = $reflection->getShortName();
 			// Strip "Controller" suffix for backwards compatibility
 			$shortName = preg_replace( '/Controller$/', '', $shortName );
-			return ( new \Neuron\Core\NString( $shortName ) )->toSnakeCase();
+			return new NString( $shortName )->toSnakeCase();
 		}
 
 		// Extract everything after "Controllers\"
@@ -232,7 +237,7 @@ class Base implements IController
 		$snakeCaseParts = array_map( function( $part ) {
 			// Strip "Controller" suffix for backwards compatibility
 			$part = preg_replace( '/Controller$/', '', $part );
-			return ( new \Neuron\Core\NString( $part ) )->toSnakeCase();
+			return new NString( $part )->toSnakeCase();
 		}, $parts );
 
 		// Join with forward slashes for directory path
@@ -247,7 +252,7 @@ class Base implements IController
 	 */
 	protected function initializeViewCache(): ?ViewCache
 	{
-		$registry = \Neuron\Patterns\Registry::getInstance();
+		$registry = Registry::getInstance();
 		
 		// Check if cache is already initialized
 		$viewCache = $registry->get( 'ViewCache' );
@@ -304,12 +309,12 @@ class Base implements IController
 	}
 
 	/**
-	 * Check if view cache exists for the given page and data.
+	 * Check if a view cache exists for the given page and data.
 	 * Initializes ViewCache if needed.
 	 * 
 	 * @param string $page The page/view name
 	 * @param array $data The data that affects cache key generation
-	 * @return bool True if cache exists, false otherwise
+	 * @return bool True if a cache exists, false otherwise
 	 */
 	protected function hasViewCache( string $page, array $data = [] ): bool
 	{
@@ -367,7 +372,7 @@ class Base implements IController
 	}
 
 	/**
-	 * Check if view cache exists using only cache key data.
+	 * Check if a view cache exists using only cache key data.
 	 * This allows checking cache without fetching full view data.
 	 * 
 	 * @param string $page The page/view name
@@ -394,7 +399,7 @@ class Base implements IController
 
 	/**
 	 * Get cached view content using only cache key data.
-	 * This allows retrieving cache without fetching full view data.
+	 * This allows retrieving the cache without fetching full view data.
 	 * 
 	 * @param string $page The page/view name
 	 * @param array $cacheKeyData The minimal data that determines cache uniqueness
@@ -429,24 +434,24 @@ class Base implements IController
 	 * @param string $layout Layout template name
 	 * @param bool|null $cacheEnabled Whether to enable caching
 	 * @return string Rendered HTML content
-	 * @throws \Neuron\Core\Exceptions\NotFound
+	 * @throws NotFound
 	 */
-	public function renderHtmlWithCacheKey( 
-		HttpResponseStatus $responseCode, 
-		array $viewData = [], 
-		array $cacheKeyData = [], 
-		string $page = "index", 
-		string $layout = "default", 
-		?bool $cacheEnabled = null 
+	public function renderHtmlWithCacheKey(
+		HttpResponseStatus $responseCode,
+		array $viewData = [],
+		array $cacheKeyData = [],
+		string $page = "index",
+		string $layout = "default",
+		?bool $cacheEnabled = null
 	): string
 	{
 		@http_response_code( $responseCode->value );
 
 		// Determine if cache should be used based on explicit setting or system default
-		$shouldUseCache = $cacheEnabled !== false && 
+		$shouldUseCache = $cacheEnabled !== false &&
 		                  ( $cacheEnabled === true || $this->isCacheEnabledByDefault() );
 
-		// If view data is empty and cache should be used, try to get cached content
+		// Guard: Try to return cached content early if no view data provided
 		if( empty( $viewData ) && $shouldUseCache )
 		{
 			$cachedContent = $this->getViewCacheByKey( $page, $cacheKeyData );
@@ -463,56 +468,22 @@ class Base implements IController
 			->setPage( $page )
 			->setCacheEnabled( $cacheEnabled );
 
-		// If we have view data, render normally
-		if( !empty( $viewData ) )
+		// Guard: If still no view data, render with cache key data as fallback
+		if( empty( $viewData ) )
 		{
-			$renderedContent = $view->render( $viewData );
-			
-			// Store in cache using cache key data if cache should be used
-			if( $shouldUseCache )
-			{
-				$viewCache = $this->initializeViewCache();
-				if( $viewCache )
-				{
-					// When cache is explicitly enabled, bypass global check
-					if( $cacheEnabled === true || $viewCache->isEnabled() )
-					{
-						$cacheKey = $viewCache->generateKey(
-							$this->getControllerName(),
-							$page,
-							$cacheKeyData
-						);
-						try
-						{
-							// Temporarily enable cache if needed for storage
-							$wasEnabled = $viewCache->isEnabled();
-							if( $cacheEnabled === true && !$wasEnabled )
-							{
-								$viewCache->setEnabled( true );
-							}
-							
-							$viewCache->set( $cacheKey, $renderedContent );
-							
-							// Restore original state
-							if( $cacheEnabled === true && !$wasEnabled )
-							{
-								$viewCache->setEnabled( false );
-							}
-						}
-						catch( CacheException $e )
-						{
-							// Silently fail on cache write errors
-						}
-					}
-				}
-			}
-			
-			return $renderedContent;
+			return $view->render( $cacheKeyData );
 		}
 
-		// No view data and no cache - this shouldn't happen in normal use
-		// but render with cache key data as fallback
-		return $view->render( $cacheKeyData );
+		// Render with view data
+		$renderedContent = $view->render( $viewData );
+
+		// Store in cache if needed
+		if( $shouldUseCache )
+		{
+			$this->storeCachedView( $page, $cacheKeyData, $renderedContent, $cacheEnabled );
+		}
+
+		return $renderedContent;
 	}
 
 	/**
@@ -526,25 +497,25 @@ class Base implements IController
 	 * @param string $layout Layout template name
 	 * @param bool|null $cacheEnabled Whether to enable caching
 	 * @return string Rendered Markdown content
-	 * @throws \Neuron\Core\Exceptions\NotFound
+	 * @throws NotFound
 	 * @throws CommonMarkException
 	 */
-	public function renderMarkdownWithCacheKey( 
-		HttpResponseStatus $responseCode, 
-		array $viewData = [], 
-		array $cacheKeyData = [], 
-		string $page = "index", 
-		string $layout = "default", 
-		?bool $cacheEnabled = null 
+	public function renderMarkdownWithCacheKey(
+		HttpResponseStatus $responseCode,
+		array $viewData = [],
+		array $cacheKeyData = [],
+		string $page = "index",
+		string $layout = "default",
+		?bool $cacheEnabled = null
 	): string
 	{
 		@http_response_code( $responseCode->value );
 
 		// Determine if cache should be used based on explicit setting or system default
-		$shouldUseCache = $cacheEnabled !== false && 
+		$shouldUseCache = $cacheEnabled !== false &&
 		                  ( $cacheEnabled === true || $this->isCacheEnabledByDefault() );
 
-		// If view data is empty and cache should be used, try to get cached content
+		// Guard: Try to return cached content early if no view data provided
 		if( empty( $viewData ) && $shouldUseCache )
 		{
 			$cachedContent = $this->getViewCacheByKey( $page, $cacheKeyData );
@@ -561,56 +532,84 @@ class Base implements IController
 			->setPage( $page )
 			->setCacheEnabled( $cacheEnabled );
 
-		// If we have view data, render normally
-		if( !empty( $viewData ) )
+		// Guard: If still no view data, render with cache key data as fallback
+		if( empty( $viewData ) )
 		{
-			$renderedContent = $view->render( $viewData );
-			
-			// Store in cache using cache key data if cache should be used
-			if( $shouldUseCache )
-			{
-				$viewCache = $this->initializeViewCache();
-				if( $viewCache )
-				{
-					// When cache is explicitly enabled, bypass global check
-					if( $cacheEnabled === true || $viewCache->isEnabled() )
-					{
-						$cacheKey = $viewCache->generateKey(
-							$this->getControllerName(),
-							$page,
-							$cacheKeyData
-						);
-						try
-						{
-							// Temporarily enable cache if needed for storage
-							$wasEnabled = $viewCache->isEnabled();
-							if( $cacheEnabled === true && !$wasEnabled )
-							{
-								$viewCache->setEnabled( true );
-							}
-							
-							$viewCache->set( $cacheKey, $renderedContent );
-							
-							// Restore original state
-							if( $cacheEnabled === true && !$wasEnabled )
-							{
-								$viewCache->setEnabled( false );
-							}
-						}
-						catch( CacheException $e )
-						{
-							// Silently fail on cache write errors
-						}
-					}
-				}
-			}
-			
-			return $renderedContent;
+			return $view->render( $cacheKeyData );
 		}
 
-		// No view data and no cache - this shouldn't happen in normal use
-		// but render with cache key data as fallback
-		return $view->render( $cacheKeyData );
+		// Render with view data
+		$renderedContent = $view->render( $viewData );
+
+		// Store in cache if needed
+		if( $shouldUseCache )
+		{
+			$this->storeCachedView( $page, $cacheKeyData, $renderedContent, $cacheEnabled );
+		}
+
+		return $renderedContent;
+	}
+
+	/**
+	 * Store rendered content in view cache.
+	 * Handles cache initialization, temporary enablement, and error handling.
+	 *
+	 * @param string $page The page/view name
+	 * @param array $cacheKeyData Data for cache key generation
+	 * @param string $content The rendered content to cache
+	 * @param bool|null $cacheEnabled Whether caching is explicitly enabled
+	 * @return void
+	 */
+	private function storeCachedView(
+		string $page,
+		array $cacheKeyData,
+		string $content,
+		?bool $cacheEnabled
+	): void
+	{
+		$viewCache = $this->initializeViewCache();
+
+		// Guard: No cache available
+		if( !$viewCache )
+		{
+			return;
+		}
+
+		// Guard: Check if cache should be used
+		if( $cacheEnabled !== true && !$viewCache->isEnabled() )
+		{
+			return;
+		}
+
+		$cacheKey = $viewCache->generateKey(
+			$this->getControllerName(),
+			$page,
+			$cacheKeyData
+		);
+
+		// Handle temporary cache enablement
+		$needsTemporaryEnable = $cacheEnabled === true && !$viewCache->isEnabled();
+		if( $needsTemporaryEnable )
+		{
+			$viewCache->setEnabled( true );
+		}
+
+		try
+		{
+			$viewCache->set( $cacheKey, $content );
+		}
+		catch( CacheException $e )
+		{
+			Log::error( $e );
+		}
+		finally
+		{
+			// Restore the original state if we changed it
+			if( $needsTemporaryEnable )
+			{
+				$viewCache->setEnabled( false );
+			}
+		}
 	}
 
 	/**
@@ -848,7 +847,7 @@ class Base implements IController
 	 * @param string $method The method name (e.g., 'userProfilePath', 'userProfileUrl')
 	 * @param array $arguments Method arguments, first should be parameters array
 	 * @return string|null Generated URL or null if route not found
-	 * @throws \BadMethodCallException If method pattern is not recognized
+	 * @throws \BadMethodCallException If a method pattern is not recognized
 	 * 
 	 * @example
 	 * ```php
@@ -867,14 +866,14 @@ class Base implements IController
 		// Handle *Path() methods for relative URLs
 		if( preg_match( '/^(.+)Path$/', $method, $matches ) )
 		{
-			$routeName = ( new \Neuron\Core\NString( $matches[1] ) )->toSnakeCase();
+			$routeName = new NString( $matches[1] )->toSnakeCase();
 			return $this->urlFor( $routeName, $parameters );
 		}
 
 		// Handle *Url() methods for absolute URLs
 		if( preg_match( '/^(.+)Url$/', $method, $matches ) )
 		{
-			$routeName = ( new \Neuron\Core\NString( $matches[1] ) )->toSnakeCase();
+			$routeName = new NString( $matches[1] )->toSnakeCase();
 			return $this->urlForAbsolute( $routeName, $parameters );
 		}
 

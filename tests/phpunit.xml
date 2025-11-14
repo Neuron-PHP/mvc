@@ -8,6 +8,15 @@
   <testsuites>
     <testsuite name="unit">
         <directory>Mvc</directory>
+        <exclude>Mvc/Cache/Storage/RedisCacheStorageIntegrationTest.php</exclude>
+    </testsuite>
+    <testsuite name="integration">
+        <file>Mvc/Cache/Storage/RedisCacheStorageIntegrationTest.php</file>
     </testsuite>
   </testsuites>
+  <groups>
+    <exclude>
+      <group>integration</group>
+    </exclude>
+  </groups>
 </phpunit>

@@ -196,9 +196,107 @@ class CacheControlTest extends TestCase
 	 */
 	public function testMarkdownRenderWithCacheControl()
 	{
-		// For markdown tests, we'll use the Html view since Markdown's recursive 
-		// file search doesn't work well with vfsStream
-		$this->markTestSkipped( 'Markdown view recursive search incompatible with vfsStream' );
+		// Use real filesystem for Markdown test due to vfsStream incompatibility with recursive file search
+		$TempDir = sys_get_temp_dir() . '/neuron_test_markdown_' . uniqid();
+
+		try
+		{
+			// Create directory structure
+			$ViewsDir = $TempDir . '/resources/views';
+			$CacheDir = $TempDir . '/cache/views';
+			$ControllerDir = $ViewsDir . '/test_controller_with_cache';
+			$LayoutsDir = $ViewsDir . '/layouts';
+
+			mkdir( $ControllerDir, 0777, true );
+			mkdir( $LayoutsDir, 0777, true );
+			mkdir( $CacheDir, 0777, true );
+
+			// Create Markdown view file
+			file_put_contents( $ControllerDir . '/page.md', '# Test Markdown Page' );
+
+			// Create layout file
+			file_put_contents( $LayoutsDir . '/default.php', '<?php echo $content; ?>' );
+
+			// Configure Registry with real paths
+			$OriginalBasePath = $this->Registry->get( 'Base.Path' );
+			$OriginalViewsPath = $this->Registry->get( 'Views.Path' );
+			$OriginalViewCache = $this->Registry->get( 'ViewCache' );
+
+			$this->Registry->set( 'Base.Path', $TempDir );
+			$this->Registry->set( 'Views.Path', $ViewsDir );
+
+			// Set up cache
+			$Storage = new FileCacheStorage( $CacheDir );
+			$Cache = new ViewCache( $Storage, true );
+			$this->Registry->set( 'ViewCache', $Cache );
+
+			// Create test controller
+			$Controller = new TestControllerWithCache();
+
+			// Test rendering with cache enabled
+			$MarkdownContent = $Controller->renderMarkdown(
+				HttpResponseStatus::OK,
+				[],
+				'page',
+				'default',
+				true // Cache enabled
+			);
+
+			$this->assertStringContainsString( '<h1>Test Markdown Page</h1>', $MarkdownContent );
+
+			// Render again - should use cache
+			$MarkdownContent2 = $Controller->renderMarkdown(
+				HttpResponseStatus::OK,
+				[],
+				'page',
+				'default',
+				true
+			);
+
+			$this->assertEquals( $MarkdownContent, $MarkdownContent2 );
+
+			// Restore original registry values
+			$this->Registry->set( 'Base.Path', $OriginalBasePath );
+			$this->Registry->set( 'Views.Path', $OriginalViewsPath );
+			$this->Registry->set( 'ViewCache', $OriginalViewCache );
+		}
+		finally
+		{
+			// Clean up temp directory
+			if( is_dir( $TempDir ) )
+			{
+				$this->recursiveRemoveDirectory( $TempDir );
+			}
+		}
+	}
+
+	/**
+	 * Helper method to recursively remove a directory
+	 */
+	private function recursiveRemoveDirectory( string $Dir ): void
+	{
+		if( !is_dir( $Dir ) )
+		{
+			return;
+		}
+
+		$Items = array_diff( scandir( $Dir ), [ '.', '..' ] );
+
+		foreach( $Items as $Item )
+		{
+			$Path = $Dir . DIRECTORY_SEPARATOR . $Item;
+
+			if( is_dir( $Path ) )
+			{
+				$this->recursiveRemoveDirectory( $Path );
+			}
+			else
+			{
+				unlink( $Path );
+			}
+		}
+
+		rmdir( $Dir );
 	}
 	
 	/**
