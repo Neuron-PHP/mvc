@@ -1,3 +1,5 @@
+## 0.9.2
+
 ## 0.9.1 2025-11-14
 * Refactoring and test cleanup.
 
