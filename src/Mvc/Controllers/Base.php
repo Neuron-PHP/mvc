@@ -4,9 +4,6 @@ namespace Neuron\Mvc\Controllers;
 
 use League\CommonMark\Exception\CommonMarkException;
 use Neuron\Core\Exceptions\BadRequestMethod;
-use Neuron\Data\Filter\Get;
-use Neuron\Data\Filter\Post;
-use Neuron\Data\Filter\Server;
 use Neuron\Data\Setting\SettingManager;
 use Neuron\Mvc\Application;
 use Neuron\Mvc\Cache\CacheConfig;
@@ -18,7 +15,6 @@ use Neuron\Mvc\Responses\HttpResponseStatus;
 use Neuron\Mvc\Views\Html;
 use Neuron\Mvc\Views\Json;
 use Neuron\Mvc\Views\Markdown;
-use Neuron\Mvc\Views\NotFound;
 use Neuron\Mvc\Views\Xml;
 use Neuron\Routing\Router;
 
@@ -884,47 +880,5 @@ class Base implements IController
 
 		// If no URL helper pattern matches, throw an exception
 		throw new \BadMethodCallException( "Method '$method' not found in " . static::class );
-	}
-
-	/**
-	 * Filter and retrieve a GET parameter.
-	 *
-	 * @param string $paramName The name of the GET parameter
-	 * @param mixed $default The default value if parameter is not present
-	 * @return mixed The filtered GET parameter value or default
-	 */
-	public function filterGet( string $paramName, mixed $default = null ) : mixed
-	{
-		$get = new Get();
-
-		return $get->filterScalar( $paramName ) ?? $default;
-	}
-
-	/**
-	 * Filter and retrieve a POST parameter.
-	 *
-	 * @param string $paramName The name of the POST parameter
-	 * @param mixed $default The default value if parameter is not present
-	 * @return mixed The filtered POST parameter value or default
-	 */
-	public function filterPost( string $paramName, mixed $default = null ) : mixed
-	{
-		$post = new Post();
-
-		return $post->filterScalar( $paramName ) ?? $default;
-	}
-
-	/**
-	 * Filter and retrieve a SERVER parameter.
-	 *
-	 * @param string $paramName The name of the SERVER parameter
-	 * @param mixed $default The default value if parameter is not present
-	 * @return mixed The filtered SERVER parameter value or default
-	 */
-	public function filterServer( string $paramName, mixed $default = null ): mixed
-	{
-		$server = new Server();
-
-		return $server->filterScalar( $paramName ) ?? $default;
 	}
 }
