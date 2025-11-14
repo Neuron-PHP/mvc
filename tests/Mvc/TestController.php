@@ -13,7 +13,7 @@ global $ControllerState;
 
 class TestController extends Base
 {
-	public function test( array $Parameters, ?Request $Request )
+	public function test( Request $Request )
 	{
 		global $ControllerState;
 
@@ -23,7 +23,7 @@ class TestController extends Base
 			$ControllerState = true;
 	}
 
-	public function partial( array $Parameters, ?Request $Request ) : string
+	public function partial( Request $Request ) : string
 	{
 		return $this->renderHtml(
 			HttpResponseStatus::OK,
@@ -34,7 +34,7 @@ class TestController extends Base
 		);
 	}
 
-	public function no_request( array $Parameters, ?Request $Request )
+	public function no_request( Request $Request )
 	{
 		global $ControllerState;
 		$ControllerState = true;
