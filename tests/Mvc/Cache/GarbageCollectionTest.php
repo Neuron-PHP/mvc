@@ -156,28 +156,65 @@ class GarbageCollectionTest extends TestCase
 	
 	public function testGcRemovesEmptySubdirectories()
 	{
-		// Note: This test may be skipped due to vfsStream limitations
-		if( strpos( vfsStream::url( 'cache' ), 'vfs://' ) === 0 )
+		// Use real filesystem for this test due to vfsStream limitations with subdirectory removal
+		$TempDir = sys_get_temp_dir() . '/neuron_test_gc_' . uniqid();
+		mkdir( $TempDir, 0777, true );
+
+		try
 		{
-			$this->markTestSkipped( 'Subdirectory removal test skipped due to vfsStream limitations' );
+			$Storage = new FileCacheStorage( $TempDir );
+
+			// Write and let expire
+			$Storage->write( 'test', 'content', 1 );
+			sleep( 2 );
+
+			// Run GC
+			$Storage->gc();
+
+			// Check subdirectories are cleaned up
+			$Items = scandir( $TempDir );
+			$NonDotItems = array_filter( $Items, function( $Item ) {
+				return $Item !== '.' && $Item !== '..';
+			});
+
+			$this->assertCount( 0, $NonDotItems, 'Empty subdirectories should be removed' );
+		}
+		finally
+		{
+			// Clean up temp directory
+			if( is_dir( $TempDir ) )
+			{
+				$this->recursiveRemoveDirectory( $TempDir );
+			}
+		}
+	}
+
+	/**
+	 * Helper method to recursively remove a directory
+	 */
+	private function recursiveRemoveDirectory( string $Dir ): void
+	{
+		if( !is_dir( $Dir ) )
+		{
 			return;
 		}
-		
-		$Storage = new FileCacheStorage( vfsStream::url( 'cache' ) );
-		
-		// Write and let expire
-		$Storage->write( 'test', 'content', 1 );
-		sleep( 2 );
-		
-		// Run GC
-		$Storage->gc();
-		
-		// Check subdirectories are cleaned up
-		$Items = scandir( vfsStream::url( 'cache' ) );
-		$NonDotItems = array_filter( $Items, function( $Item ) {
-			return $Item !== '.' && $Item !== '..';
-		});
-		
-		$this->assertCount( 0, $NonDotItems, 'Empty subdirectories should be removed' );
+
+		$Items = array_diff( scandir( $Dir ), [ '.', '..' ] );
+
+		foreach( $Items as $Item )
+		{
+			$Path = $Dir . DIRECTORY_SEPARATOR . $Item;
+
+			if( is_dir( $Path ) )
+			{
+				$this->recursiveRemoveDirectory( $Path );
+			}
+			else
+			{
+				unlink( $Path );
+			}
+		}
+
+		rmdir( $Dir );
 	}
 }

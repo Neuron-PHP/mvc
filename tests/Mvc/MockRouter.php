@@ -1,9 +1,9 @@
 <?php
 
-namespace Tests\Mock;
+namespace Mvc;
 
-use Neuron\Routing\Router;
 use Neuron\Routing\RouteMap;
+use Neuron\Routing\Router;
 
 /**
  * Mock Router for testing URL helpers.

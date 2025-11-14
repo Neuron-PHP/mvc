@@ -55,23 +55,63 @@ class ViewCacheTest extends TestCase
 
 	public function testCacheClear()
 	{
-		// Skip this test with vfsStream due to limitations with directory operations
-		if( strpos( vfsStream::url( 'cache' ), 'vfs://' ) === 0 )
+		// Use real filesystem for this test due to vfsStream limitations with recursive directory clearing
+		$TempDir = sys_get_temp_dir() . '/neuron_test_cache_' . uniqid();
+		mkdir( $TempDir, 0777, true );
+
+		try
 		{
-			$this->markTestSkipped( 'Clear test skipped due to vfsStream limitations' );
+			$RealStorage = new FileCacheStorage( $TempDir );
+			$RealCache = new ViewCache( $RealStorage );
+
+			$RealCache->set( 'key1', 'content1' );
+			$RealCache->set( 'key2', 'content2' );
+
+			$this->assertTrue( $RealCache->exists( 'key1' ) );
+			$this->assertTrue( $RealCache->exists( 'key2' ) );
+
+			$this->assertTrue( $RealCache->clear() );
+
+			$this->assertFalse( $RealCache->exists( 'key1' ) );
+			$this->assertFalse( $RealCache->exists( 'key2' ) );
+		}
+		finally
+		{
+			// Clean up temp directory
+			if( is_dir( $TempDir ) )
+			{
+				$this->recursiveRemoveDirectory( $TempDir );
+			}
+		}
+	}
+
+	/**
+	 * Helper method to recursively remove a directory
+	 */
+	private function recursiveRemoveDirectory( string $Dir ): void
+	{
+		if( !is_dir( $Dir ) )
+		{
 			return;
 		}
-		
-		$this->Cache->set( 'key1', 'content1' );
-		$this->Cache->set( 'key2', 'content2' );
-		
-		$this->assertTrue( $this->Cache->exists( 'key1' ) );
-		$this->assertTrue( $this->Cache->exists( 'key2' ) );
-		
-		$this->assertTrue( $this->Cache->clear() );
-		
-		$this->assertFalse( $this->Cache->exists( 'key1' ) );
-		$this->assertFalse( $this->Cache->exists( 'key2' ) );
+
+		$Items = array_diff( scandir( $Dir ), [ '.', '..' ] );
+
+		foreach( $Items as $Item )
+		{
+			$Path = $Dir . DIRECTORY_SEPARATOR . $Item;
+
+			if( is_dir( $Path ) )
+			{
+				$this->recursiveRemoveDirectory( $Path );
+			}
+			else
+			{
+				unlink( $Path );
+			}
+		}
+
+		rmdir( $Dir );
 	}
 
 	public function testGenerateKey()

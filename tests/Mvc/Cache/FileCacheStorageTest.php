@@ -83,26 +83,65 @@ class FileCacheStorageTest extends TestCase
 
 	public function testClear()
 	{
-		// Skip this test with vfsStream due to limitations with directory operations
-		if( strpos( vfsStream::url( 'cache' ), 'vfs://' ) === 0 )
+		// Use real filesystem for this test due to vfsStream limitations with recursive directory clearing
+		$TempDir = sys_get_temp_dir() . '/neuron_test_file_cache_' . uniqid();
+		mkdir( $TempDir, 0777, true );
+
+		try
 		{
-			$this->markTestSkipped( 'Clear test skipped due to vfsStream limitations' );
+			$RealStorage = new FileCacheStorage( $TempDir );
+
+			$RealStorage->write( 'key1', 'content1', 3600 );
+			$RealStorage->write( 'key2', 'content2', 3600 );
+			$RealStorage->write( 'key3', 'content3', 3600 );
+
+			$this->assertTrue( $RealStorage->exists( 'key1' ) );
+			$this->assertTrue( $RealStorage->exists( 'key2' ) );
+			$this->assertTrue( $RealStorage->exists( 'key3' ) );
+
+			$this->assertTrue( $RealStorage->clear() );
+
+			$this->assertFalse( $RealStorage->exists( 'key1' ) );
+			$this->assertFalse( $RealStorage->exists( 'key2' ) );
+			$this->assertFalse( $RealStorage->exists( 'key3' ) );
+		}
+		finally
+		{
+			// Clean up temp directory
+			if( is_dir( $TempDir ) )
+			{
+				$this->recursiveRemoveDirectory( $TempDir );
+			}
+		}
+	}
+
+	/**
+	 * Helper method to recursively remove a directory
+	 */
+	private function recursiveRemoveDirectory( string $Dir ): void
+	{
+		if( !is_dir( $Dir ) )
+		{
 			return;
 		}
-		
-		$this->Storage->write( 'key1', 'content1', 3600 );
-		$this->Storage->write( 'key2', 'content2', 3600 );
-		$this->Storage->write( 'key3', 'content3', 3600 );
-		
-		$this->assertTrue( $this->Storage->exists( 'key1' ) );
-		$this->assertTrue( $this->Storage->exists( 'key2' ) );
-		$this->assertTrue( $this->Storage->exists( 'key3' ) );
-		
-		$this->assertTrue( $this->Storage->clear() );
-		
-		$this->assertFalse( $this->Storage->exists( 'key1' ) );
-		$this->assertFalse( $this->Storage->exists( 'key2' ) );
-		$this->assertFalse( $this->Storage->exists( 'key3' ) );
+
+		$Items = array_diff( scandir( $Dir ), [ '.', '..' ] );
+
+		foreach( $Items as $Item )
+		{
+			$Path = $Dir . DIRECTORY_SEPARATOR . $Item;
+
+			if( is_dir( $Path ) )
+			{
+				$this->recursiveRemoveDirectory( $Path );
+			}
+			else
+			{
+				unlink( $Path );
+			}
+		}
+
+		rmdir( $Dir );
 	}
 
 	public function testSubdirectoryCreation()

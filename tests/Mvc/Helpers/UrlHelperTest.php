@@ -2,12 +2,12 @@
 
 namespace Tests\Mvc\Helpers;
 
+use Mvc\MockRouter;
 use Neuron\Mvc\Helpers\UrlHelper;
 use Neuron\Patterns\Registry;
-use Neuron\Routing\Router;
 use Neuron\Routing\RouteMap;
+use Neuron\Routing\Router;
 use PHPUnit\Framework\TestCase;
-use Tests\Mock\MockRouter;
 
 /**
  * Unit tests for the UrlHelper class.

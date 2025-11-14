@@ -6,10 +6,17 @@ use Neuron\Mvc\Cache\Storage\RedisCacheStorage;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Tests RedisCacheStorage implementation.
- * These tests will be skipped if Redis extension is not installed or Redis server is not running.
+ * Integration tests for RedisCacheStorage implementation.
+ * These tests require a running Redis server and will be skipped if:
+ * - Redis extension is not installed
+ * - Redis server is not running at 127.0.0.1:6379
+ *
+ * To run only integration tests: ./vendor/bin/phpunit --group integration
+ * To exclude integration tests: ./vendor/bin/phpunit --exclude-group integration
+ *
+ * @group integration
  */
-class RedisCacheStorageTest extends TestCase
+class RedisCacheStorageIntegrationTest extends TestCase
 {
 	private ?RedisCacheStorage $Storage = null;
 	private bool $RedisAvailable = false;
