@@ -1,3 +1,6 @@
+## 0.8.14 2025-11-13
+* Dispatched controller methods now always receive request objects, even if empty.
+
 ## 0.8.13 2025-11-13
 * Added get/post/server filter wrappers to controller base.
 

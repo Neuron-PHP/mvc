@@ -37,7 +37,7 @@ class TestController extends Base
 	public function no_request( array $Parameters, ?Request $Request )
 	{
 		global $ControllerState;
-		$ControllerState = $Request === null;
+		$ControllerState = true;
 	}
 
 

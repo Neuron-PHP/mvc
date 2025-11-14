@@ -3,7 +3,12 @@
 namespace Neuron\Mvc\Requests;
 
 use Neuron\Core\Exceptions\Validation;
+use Neuron\Data\Filter\Get;
+use Neuron\Data\Filter\Post;
+use Neuron\Data\Filter\Server;
+use Neuron\Data\Filter\Session;
 use Neuron\Log\Log;
+use Neuron\Routing\DefaultIpResolver;
 use Neuron\Routing\RequestMethod;
 use Symfony\Component\Yaml\Yaml;
 
@@ -17,14 +22,79 @@ class Request
 	private array $_headers = [];
 	private array $_parameters;
 	private array $_errors = [];
+	private DefaultIpResolver $_ipResolver;
+	private Get $_get;
+	private Post $_post;
+	private Server $_server;
+	private Session $_session;
 
 	/**
 	 * Request constructor.
 	 */
 	public function __construct()
 	{
+		$this->_ipResolver = new DefaultIpResolver();
+		$this->_get = new Get();
+		$this->_post = new Post();
+		$this->_server = new Server();
+		$this->_session = new Session();
 	}
 
+	/**
+	 * @return string
+	 */
+	public function getClientIp(): string
+	{
+		return $this->_ipResolver->resolve( $_SERVER );
+	}
+
+	/**
+	 * Filtered GET parameter
+	 * @param string $key
+	 * @param mixed|null $default
+	 * @return mixed
+	 */
+	public function get( string $key, mixed $default = null ): mixed
+	{
+		return $this->_get->filterScalar( $key, $default );
+	}
+
+	/**
+	 * Filtered POST parameter
+	 * @param string $key
+	 * @param mixed|null $default
+	 * @return mixed
+	 */
+	public function post( string $key, mixed $default = null ): mixed
+	{
+		return $this->_post->filterScalar( $key, $default );
+	}
+
+	/**
+	 * Filtered SERVER parameter
+	 * @param string $key
+	 * @param mixed|null $default
+	 * @return mixed
+	 */
+	public function server( string $key, mixed $default = null ): mixed
+	{
+		return $this->_server->filterScalar( $key, $default );
+	}
+
+	/**
+	 *
+	 * @param string $key
+	 * @param mixed|null $default
+	 * @return mixed
+	 */
+	public function session( string $key, mixed $default = null ): mixed
+	{
+		return $this->_session->filterScalar( $key, $default );
+	}
+
+	/**
+	 * @return array
+	 */
 	public function getErrors(): array
 	{
 		return $this->_errors;
