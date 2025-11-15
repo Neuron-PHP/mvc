@@ -1,4 +1,4 @@
-## 0.9.4
+## 0.9.4 2025-11-15
 
 ## 0.9.5 2025-11-15
 * Enhanced `urlFor()` and `urlForAbsolute()` methods to accept optional fallback parameter
