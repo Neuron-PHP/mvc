@@ -778,34 +778,38 @@ class Base implements IController
 
 	/**
 	 * Generate a relative URL for a named route.
-	 * 
+	 *
 	 * @param string $routeName The name of the route
 	 * @param array $parameters Parameters to substitute in the route path
-	 * @return string|null The generated relative URL or null if route not found
+	 * @param string|null $fallback Fallback URL if route not found
+	 * @return string|null The generated relative URL, fallback if provided, or null if route not found
 	 */
-	protected function urlFor( string $routeName, array $parameters = [] ): ?string
+	protected function urlFor( string $routeName, array $parameters = [], ?string $fallback = null ): ?string
 	{
 		if( !isset( $this->_router ) || !method_exists( $this->_router, 'generateUrl' ) )
 		{
-			return null;
+			return $fallback;
 		}
-		return $this->_router->generateUrl( $routeName, $parameters, false );
+		$url = $this->_router->generateUrl( $routeName, $parameters, false );
+		return $url ?? $fallback;
 	}
 
 	/**
 	 * Generate an absolute URL for a named route.
-	 * 
+	 *
 	 * @param string $routeName The name of the route
 	 * @param array $parameters Parameters to substitute in the route path
-	 * @return string|null The generated absolute URL or null if route not found
+	 * @param string|null $fallback Fallback URL if route not found
+	 * @return string|null The generated absolute URL, fallback if provided, or null if route not found
 	 */
-	protected function urlForAbsolute( string $routeName, array $parameters = [] ): ?string
+	protected function urlForAbsolute( string $routeName, array $parameters = [], ?string $fallback = null ): ?string
 	{
 		if( !isset( $this->_router ) || !method_exists( $this->_router, 'generateUrl' ) )
 		{
-			return null;
+			return $fallback;
 		}
-		return $this->_router->generateUrl( $routeName, $parameters, true );
+		$url = $this->_router->generateUrl( $routeName, $parameters, true );
+		return $url ?? $fallback;
 	}
 
 	/**

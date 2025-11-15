@@ -1,3 +1,11 @@
+## 0.9.5 2025-11-15
+* Enhanced `urlFor()` and `urlForAbsolute()` methods to accept optional fallback parameter
+* Methods now return fallback URL when route is not found, instead of null
+* This eliminates need for null coalescing operator at every call site
+
+## 0.9.4 2025-11-15
+* Added missing dependency on neuron-php/data (^0.8.6) which is required by Request class filter methods
+
 ## 0.9.3 2025-11-15
 * **Breaking Change**: Integrated DTO component for request validation
   - Replaced Parameter class with DTO-based validation system
@@ -163,7 +171,7 @@
 
 ## 0.6.28 2025-11-04
 ## 0.6.27 2025-11-08
-## 0.6.26
+## 0.6.26 2025-11-15
 ## 0.6.25
 ## 0.6.24 2025-01-08
 * Added markdown support to the view.

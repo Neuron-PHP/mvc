@@ -15,6 +15,7 @@
       "ext-json": "*",
       "neuron-php/application": "0.8.*",
       "neuron-php/routing": "0.8.*",
+      "neuron-php/data": "^0.8.6",
       "neuron-php/dto": "^0.0.7",
       "league/commonmark": "^2.6",
       "neuron-php/cli": "0.8.*",
