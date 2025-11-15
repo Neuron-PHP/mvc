@@ -1,3 +1,5 @@
+## 0.9.3
+
 ## 0.9.3 2025-11-15
 * **Breaking Change**: Integrated DTO component for request validation
   - Replaced Parameter class with DTO-based validation system
