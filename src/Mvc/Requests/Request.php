@@ -3,6 +3,7 @@
 namespace Neuron\Mvc\Requests;
 
 use Neuron\Core\Exceptions\Validation;
+use Neuron\Data\Filter\Cookie;
 use Neuron\Data\Filter\Get;
 use Neuron\Data\Filter\Post;
 use Neuron\Data\Filter\Server;
@@ -24,6 +25,7 @@ class Request
 	private array $_routeParameters = [];
 	private array $_errors = [];
 	private DefaultIpResolver $_ipResolver;
+	private Cookie $_cookie;
 	private Get $_get;
 	private Post $_post;
 	private Server $_server;
@@ -35,6 +37,7 @@ class Request
 	public function __construct()
 	{
 		$this->_ipResolver = new DefaultIpResolver();
+		$this->_cookie = new Cookie();
 		$this->_get = new Get();
 		$this->_post = new Post();
 		$this->_server = new Server();

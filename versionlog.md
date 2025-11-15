@@ -1,4 +1,5 @@
 ## 0.9.2
+* Added cookie method to the request object.
 
 ## 0.9.1 2025-11-14
 * Refactoring and test cleanup.
@@ -10,7 +11,7 @@
 * Dispatched controller methods now always receive request objects, even if empty.
 
 ## 0.8.13 2025-11-13
-* Added get/post/server filter wrappers to controller base.
+* Added get/post/server filter wrappers to the controller base.
 
 ## 0.8.12 2025-11-12
 * Added ViewDataProvider for global view data injection
