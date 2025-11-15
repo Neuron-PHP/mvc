@@ -187,23 +187,27 @@ routes:
 
 ### Request Handling
 
-Create request parameter definitions for validation:
+Create request DTO definitions for validation:
 
 ```yaml
 # config/requests/user_profile.yaml
-parameters:
-  id:
-    type: integer
-    required: true
-    min_value: 1
+request:
+  method: GET
+  properties:
+    id:
+      type: integer
+      required: true
+      range:
+        min: 1
 ```
 
-Access parameters in controllers:
+Access validated data in controllers:
 
 ```php
 public function profile(Request $request): string
 {
-    $userId = $request->getParam('id')->getValue();
+    $dto = $request->getDto();
+    $userId = $dto->id;
     // ...
 }
 ```
@@ -448,7 +452,7 @@ class ProductController extends Base
     
     public function details(Request $request): string
     {
-        $id = $request->getParam('id')->getValue();
+        $id = $request->getRouteParameter('id');
         $product = $this->getProduct($id);
         
         if (!$product) {
@@ -470,40 +474,48 @@ class ProductController extends Base
 }
 ```
 
-### Request Parameter Validation
+### Request Validation with DTOs
 
-Define parameters in YAML:
+Define request DTOs in YAML:
 
 ```yaml
 # config/requests/product_create.yaml
-parameters:
-  name:
-    type: string
-    required: true
-    min_length: 3
-    max_length: 100
-    
-  price:
-    type: currency
-    required: true
-    min_value: 0
-    
-  category_id:
-    type: integer
-    required: true
-    
-  description:
-    type: string
-    required: false
-    max_length: 1000
+request:
+  method: POST
+  headers:
+    Content-Type: application/json
+  properties:
+    name:
+      type: string
+      required: true
+      length:
+        min: 3
+        max: 100
+
+    price:
+      type: currency
+      required: true
+      range:
+        min: 0
+
+    category_id:
+      type: integer
+      required: true
+
+    description:
+      type: string
+      required: false
+      length:
+        max: 1000
 ```
 
-Available parameter types:
+Available property types:
 - `string`, `integer`, `float`, `boolean`
 - `email`, `url`, `uuid`
-- `date`, `datetime`
-- `currency`, `phone_number`
+- `date`, `date_time`, `time`
+- `currency`, `us_phone_number`, `intl_phone_number`
 - `array`, `object`
+- `ip_address`, `ein`, `upc`, `name`, `numeric`
 
 ### Error Handling
 

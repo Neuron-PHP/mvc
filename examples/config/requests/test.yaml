@@ -27,8 +27,9 @@ request:
     integer:
       required: true
       type: integer
-      minValue: 1
-      maxValue: 100
+      range:
+        min: 1
+        max: 100
     ip_address:
       required: true
       type: ip_address
@@ -45,18 +46,21 @@ request:
         subparam1:
           required: true
           type: string
-          minLength: 3
-          maxLength: 20
+          length:
+            min: 3
+            max: 20
         subparam2:
           required: true
           type: string
-          minLength: 3
-          maxLength: 20
+          length:
+            min: 3
+            max: 20
     string:
       required: true
       type: string
-      minLength: 3
-      maxLength: 20
+      length:
+        min: 3
+        max: 20
     time:
       required: true
       type: time
