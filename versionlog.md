@@ -8,7 +8,7 @@
   - Added recursive nested object population in `processPayload()`
   - Request validation now provides consistent error handling across all property types
 
-## 0.9.2
+## 0.9.2 2025-11-15
 * Added cookie method to the request object.
 
 ## 0.9.1 2025-11-14
