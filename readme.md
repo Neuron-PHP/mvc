@@ -187,7 +187,9 @@ routes:
 
 ### Request Handling
 
-Create request DTO definitions for validation:
+Create request DTO definitions for validation. You can define DTOs inline or reference external DTO files:
+
+**Inline DTO Definition:**
 
 ```yaml
 # config/requests/user_profile.yaml
@@ -199,6 +201,29 @@ request:
       required: true
       range:
         min: 1
+```
+
+**Referenced DTO:**
+
+```yaml
+# config/requests/user_create.yaml
+request:
+  method: POST
+  dto: user  # References config/Dtos/user.yaml or src/Dtos/user.yaml
+```
+
+```yaml
+# config/Dtos/user.yaml (or src/Dtos/user.yaml)
+dto:
+  username:
+    type: string
+    required: true
+    length:
+      min: 3
+      max: 20
+  email:
+    type: email
+    required: true
 ```
 
 Access validated data in controllers:
