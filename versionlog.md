@@ -1,3 +1,13 @@
+## 0.9.3 2025-11-15
+* **Breaking Change**: Integrated DTO component for request validation
+  - Replaced Parameter class with DTO-based validation system
+  - Request class now uses `neuron-php/dto` ^0.0.7 for payload validation
+  - Updated YAML request format: `minLength/maxLength` → `length: {min, max}`, `minimum/maximum` → `range: {min, max}`
+  - Removed `getParameter()` and `getParameters()` methods, added `getDto()` method
+  - Added support for both inline and referenced DTOs in request YAML files
+  - Added recursive nested object population in `processPayload()`
+  - Request validation now provides consistent error handling across all property types
+
 ## 0.9.2
 * Added cookie method to the request object.
 
