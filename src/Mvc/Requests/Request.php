@@ -3,10 +3,13 @@
 namespace Neuron\Mvc\Requests;
 
 use Neuron\Core\Exceptions\Validation;
+use Neuron\Data\Filter\Cookie;
 use Neuron\Data\Filter\Get;
 use Neuron\Data\Filter\Post;
 use Neuron\Data\Filter\Server;
 use Neuron\Data\Filter\Session;
+use Neuron\Dto\Dto;
+use Neuron\Dto\Factory as DtoFactory;
 use Neuron\Log\Log;
 use Neuron\Routing\DefaultIpResolver;
 use Neuron\Routing\RequestMethod;
@@ -20,10 +23,11 @@ class Request
 	private string $_name = '';
 	private int   $_requestMethod;
 	private array $_headers = [];
-	private array $_parameters = [];
+	private ?Dto $_dto = null;
 	private array $_routeParameters = [];
 	private array $_errors = [];
 	private DefaultIpResolver $_ipResolver;
+	private Cookie $_cookie;
 	private Get $_get;
 	private Post $_post;
 	private Server $_server;
@@ -35,6 +39,7 @@ class Request
 	public function __construct()
 	{
 		$this->_ipResolver = new DefaultIpResolver();
+		$this->_cookie = new Cookie();
 		$this->_get = new Get();
 		$this->_post = new Post();
 		$this->_server = new Server();
@@ -115,7 +120,7 @@ class Request
 	}
 
 	/**
-	 *
+	 * Filtered SESSION parameter
 	 * @param string $key
 	 * @param mixed|null $default
 	 * @return mixed
@@ -123,6 +128,17 @@ class Request
 	public function session( string $key, mixed $default = null ): mixed
 	{
 		return $this->_session->filterScalar( $key, $default );
+	}
+
+	/**
+	 * Filtered COOKIE parameter
+	 * @param string $key
+	 * @param mixed|null $default
+	 * @return mixed
+	 */
+	public function cookie( string $key, mixed $default = null ): mixed
+	{
+		return $this->_cookie->filterScalar( $key, $default );
 	}
 
 	/**
@@ -168,97 +184,83 @@ class Request
 	}
 
 	/**
-	 * @return array
+	 * Get the DTO instance
+	 * @return Dto|null
 	 */
-	public function getParameters(): array
+	public function getDto(): ?Dto
 	{
-		return $this->_parameters;
-	}
-
-	/**
-	 * @param string $name
-	 * @return Parameter|null
-	 */
-	public function getParameter( string $name ): ?Parameter
-	{
-		return $this->_parameters[ $name ] ?? null;
+		return $this->_dto;
 	}
 
 	/**
 	 * @param string $fileName
 	 * @return void
+	 * @throws \Exception
 	 */
 	public function loadFile( string $fileName ): void
 	{
 		$name = pathinfo( $fileName )[ 'filename' ];
 		$data = Yaml::parseFile( $fileName );
 
+		$this->_name = $name;
 		$this->_requestMethod = RequestMethod::getType( $data[ 'request' ][ 'method' ] );
-		$this->_headers       = $data[ 'request' ][ 'headers' ];
+		$this->_headers       = $data[ 'request' ][ 'headers' ] ?? [];
 
-		$this->loadData( $name, $data[ 'request' ] );
+		// Load DTO from either referenced file or inline properties
+		if( isset( $data[ 'request' ][ 'dto' ] ) )
+		{
+			// Referenced DTO - resolve path and load
+			$dtoPath = $this->resolveDtoPath( $data[ 'request' ][ 'dto' ] );
+			$factory = new DtoFactory( $dtoPath );
+			$this->_dto = $factory->create();
+		}
+		elseif( isset( $data[ 'request' ][ 'properties' ] ) )
+		{
+			// Inline DTO - create from array
+			$factory = new DtoFactory( $data[ 'request' ][ 'properties' ] );
+			$this->_dto = $factory->create();
+		}
 	}
 
 	/**
+	 * Resolve DTO file path from name
+	 * Checks: absolute path, relative to current dir, common DTO locations
+	 *
 	 * @param string $name
-	 * @param array $request
+	 * @return string
+	 * @throws \Exception
 	 */
-	protected function loadData( string $name, array $request ) : void
+	protected function resolveDtoPath( string $name ): string
 	{
-		$this->_name = $name;
-		$this->_parameters = [];
-
-		if( !isset( $request[ 'properties' ] ) )
+		// If already has .yaml extension, use as-is
+		if( !str_ends_with( $name, '.yaml' ) )
 		{
-			return;
+			$name .= '.yaml';
 		}
 
-		foreach( $request[ 'properties' ] as $name => $parameter )
+		// Check if absolute path exists
+		if( file_exists( $name ) )
 		{
-			$p = new Parameter();
-			$p->setName( $name );
-
-			if( isset( $parameter[ 'required' ] ) )
-			{
-				$p->setRequired( $parameter[ 'required' ] );
-			}
-
-			$p->setType( $parameter[ 'type' ] );
-
-			if( $p->getType() === 'object' )
-			{
-				$request = new Request();
-				$request->loadData( $this->_name.':'.$name, $parameter );
-				$p->setValue( $request );
-			}
-
-			if( isset( $parameter[ 'minLength' ] ) )
-			{
-				$p->setMinLength( $parameter[ 'minLength' ] );
-			}
-
-			if( isset( $parameter[ 'maxLength' ] ) )
-			{
-				$p->setMaxLength( $parameter[ 'maxLength' ] );
-			}
-
-			if( isset( $parameter[ 'minimum' ] ) )
-			{
-				$p->setMinValue( $parameter[ 'minimum' ] );
-			}
-
-			if( isset( $parameter[ 'maximum' ] ) )
-			{
-				$p->setMaxValue( $parameter[ 'maximum' ] );
-			}
-
-			if( isset( $parameter[ 'pattern' ] ) )
-			{
-				$p->setPattern( $parameter[ 'pattern' ] );
-			}
-
-			$this->_parameters[ $p->getName() ] = $p;
+			return $name;
 		}
+
+		// Check common DTO locations
+		$commonPaths = [
+			getcwd() . '/Dtos/' . $name,
+			getcwd() . '/src/Dtos/' . $name,
+			getcwd() . '/../Dtos/' . $name,
+		];
+
+		foreach( $commonPaths as $path )
+		{
+			if( file_exists( $path ) )
+			{
+				return $path;
+			}
+		}
+
+		// Not found - throw exception
+		throw new \Exception( "DTO file not found: {$name}" );
 	}
 
 	/**
@@ -285,6 +287,7 @@ class Request
 	}
 
 	/**
+	 * Process and validate payload data
 	 * @param array $payload
 	 * @throws Validation
 	 */
@@ -292,8 +295,83 @@ class Request
 	{
 		$this->_errors = [];
 
-		$requiredHeaders = $this->_headers;
+		// Validate HTTP headers
+		$this->validateHeaders();
 
+		// Populate and validate DTO
+		if( $this->_dto )
+		{
+			// Populate DTO properties from payload (handles nested objects)
+			$this->populateDto( $this->_dto, $payload );
+
+			// Validate entire DTO
+			try
+			{
+				$this->_dto->validate();
+			}
+			catch( Validation $exception )
+			{
+				Log::warning( $exception->getMessage() );
+				$this->_errors = array_merge( $this->_errors, $exception->errors );
+			}
+		}
+
+		// Throw if any errors accumulated
+		if( !empty( $this->_errors ) )
+		{
+			throw new Validation( $this->_name, $this->_errors );
+		}
+	}
+
+	/**
+	 * Recursively populate DTO from payload data
+	 * @param Dto $dto
+	 * @param array $data
+	 * @return void
+	 */
+	protected function populateDto( Dto $dto, array $data ): void
+	{
+		foreach( $data as $key => $value )
+		{
+			try
+			{
+				$property = $dto->getProperty( $key );
+
+				if( !$property )
+				{
+					continue;
+				}
+
+				// Handle nested objects
+				if( $property->getType() === 'object' && is_array( $value ) )
+				{
+					$nestedDto = $property->getValue();
+					if( $nestedDto instanceof Dto )
+					{
+						$this->populateDto( $nestedDto, $value );
+					}
+				}
+				else
+				{
+					// Set scalar or array values directly
+					$dto->$key = $value;
+				}
+			}
+			catch( Validation $exception )
+			{
+				Log::warning( $exception->getMessage() );
+				$this->_errors = array_merge( $this->_errors, $exception->errors );
+			}
+		}
+	}
+
+	/**
+	 * Validate HTTP headers against required headers
+	 * @return void
+	 */
+	protected function validateHeaders(): void
+	{
+		$requiredHeaders = $this->_headers;
 		$headers = $this->getHttpHeaders();
 
 		foreach( $requiredHeaders as $requiredName => $requiredValue )
@@ -302,7 +380,6 @@ class Request
 			{
 				$msg = 'Missing header: ' . $requiredName;
 				Log::warning( $msg );
-
 				$this->_errors[] = $msg;
 				continue;
 			}
@@ -311,57 +388,8 @@ class Request
 			{
 				$msg = "Invalid header value: $requiredName, expected: $requiredValue, got: " . $headers[ $requiredName ];
 				Log::warning( $msg );
-
 				$this->_errors[] = $msg;
 			}
-		}
-
-		foreach( $this->_parameters as $parameter )
-		{
-			if( !isset( $payload[ $parameter->getName() ] )  )
-			{
-				$this->validateParameter( $parameter );
-				continue;
-			}
-
-			if( $parameter->getType() === 'object' )
-			{
-				try
-				{
-					$parameter->getValue()->processPayload( $payload[ $parameter->getName() ] );
-					continue;
-				}
-				catch( Validation $exception )
-				{
-					Log::warning( $exception->getMessage() );
-					$this->_errors = array_merge( $this->_errors, $exception->errors );
-				}
-			}
-
-			$parameter->setValue( $payload[ $parameter->getName() ] );
-
-			$this->validateParameter( $parameter );
-		}
-
-		if( !empty( $this->_errors ) )
-		{
-			throw new Validation( $this->_name, $this->_errors );
-		}
-	}
-
-	/**
-	 * @param mixed $parameter
-	 */
-	protected function validateParameter( mixed $parameter ): void
-	{
-		try
-		{
-			$parameter->validate();
-		}
-		catch( Validation $exception )
-		{
-			Log::warning( $exception->getMessage() );
-			$this->_errors[] = $exception->getMessage();
 		}
 	}
 }

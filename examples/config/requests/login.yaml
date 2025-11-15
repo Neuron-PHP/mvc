@@ -6,17 +6,20 @@ request:
     username:
       required: true
       type: string
-      minLength: 3
-      maxLength: 20
+      length:
+        min: 3
+        max: 20
     password:
       required: true
       type: string
-      minLength: 8
-      maxLength: 50
+      length:
+        min: 8
+        max: 50
     age:
       type: integer
-      minimum: 18
-      maximum: 40
+      range:
+        min: 18
+        max: 40
     birthdate:
       type: string
       format: date
@@ -28,20 +31,24 @@ request:
         street:
           required: true
           type: string
-          minLength: 3
-          maxLength: 10
+          length:
+            min: 3
+            max: 10
         city:
           required: true
           type: string
-          minLength: 3
-          maxLength: 20
+          length:
+            min: 3
+            max: 20
         state:
           required: true
           type: string
-          minLength: 2
-          maxLength: 2
+          length:
+            min: 2
+            max: 2
         zip:
           required: true
           type: string
-          minLength: 3
-          maxLength: 20
+          length:
+            min: 3
+            max: 20

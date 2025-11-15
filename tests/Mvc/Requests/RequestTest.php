@@ -24,32 +24,34 @@ class RequestTest extends TestCase
 			$Request->getHeaders()
 		);
 
-		$this->assertIsArray(
-			$Request->getParameters()
-		);
+		$Dto = $Request->getDto();
+
+		$this->assertNotNull( $Dto );
 
 		$this->assertArrayHasKey(
 			'username',
-			$Request->getParameters()
+			$Dto->getProperties()
 		);
 
 		$this->assertArrayHasKey(
 			'password',
-			$Request->getParameters()
+			$Dto->getProperties()
 		);
 
 		$this->assertArrayHasKey(
-			'username',
-			$Request->getParameters()
+			'address',
+			$Dto->getProperties()
 		);
 
-		$Address = $Request->getParameter( 'address' )->getValue();
+		$AddressProperty = $Dto->getProperty( 'address' );
 
-		$this->assertNotNull( $Address );
+		$this->assertNotNull( $AddressProperty );
+
+		$AddressDto = $AddressProperty->getValue();
 
 		$this->assertArrayHasKey(
 			'street',
-			$Address->getParameters()
+			$AddressDto->getProperties()
 		);
 	}
 
@@ -62,7 +64,7 @@ class RequestTest extends TestCase
 			'username' => 'test',
 			'password' => 'testtest',
 			'age'      => 40,
-			'birthday' => '1978-01-01',
+			'birthdate' => '1978-01-01',
 			'address'  => [
 				'street' => '13 Mocking',
 				'city'   => 'Mockingbird Heights',
@@ -84,14 +86,16 @@ class RequestTest extends TestCase
 
 		$this->assertEmpty( $Errors );
 
+		$Dto = $Request->getDto();
+
 		$this->assertEquals(
 			'test',
-			$Request->getParameter( 'username' )->getValue()
+			$Dto->username
 		);
 
 		$this->assertEquals(
 			'testtest',
-			$Request->getParameter( 'password' )->getValue()
+			$Dto->password
 		);
 	}
 
@@ -104,7 +108,7 @@ class RequestTest extends TestCase
 			'username' => 'test',
 			'password' => 'testtest',
 			'age'      => 42,
-			'birthday' => '1978-01-01',
+			'birthdate' => '1978-01-01',
 			'address'  => [
 				'street' => '13 Mockingbird Lane.',
 				'city'   => 'Mockingbird Heights',
@@ -125,14 +129,16 @@ class RequestTest extends TestCase
 
 		$this->assertNotEmpty( $Errors );
 
+		$Dto = $Request->getDto();
+
 		$this->assertEquals(
 			'test',
-			$Request->getParameter( 'username' )->getValue()
+			$Dto->username
 		);
 
 		$this->assertEquals(
 			'testtest',
-			$Request->getParameter( 'password' )->getValue()
+			$Dto->password
 		);
 	}
 
@@ -146,7 +152,7 @@ class RequestTest extends TestCase
 			"username": "test",
 			"password": "testtest",
 			"age": 40,
-			"birthday": "1978-01-01",
+			"birthdate": "1978-01-01",
 			"address": {
 				"street": "13 Mocking",
 				"city": "Mockingbird Heights",
