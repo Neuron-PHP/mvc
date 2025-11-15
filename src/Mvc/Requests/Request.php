@@ -27,11 +27,6 @@ class Request
 	private array $_routeParameters = [];
 	private array $_errors = [];
 	private DefaultIpResolver $_ipResolver;
-	private Cookie $_cookie;
-	private Get $_get;
-	private Post $_post;
-	private Server $_server;
-	private Session $_session;
 
 	/**
 	 * Request constructor.
@@ -39,11 +34,6 @@ class Request
 	public function __construct()
 	{
 		$this->_ipResolver = new DefaultIpResolver();
-		$this->_cookie = new Cookie();
-		$this->_get = new Get();
-		$this->_post = new Post();
-		$this->_server = new Server();
-		$this->_session = new Session();
 	}
 
 	/**
@@ -94,7 +84,7 @@ class Request
 	 */
 	public function get( string $key, mixed $default = null ): mixed
 	{
-		return $this->_get->filterScalar( $key, $default );
+		return Get::filterScalar( $key, $default );
 	}
 
 	/**
@@ -105,7 +95,7 @@ class Request
 	 */
 	public function post( string $key, mixed $default = null ): mixed
 	{
-		return $this->_post->filterScalar( $key, $default );
+		return Post::filterScalar( $key, $default );
 	}
 
 	/**
@@ -116,7 +106,7 @@ class Request
 	 */
 	public function server( string $key, mixed $default = null ): mixed
 	{
-		return $this->_server->filterScalar( $key, $default );
+		return Server::filterScalar( $key, $default );
 	}
 
 	/**
@@ -127,7 +117,7 @@ class Request
 	 */
 	public function session( string $key, mixed $default = null ): mixed
 	{
-		return $this->_session->filterScalar( $key, $default );
+		return Session::filterScalar( $key, $default );
 	}
 
 	/**
@@ -138,7 +128,7 @@ class Request
 	 */
 	public function cookie( string $key, mixed $default = null ): mixed
 	{
-		return $this->_cookie->filterScalar( $key, $default );
+		return Cookie::filterScalar( $key, $default );
 	}
 
 	/**
