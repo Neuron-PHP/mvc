@@ -118,7 +118,7 @@ class Request
 	}
 
 	/**
-	 *
+	 * Filtered SESSION parameter
 	 * @param string $key
 	 * @param mixed|null $default
 	 * @return mixed
@@ -126,6 +126,17 @@ class Request
 	public function session( string $key, mixed $default = null ): mixed
 	{
 		return $this->_session->filterScalar( $key, $default );
+	}
+
+	/**
+	 * Filtered COOKIE parameter
+	 * @param string $key
+	 * @param mixed|null $default
+	 * @return mixed
+	 */
+	public function cookie( string $key, mixed $default = null ): mixed
+	{
+		return $this->_cookie->filterScalar( $key, $default );
 	}
 
 	/**
