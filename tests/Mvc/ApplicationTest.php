@@ -12,6 +12,8 @@ use Neuron\Mvc\Events\Http404;
 use Neuron\Patterns\Registry;
 use PHPUnit\Framework\TestCase;
 
+require_once 'tests/Mvc/HelperFunctions.php';
+
 $ControllerState = false;
 
 class ApplicationTest extends TestCase
@@ -59,6 +61,8 @@ class ApplicationTest extends TestCase
 	 */
 	public function testConfig()
 	{
+		$this->App->setCaptureOutput( true );
+
 		$this->App->run(
 			[
 				"type"  => "GET",
@@ -101,7 +105,7 @@ class ApplicationTest extends TestCase
 	 */
 	public function testHtml()
 	{
-		ob_start();
+		$this->App->setCaptureOutput( true );
 
 		$this->App->run(
 			[
@@ -110,7 +114,7 @@ class ApplicationTest extends TestCase
 			]
 		);
 
-		$Output = ob_get_clean();
+		$Output = $this->App->getOutput();
 
 		$this->assertStringContainsString(
 			"<html>",

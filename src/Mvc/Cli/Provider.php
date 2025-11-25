@@ -35,26 +35,6 @@ class Provider
 			'Neuron\\Mvc\\Cli\\Commands\\Routes\\ListCommand'
 		);
 
-		// Generator commands
-		$registry->register(
-			'controller:generate',
-			'Neuron\\Mvc\\Cli\\Commands\\Generate\\ControllerCommand'
-		);
-
-		$registry->register(
-			'event:generate',
-			'Neuron\\Mvc\\Cli\\Commands\\Generate\\EventCommand'
-		);
-
-		$registry->register(
-			'listener:generate',
-			'Neuron\\Mvc\\Cli\\Commands\\Generate\\ListenerCommand'
-		);
-
-		$registry->register(
-			'job:generate',
-			'Neuron\\Mvc\\Cli\\Commands\\Generate\\JobCommand'
-		);
 
 		// Database migration commands
 		$registry->register(

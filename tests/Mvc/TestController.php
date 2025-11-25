@@ -41,8 +41,9 @@ class TestController extends Base
 	}
 
 
-	public function __construct( ?Application $app )
+	public function __construct( ?Application $app = null )
 	{
+		parent::__construct( $app );
 	}
 
 	public function renderJson( HttpResponseStatus $ResponseCode, array $Data = [] ): string
