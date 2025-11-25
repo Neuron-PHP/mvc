@@ -11,6 +11,7 @@ build/
 /examples/test.log
 test.log
 /examples/bad/test.log
+test.log
 CLAUDE.md
 /cache/
 /.claude/
