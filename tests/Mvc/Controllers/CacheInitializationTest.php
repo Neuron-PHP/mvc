@@ -101,24 +101,27 @@ class CacheInitializationTest extends TestCase
 	public function testInitializeViewCacheReturnsNullWhenCacheDisabled()
 	{
 		// Setup settings with cache disabled
-		$Settings = $this->createMock( \Neuron\Data\Setting\Source\ISettingSource::class );
-		$Settings->method( 'get' )
+		$SettingSource = $this->createMock( \Neuron\Data\Setting\Source\ISettingSource::class );
+		$SettingSource->method( 'get' )
 			->willReturnMap( [
 				['cache', 'enabled', 'false'],
 				['cache', 'storage', 'file'],
 				['cache', 'path', 'cache/views'],
 				['cache', 'ttl', '3600']
 			] );
-		
+
+		// Wrap the mock source in a proper SettingManager
+		$Settings = new \Neuron\Data\Setting\SettingManager( $SettingSource );
+
 		$Registry = Registry::getInstance();
 		$Registry->set( 'Settings', $Settings );
-		
+
 		// Create test controller
 		$Controller = new CacheInitTestController( new Application() );
-		
+
 		// Test initialization returns null
 		$ViewCache = $Controller->testInitializeViewCache();
-		
+
 		$this->assertNull( $ViewCache );
 		$this->assertNull( $Registry->get( 'ViewCache' ) );
 	}
