@@ -9,6 +9,7 @@ public_html/
 build/
 .phpunit.result.cache
 /examples/test.log
+test.log
 /examples/bad/test.log
 CLAUDE.md
 /cache/
