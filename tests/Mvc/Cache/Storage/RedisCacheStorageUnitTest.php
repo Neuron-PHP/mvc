@@ -211,10 +211,16 @@ class RedisCacheStorageUnitTest extends TestCase
 	public function testIsExpiredReturnsTrueWhenTtlIsNegative()
 	{
 		$MockRedis = $this->createMock( Redis::class );
+
+		// First exists() is called, return false to indicate key doesn't exist
 		$MockRedis->expects( $this->once() )
-			->method( 'ttl' )
+			->method( 'exists' )
 			->with( 'neuron_cache_test_key' )
-			->willReturn( -2 ); // Key doesn't exist
+			->willReturn( 0 ); // Redis exists returns 0 for non-existent keys
+
+		// ttl() should not be called since exists() returns false
+		$MockRedis->expects( $this->never() )
+			->method( 'ttl' );
 
 		$Storage = $this->createStorageWithMock( $MockRedis );
 
@@ -225,6 +231,14 @@ class RedisCacheStorageUnitTest extends TestCase
 	public function testIsExpiredReturnsFalseWhenTtlIsPositive()
 	{
 		$MockRedis = $this->createMock( Redis::class );
+
+		// First exists() is called, return true to indicate key exists
+		$MockRedis->expects( $this->once() )
+			->method( 'exists' )
+			->with( 'neuron_cache_test_key' )
+			->willReturn( 1 ); // Redis exists returns 1 for existing keys
+
+		// Then ttl() is called and returns positive value
 		$MockRedis->expects( $this->once() )
 			->method( 'ttl' )
 			->with( 'neuron_cache_test_key' )

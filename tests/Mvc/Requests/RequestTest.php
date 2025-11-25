@@ -57,6 +57,13 @@ class RequestTest extends TestCase
 
 	public function testProcessPayloadSuccess()
 	{
+		// Set required headers for the request
+		setHeaders(
+			[
+				'Content-Type' => 'application/json'
+			]
+		);
+
 		$Request = new Request();
 		$Request->loadFile( 'examples/config/requests/login.yaml' );
 
@@ -144,6 +151,13 @@ class RequestTest extends TestCase
 
 	public function testRequestPayload()
 	{
+		// Set required headers for the request
+		setHeaders(
+			[
+				'Content-Type' => 'application/json'
+			]
+		);
+
 		$Request = new Request();
 		$Request->loadFile( 'examples/config/requests/login.yaml' );
 
@@ -179,6 +193,13 @@ class RequestTest extends TestCase
 
 	public function testNoProperties()
 	{
+		// Set required headers for the request
+		setHeaders(
+			[
+				'Content-Type' => 'application/json'
+			]
+		);
+
 		$Request = new Request();
 		$Request->loadFile( 'examples/config/requests/logout.yaml' );
 

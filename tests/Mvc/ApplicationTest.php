@@ -25,8 +25,33 @@ class ApplicationTest extends TestCase
 	{
 		parent::setUp();
 
+		// Clear any previous output buffers to ensure clean state
+		while( ob_get_level() > 0 )
+		{
+			ob_end_clean();
+		}
+
+		// Reset Registry singleton state to avoid pollution between tests
+		$registry = Registry::getInstance();
+		$registry->reset();
+
 		$Ini = new Yaml( './examples/config/neuron.yaml' );
 		$this->App = new Application( "1.0.0", $Ini );
+	}
+
+	protected function tearDown() : void
+	{
+		// Clean up $_SERVER state
+		unset( $_SERVER['HTTP_CONTENT_TYPE'] );
+		unset( $_SERVER['HTTP_AUTHORIZATION'] );
+
+		// Clean up any leftover output buffers that tests may have opened
+		while( ob_get_level() > 0 )
+		{
+			ob_end_clean();
+		}
+
+		parent::tearDown();
 	}
 
 	/**
@@ -375,6 +400,10 @@ class ApplicationTest extends TestCase
 	public function testBadRoutes()
 	{
 		$this->expectException( \Neuron\Core\Exceptions\Validation::class );
+
+		// Clear Registry to ensure clean state for this test
+		Registry::getInstance()->reset();
+
 		$Ini = new Yaml( './examples/bad/neuron.yaml' );
 		$App = new Application( "1.0.0", $Ini );
 	}
