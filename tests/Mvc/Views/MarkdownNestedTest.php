@@ -61,7 +61,7 @@ class MarkdownNestedTest extends TestCase
 		$method->setAccessible( true );
 
 		$basePath = vfsStream::url( 'views/testcontroller' );
-		$result = $method->invoke( $this->markdown, $basePath, 'page2' );
+		$result = $method->invoke( $this->markdown, $basePath, 'subfolder/page2' );
 
 		$this->assertNotNull( $result );
 		$this->assertStringContainsString( 'subfolder', $result );
@@ -75,7 +75,7 @@ class MarkdownNestedTest extends TestCase
 		$method->setAccessible( true );
 
 		$basePath = vfsStream::url( 'views/testcontroller' );
-		$result = $method->invoke( $this->markdown, $basePath, 'page3' );
+		$result = $method->invoke( $this->markdown, $basePath, 'subfolder/deep/page3' );
 
 		$this->assertNotNull( $result );
 		$this->assertStringContainsString( 'deep', $result );
@@ -107,13 +107,51 @@ class MarkdownNestedTest extends TestCase
 
 	public function testRenderWithNestedMarkdownFile()
 	{
-		$this->markdown->setPage( 'page2' );
+		$this->markdown->setPage( 'subfolder/page2' );
 
 		$result = $this->markdown->render( [] );
 
 		$this->assertStringContainsString( '<h1>Nested Page</h1>', $result );
 		$this->assertStringContainsString( '<html>', $result );
 		$this->assertStringContainsString( '</html>', $result );
+	}
+
+	public function testFindMarkdownFileWithBackslashSeparator()
+	{
+		$reflection = new \ReflectionClass( $this->markdown );
+		$method = $reflection->getMethod( 'findMarkdownFile' );
+		$method->setAccessible( true );
+
+		$basePath = vfsStream::url( 'views/testcontroller' );
+		$result = $method->invoke( $this->markdown, $basePath, 'subfolder\page2' );
+
+		$this->assertNotNull( $result );
+		$this->assertStringContainsString( 'subfolder', $result );
+		$this->assertStringEndsWith( 'page2.md', $result );
+	}
+
+	public function testFindMarkdownFileBlocksDirectoryTraversal()
+	{
+		$reflection = new \ReflectionClass( $this->markdown );
+		$method = $reflection->getMethod( 'findMarkdownFile' );
+		$method->setAccessible( true );
+
+		$basePath = vfsStream::url( 'views/testcontroller' );
+		$result = $method->invoke( $this->markdown, $basePath, '../page1' );
+
+		$this->assertNull( $result );
+	}
+
+	public function testFindMarkdownFileBlocksComplexDirectoryTraversal()
+	{
+		$reflection = new \ReflectionClass( $this->markdown );
+		$method = $reflection->getMethod( 'findMarkdownFile' );
+		$method->setAccessible( true );
+
+		$basePath = vfsStream::url( 'views/testcontroller' );
+		$result = $method->invoke( $this->markdown, $basePath, 'subfolder/../../page1' );
+
+		$this->assertNull( $result );
 	}
 }
 

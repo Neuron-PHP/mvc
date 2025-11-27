@@ -80,11 +80,11 @@ class Markdown extends Base implements IView
 	}
 
 	/**
-	 * Find markdown file in controller directory or nested subdirectories
+	 * Find markdown file using directory path
 	 *
-	 * @param string $basePath
-	 * @param string $pageName
-	 * @return string|null
+	 * @param string $basePath Base directory for controller views
+	 * @param string $pageName Relative path to markdown file (e.g., "cms/guides/authentication")
+	 * @return string|null Full path to markdown file or null if not found
 	 */
 	protected function findMarkdownFile( string $basePath, string $pageName ): ?string
 	{
@@ -93,29 +93,22 @@ class Markdown extends Base implements IView
 			return null;
 		}
 
-		// First check direct path
-		$directPath = "$basePath/$pageName.md";
-		if( file_exists( $directPath ) )
+		// Normalize path separators to forward slashes
+		$pageName = str_replace( '\\', '/', $pageName );
+
+		// Security: prevent directory traversal attacks
+		if( str_contains( $pageName, '..' ) )
 		{
-			return $directPath;
+			return null;
 		}
 
-		// Search recursively in subdirectories
-		$iterator = new \RecursiveIteratorIterator(
-			new \RecursiveDirectoryIterator( $basePath, \RecursiveDirectoryIterator::SKIP_DOTS ),
-			\RecursiveIteratorIterator::SELF_FIRST
-		);
+		// Build full path
+		$fullPath = "$basePath/$pageName.md";
 
-		foreach( $iterator as $file )
+		// Return path if file exists
+		if( file_exists( $fullPath ) )
 		{
-			if( $file->isFile() && $file->getExtension() === 'md' )
-			{
-				$fileName = $file->getBasename( '.md' );
-				if( $fileName === $pageName )
-				{
-					return $file->getPathname();
-				}
-			}
+			return $fullPath;
 		}
 
 		return null;
