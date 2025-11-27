@@ -1,6 +1,7 @@
 ## 0.9.12
 
 ## 0.9.11 2025-11-27
+* Added 500 error page.
 
 ## 0.9.10 2025-11-27
 * Updated markdown to respect file paths.

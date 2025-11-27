@@ -12,6 +12,7 @@ use Neuron\Data\Setting\Source\ISettingSource;
 use Neuron\Log\Log;
 use Neuron\Mvc\Controllers\Factory;
 use Neuron\Mvc\Events\Http404;
+use Neuron\Mvc\Events\Http500;
 use Neuron\Mvc\Requests\Request;
 use Neuron\Patterns\Registry;
 use Neuron\Routing\RequestMethod;
@@ -235,7 +236,7 @@ class Application extends Base
 		$route = $params['REQUEST_URI'] ?? '/';
 		$ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
 
-		\Neuron\Application\CrossCutting\Event::emit( new Events\RequestReceivedEvent(
+		Event::emit( new Events\RequestReceivedEvent(
 			$method,
 			$route,
 			$ip,
@@ -314,6 +315,38 @@ class Application extends Base
 					$parameters,
 					[
 						"Controller" => "Neuron\Mvc\Controllers\HttpCodes@code404",
+					]
+				)
+			);
+		}
+		catch( \Throwable $e )
+		{
+			Log::error( "Exception in controller: " . $e->getMessage() );
+
+			Event::emit( new Http500(
+				$parameters['route'] ?? 'unknown',
+				get_class( $e ),
+				$e->getMessage(),
+				$e->getFile(),
+				$e->getLine()
+			) );
+
+			$this->onCrash(
+				[
+					'type' => get_class( $e ),
+					'message' => $e->getMessage(),
+					'file' => $e->getFile(),
+					'line' => $e->getLine()
+				]
+			);
+
+			return $this->executeController(
+				array_merge(
+					$parameters,
+					[
+						"Controller" => "Neuron\Mvc\Controllers\HttpCodes@code500",
+						"error" => $e->getMessage(),
+						"type" => get_class( $e )
 					]
 				)
 			);
