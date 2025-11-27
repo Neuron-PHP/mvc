@@ -1,3 +1,5 @@
+## 0.9.11
+
 ## 0.9.10 2025-11-27
 * Updated markdown to respect file paths.
 
