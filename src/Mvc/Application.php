@@ -262,7 +262,6 @@ class Application extends Base
 	 * @param string $requestName
 	 * @return mixed
 	 * @throws MissingMethod
-	 * @throws NotFound
 	 * @throws Exception
 	 */
 	public function executeController( array $parameters, string $requestName = '' ): mixed
@@ -299,7 +298,26 @@ class Application extends Base
 
 		$request->setRouteParameters( $parameters );
 
-		return $controller->$method( $request );
+		// Catch NotFound exceptions and redirect to 404
+		try
+		{
+			return $controller->$method( $request );
+		}
+		catch( NotFound $e )
+		{
+			Log::warning( "Resource not found: " . $e->getMessage() );
+
+			Event::emit( new Http404( $parameters['route'] ?? 'unknown' ) );
+
+			return $this->executeController(
+				array_merge(
+					$parameters,
+					[
+						"Controller" => "Neuron\Mvc\Controllers\HttpCodes@code404",
+					]
+				)
+			);
+		}
 	}
 
 	/**
