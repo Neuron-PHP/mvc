@@ -229,6 +229,19 @@ class Application extends Base
 	 */
 	protected function onRun() : void
 	{
+		// Emit request received event
+		$params = $this->getParameters();
+		$method = $params['REQUEST_METHOD'] ?? 'GET';
+		$route = $params['REQUEST_URI'] ?? '/';
+		$ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+
+		\Neuron\Application\CrossCutting\Event::emit( new Events\RequestReceivedEvent(
+			$method,
+			$route,
+			$ip,
+			microtime( true )
+		) );
+
 		$output = $this->_router->run( $this->getParameters() );
 
 		if( !$this->_captureOutput )
