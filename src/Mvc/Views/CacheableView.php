@@ -84,6 +84,24 @@ trait CacheableView
 			try
 			{
 				$content = $cache->get( $key );
+
+				// Emit cache hit or miss event
+				if( $content !== null )
+				{
+					\Neuron\Application\CrossCutting\Event::emit( new \Neuron\Mvc\Events\ViewCacheHitEvent(
+						$this->getController(),
+						$this->getPage(),
+						$key
+					) );
+				}
+				else
+				{
+					\Neuron\Application\CrossCutting\Event::emit( new \Neuron\Mvc\Events\ViewCacheMissEvent(
+						$this->getController(),
+						$this->getPage(),
+						$key
+					) );
+				}
 			}
 			finally
 			{
@@ -98,7 +116,27 @@ trait CacheableView
 		}
 
 		// Otherwise use normal cache method which checks global setting
-		return $cache->get( $key );
+		$content = $cache->get( $key );
+
+		// Emit cache hit or miss event
+		if( $content !== null )
+		{
+			\Neuron\Application\CrossCutting\Event::emit( new \Neuron\Mvc\Events\ViewCacheHitEvent(
+				$this->getController(),
+				$this->getPage(),
+				$key
+			) );
+		}
+		else
+		{
+			\Neuron\Application\CrossCutting\Event::emit( new \Neuron\Mvc\Events\ViewCacheMissEvent(
+				$this->getController(),
+				$this->getPage(),
+				$key
+			) );
+		}
+
+		return $content;
 	}
 
 	/**
