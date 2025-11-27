@@ -20,4 +20,18 @@ class HttpCodes extends Base
 			'404'
 		);
 	}
+
+	public function code500( Request $request ) : string
+	{
+		return $this->renderHtml(
+			HttpResponseStatus::INTERNAL_SERVER_ERROR,
+			array_merge(
+				$request->getRouteParameters(),
+				[
+					"title" => "Internal Server Error",
+				]
+			),
+			'500'
+		);
+	}
 }
