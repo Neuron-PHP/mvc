@@ -18,9 +18,52 @@ use Neuron\Routing\Router;
  */
 interface IController
 {
+	/**
+	 * Constructor for the controller.
+	 *
+	 * @param Application|null $app The application instance.
+	 */
 	public function __construct( ?Application $app );
 
+	/**
+	 * Renders an HTML response.
+	 *
+	 * @param HttpResponseStatus $responseCode The HTTP response status code.
+	 * @param array $data Data to be passed to the view.
+	 * @param string $page The view page to render.
+	 * @param string $layout The layout to use for rendering.
+	 * @param bool|null $cacheEnabled Whether caching is enabled for this response.
+	 * @return string The rendered HTML content.
+	 */
 	public function renderHtml(  HttpResponseStatus $responseCode, array $data = [], string $page = "index", string $layout = "default", ?bool $cacheEnabled = null ) : string;
+
+	/**
+	 * Renders a Markdown response.
+	 *
+	 * @param HttpResponseStatus $responseCode The HTTP response status code.
+	 * @param array $data Data to be passed to the view.
+	 * @param string $page The view page to render.
+	 * @param string $layout The layout to use for rendering.
+	 * @param bool|null $cacheEnabled Whether caching is enabled for this response.
+	 * @return string The rendered Markdown content.
+	 */
+	public function renderMarkdown( HttpResponseStatus $responseCode, array $data = [], string $page = "index", string $layout = "default", ?bool $cacheEnabled = null ) : string;
+
+	/**
+	 * Renders a JSON response.
+	 *
+	 * @param HttpResponseStatus $responseCode The HTTP response status code.
+	 * @param array $data Data to be included in the JSON response.
+	 * @return string The rendered JSON content.
+	 */
 	public function renderJson( HttpResponseStatus $responseCode, array $data = [] ) : string;
+
+	/**
+	 * Renders an XML response.
+	 *
+	 * @param HttpResponseStatus $responseCode The HTTP response status code.
+	 * @param array $data Data to be included in the XML response.
+	 * @return string The rendered XML content.
+	 */
 	public function renderXml( HttpResponseStatus $responseCode, array $data = [] ) : string;
 }

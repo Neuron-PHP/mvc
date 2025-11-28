@@ -38,6 +38,11 @@ class TestController implements IController
 	{
 		return 'xml';
 	}
+
+	public function renderMarkdown( HttpResponseStatus $ResponseCode, array $Data = [], string $Page = "index", string $Layout = "default", ?bool $CacheEnabled = null ): string
+	{
+		return 'markdown';
+	}
 }
 
 class InvalidController
