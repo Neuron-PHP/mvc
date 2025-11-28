@@ -29,6 +29,7 @@ class HttpCodes extends Base
 				$request->getRouteParameters(),
 				[
 					"title" => "Internal Server Error",
+					"error" => $request->getRouteParameter( "error" )
 				]
 			),
 			'500'
