@@ -272,36 +272,35 @@ class Application extends Base
 		$controller = $parts[ 0 ];
 		$method     = $parts[ 1 ];
 
-		$controller = Factory::create( $this, $controller );
-
-		if( !method_exists( $controller, $method ) )
-		{
-			throw new MissingMethod( "Method '$method'' not found." );
-		}
-
-		if( empty( $requestName ) )
-		{
-			$request = new Request();
-		}
-		else
-		{
-			$request = $this->getRequest( $requestName );
-
-			try
-			{
-				$request->processPayload( $request->getJsonPayload() );
-			}
-			catch( Exception $e )
-			{
-				Log::error( $e->getMessage() );
-			}
-		}
-
-		$request->setRouteParameters( $parameters );
-
-		// Catch NotFound exceptions and redirect to 404
 		try
 		{
+			$controller = Factory::create( $this, $controller );
+
+			if( !method_exists( $controller, $method ) )
+			{
+				throw new MissingMethod( "Method '$method'' not found." );
+			}
+
+			if( empty( $requestName ) )
+			{
+				$request = new Request();
+			}
+			else
+			{
+				$request = $this->getRequest( $requestName );
+
+				try
+				{
+					$request->processPayload( $request->getJsonPayload() );
+				}
+				catch( Exception $e )
+				{
+					Log::error( $e->getMessage() );
+				}
+			}
+
+			$request->setRouteParameters( $parameters );
+
 			return $controller->$method( $request );
 		}
 		catch( NotFound $e )
@@ -323,13 +322,15 @@ class Application extends Base
 		{
 			Log::error( "Exception in controller: " . $e->getMessage() );
 
-			Event::emit( new Http500(
-				$parameters['route'] ?? 'unknown',
-				get_class( $e ),
-				$e->getMessage(),
-				$e->getFile(),
-				$e->getLine()
-			) );
+			Event::emit(
+				new Http500(
+					$parameters['route'] ?? 'unknown',
+					get_class( $e ),
+					$e->getMessage(),
+					$e->getFile(),
+					$e->getLine()
+				)
+			);
 
 			$this->onCrash(
 				[
