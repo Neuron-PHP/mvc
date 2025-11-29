@@ -3,11 +3,11 @@
 namespace Neuron\Mvc\Requests;
 
 use Neuron\Core\Exceptions\Validation;
-use Neuron\Data\Filter\Cookie;
-use Neuron\Data\Filter\Get;
-use Neuron\Data\Filter\Post;
-use Neuron\Data\Filter\Server;
-use Neuron\Data\Filter\Session;
+use Neuron\Data\Filters\Cookie;
+use Neuron\Data\Filters\Get;
+use Neuron\Data\Filters\Post;
+use Neuron\Data\Filters\Server;
+use Neuron\Data\Filters\Session;
 use Neuron\Dto\Dto;
 use Neuron\Dto\Factory as DtoFactory;
 use Neuron\Log\Log;

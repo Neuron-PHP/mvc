@@ -6,7 +6,7 @@ use Neuron\Cli\Commands\Command;
 use Neuron\Mvc\Cache\Storage\CacheStorageFactory;
 use Neuron\Mvc\Cache\Storage\ICacheStorage;
 use Neuron\Mvc\Cache\CacheConfig;
-use Neuron\Data\Setting\Source\Yaml;
+use Neuron\Data\Settings\Source\Yaml;
 
 /**
  * CLI command for clearing the MVC view cache.

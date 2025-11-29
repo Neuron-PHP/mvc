@@ -51,7 +51,7 @@ class CacheInitializationTest extends TestCase
 	public function testInitializeViewCacheCreatesInstanceWhenNotInRegistry()
 	{
 		// Setup settings in registry
-		$Settings = $this->createMock( \Neuron\Data\Setting\Source\ISettingSource::class );
+		$Settings = $this->createMock( \Neuron\Data\Settings\Source\ISettingSource::class );
 		$Settings->method( 'get' )
 			->willReturnMap( [
 				['cache', 'enabled', 'true'],
@@ -101,7 +101,7 @@ class CacheInitializationTest extends TestCase
 	public function testInitializeViewCacheReturnsNullWhenCacheDisabled()
 	{
 		// Setup settings with cache disabled
-		$SettingSource = $this->createMock( \Neuron\Data\Setting\Source\ISettingSource::class );
+		$SettingSource = $this->createMock( \Neuron\Data\Settings\Source\ISettingSource::class );
 		$SettingSource->method( 'get' )
 			->willReturnMap( [
 				['cache', 'enabled', 'false'],
@@ -111,7 +111,7 @@ class CacheInitializationTest extends TestCase
 			] );
 
 		// Wrap the mock source in a proper SettingManager
-		$Settings = new \Neuron\Data\Setting\SettingManager( $SettingSource );
+		$Settings = new \Neuron\Data\Settings\SettingManager( $SettingSource );
 
 		$Registry = Registry::getInstance();
 		$Registry->set( 'Settings', $Settings );
@@ -150,7 +150,7 @@ class CacheInitializationTest extends TestCase
 	public function testHasViewCacheInitializesCacheWhenNotInRegistry()
 	{
 		// Setup settings
-		$Settings = $this->createMock( \Neuron\Data\Setting\Source\ISettingSource::class );
+		$Settings = $this->createMock( \Neuron\Data\Settings\Source\ISettingSource::class );
 		$Settings->method( 'get' )
 			->willReturnMap( [
 				['cache', 'enabled', 'true'],
@@ -208,7 +208,7 @@ class CacheInitializationTest extends TestCase
 	public function testGetViewCacheInitializesCacheWhenNotInRegistry()
 	{
 		// Setup settings
-		$Settings = $this->createMock( \Neuron\Data\Setting\Source\ISettingSource::class );
+		$Settings = $this->createMock( \Neuron\Data\Settings\Source\ISettingSource::class );
 		$Settings->method( 'get' )
 			->willReturnMap( [
 				['cache', 'enabled', 'true'],

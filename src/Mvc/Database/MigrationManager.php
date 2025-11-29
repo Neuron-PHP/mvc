@@ -2,7 +2,7 @@
 
 namespace Neuron\Mvc\Database;
 
-use Neuron\Data\Setting\Source\ISettingSource;
+use Neuron\Data\Settings\Source\ISettingSource;
 use Phinx\Config\Config;
 use Phinx\Migration\Manager;
 use Symfony\Component\Console\Input\StringInput;

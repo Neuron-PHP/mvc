@@ -5,7 +5,7 @@ namespace Neuron\Mvc\Cli\Commands\Cache;
 use Neuron\Cli\Commands\Command;
 use Neuron\Mvc\Cache\Storage\FileCacheStorage;
 use Neuron\Mvc\Cache\CacheConfig;
-use Neuron\Data\Setting\Source\Yaml;
+use Neuron\Data\Settings\Source\Yaml;
 
 /**
  * CLI command for displaying MVC cache statistics.

@@ -262,7 +262,7 @@ trait CacheableView
 		if( $settings !== null )
 		{
 			// Handle both SettingManager and ISettingSource
-			if( $settings instanceof \Neuron\Data\Setting\SettingManager )
+			if( $settings instanceof \Neuron\Data\Settings\SettingManager )
 			{
 				$settingSource = $settings->getSource();
 			}

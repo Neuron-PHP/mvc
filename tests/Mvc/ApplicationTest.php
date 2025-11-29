@@ -6,7 +6,7 @@ use Neuron\Application\CrossCutting\Event;
 use Neuron\Core\Exceptions\BadRequestMethod;
 use Neuron\Core\Exceptions\MissingMethod;
 use Neuron\Core\Exceptions\NotFound;
-use Neuron\Data\Setting\Source\Yaml;
+use Neuron\Data\Settings\Source\Yaml;
 use Neuron\Mvc\Application;
 use Neuron\Mvc\Events\Http404;
 use Neuron\Patterns\Registry;

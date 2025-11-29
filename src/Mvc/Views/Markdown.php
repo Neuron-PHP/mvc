@@ -8,6 +8,7 @@ use League\CommonMark\Environment\Environment;
 use League\CommonMark\Exception\CommonMarkException;
 use League\CommonMark\Extension\CommonMark\CommonMarkCoreExtension;
 use League\CommonMark\Extension\Footnote\FootnoteExtension;
+use League\CommonMark\Extension\GithubFlavoredMarkdownExtension;
 use League\CommonMark\MarkdownConverter;
 use Neuron\Core\Exceptions\NotFound;
 use Neuron\Core\NString;
@@ -136,7 +137,10 @@ class Markdown extends Base implements IView
 		$environment = new Environment( $config );
 		$environment->addExtension( new CommonMarkCoreExtension() );
 
-		// Add the extension
+		// Add GitHub Flavored Markdown features (tables, autolinks, strikethrough, task lists)
+		$environment->addExtension( new GithubFlavoredMarkdownExtension() );
+
+		// Add footnote support
 		$environment->addExtension( new FootnoteExtension() );
 
 		return new MarkdownConverter( $environment );
