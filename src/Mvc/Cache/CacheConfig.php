@@ -1,7 +1,7 @@
 <?php
 namespace Neuron\Mvc\Cache;
 
-use Neuron\Data\Setting\Source\ISettingSource;
+use Neuron\Data\Settings\Source\ISettingSource;
 
 class CacheConfig
 {

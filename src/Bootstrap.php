@@ -2,10 +2,10 @@
 namespace Neuron\Mvc;
 
 use Neuron\Core\Exceptions\NotFound;
-use Neuron\Data\Filter\Get;
-use Neuron\Data\Filter\Server;
-use Neuron\Data\Object\Version;
-use Neuron\Data\Setting\Source\Yaml;
+use Neuron\Data\Filters\Get;
+use Neuron\Data\Filters\Server;
+use Neuron\Data\Objects\Version;
+use Neuron\Data\Settings\Source\Yaml;
 use Neuron\Patterns\Registry;
 
 /**
@@ -18,7 +18,7 @@ use Neuron\Patterns\Registry;
 
 function boot( string $configPath ) : Application
 {
-	/** @var Neuron\Data\Setting\Source\ISettingSource $settings */
+	/** @var Neuron\Data\Settings\Source\ISettingSource $settings */
 
 	try
 	{
@@ -31,8 +31,7 @@ function boot( string $configPath ) : Application
 		$basePath = getenv( 'SYSTEM_BASE_PATH' ) ? : '.';
 	}
 
-	$version = new Version();
-	$version->loadFromFile( "$basePath/.version.json" );
+	$version = \Neuron\Data\Factories\Version::fromFile( "$basePath/.version.json" );
 
 	try
 	{

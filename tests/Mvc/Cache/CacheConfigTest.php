@@ -2,7 +2,7 @@
 
 namespace Tests\Mvc\Cache;
 
-use Neuron\Data\Setting\Source\Memory;
+use Neuron\Data\Settings\Source\Memory;
 use Neuron\Mvc\Cache\CacheConfig;
 use PHPUnit\Framework\TestCase;
 

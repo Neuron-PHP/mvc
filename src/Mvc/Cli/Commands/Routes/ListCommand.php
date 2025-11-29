@@ -3,7 +3,7 @@
 namespace Neuron\Mvc\Cli\Commands\Routes;
 
 use Neuron\Cli\Commands\Command;
-use Neuron\Data\Setting\Source\Yaml;
+use Neuron\Data\Settings\Source\Yaml;
 use Symfony\Component\Yaml\Yaml as YamlParser;
 
 /**

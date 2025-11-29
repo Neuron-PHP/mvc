@@ -6,7 +6,7 @@ use League\CommonMark\Exception\CommonMarkException;
 use Neuron\Core\Exceptions\BadRequestMethod;
 use Neuron\Core\Exceptions\NotFound;
 use Neuron\Core\NString;
-use Neuron\Data\Setting\SettingManager;
+use Neuron\Data\Settings\SettingManager;
 use Neuron\Log\Log;
 use Neuron\Mvc\Application;
 use Neuron\Mvc\Cache\CacheConfig;

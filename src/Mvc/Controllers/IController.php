@@ -2,7 +2,7 @@
 
 namespace Neuron\Mvc\Controllers;
 
-use Neuron\Data\Setting\Source\ISettingSource;
+use Neuron\Data\Settings\Source\ISettingSource;
 use Neuron\Mvc\Application;
 use Neuron\Mvc\Responses\HttpResponseStatus;
 use Neuron\Routing\Router;

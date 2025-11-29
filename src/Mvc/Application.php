@@ -8,7 +8,7 @@ use Neuron\Core\Exceptions\BadRequestMethod;
 use Neuron\Core\Exceptions\MissingMethod;
 use Neuron\Core\Exceptions\NotFound;
 use Neuron\Core\Exceptions\Validation;
-use Neuron\Data\Setting\Source\ISettingSource;
+use Neuron\Data\Settings\Source\ISettingSource;
 use Neuron\Log\Log;
 use Neuron\Mvc\Controllers\Factory;
 use Neuron\Mvc\Events\Http404;

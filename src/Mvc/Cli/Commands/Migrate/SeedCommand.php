@@ -4,7 +4,7 @@ namespace Neuron\Mvc\Cli\Commands\Migrate;
 
 use Neuron\Cli\Commands\Command;
 use Neuron\Mvc\Database\MigrationManager;
-use Neuron\Data\Setting\Source\Yaml;
+use Neuron\Data\Settings\Source\Yaml;
 
 /**
  * CLI command for running database seeders
