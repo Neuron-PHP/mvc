@@ -121,13 +121,34 @@ class SchemaExporter
 	 */
 	private function getTables(): array
 	{
-		// Get all tables using adapter's native method
-		$tables = $this->_Adapter->getTables();
+		$adapterType = $this->_Adapter->getAdapterType();
 
-		// Return array of table names
-		return array_map( function( $table ) {
-			return $table->getName();
-		}, $tables );
+		switch( $adapterType )
+		{
+			case 'mysql':
+				$sql = "SELECT TABLE_NAME FROM information_schema.TABLES
+						WHERE TABLE_SCHEMA = ? AND TABLE_TYPE = 'BASE TABLE'
+						ORDER BY TABLE_NAME";
+				$rows = $this->_Adapter->fetchAll( $sql, [$this->_Adapter->getOption( 'name' )] );
+				return array_column( $rows, 'TABLE_NAME' );
+
+			case 'pgsql':
+				$sql = "SELECT tablename FROM pg_catalog.pg_tables
+						WHERE schemaname = 'public'
+						ORDER BY tablename";
+				$rows = $this->_Adapter->fetchAll( $sql );
+				return array_column( $rows, 'tablename' );
+
+			case 'sqlite':
+				$sql = "SELECT name FROM sqlite_master
+						WHERE type = 'table' AND name NOT LIKE 'sqlite_%'
+						ORDER BY name";
+				$rows = $this->_Adapter->fetchAll( $sql );
+				return array_column( $rows, 'name' );
+
+			default:
+				throw new \RuntimeException( "Unsupported adapter type: {$adapterType}" );
+		}
 	}
 
 	/**
