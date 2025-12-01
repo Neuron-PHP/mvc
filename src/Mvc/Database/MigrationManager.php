@@ -263,6 +263,56 @@ class MigrationManager
 	}
 
 	/**
+	 * Get schema file path
+	 *
+	 * @return string
+	 */
+	public function getSchemaFilePath(): string
+	{
+		$path = $this->getSetting( 'migrations', 'schema_file', 'db/schema.yaml' );
+
+		return $this->resolvePath( $path );
+	}
+
+	/**
+	 * Check if auto-dump schema is enabled
+	 *
+	 * @return bool
+	 */
+	public function isAutoDumpSchemaEnabled(): bool
+	{
+		return (bool)$this->getSetting( 'migrations', 'auto_dump_schema', false );
+	}
+
+	/**
+	 * Dump database schema to YAML file
+	 *
+	 * @param string|null $outputPath Optional output path (uses configured path if null)
+	 * @return bool Success status
+	 */
+	public function dumpSchema( ?string $outputPath = null ): bool
+	{
+		try
+		{
+			$exporter = new SchemaExporter(
+				$this->getPhinxConfig(),
+				$this->getEnvironment(),
+				$this->getMigrationTable()
+			);
+
+			$path = $outputPath ?? $this->getSchemaFilePath();
+
+			return $exporter->exportToFile( $path );
+		}
+		catch( \Exception $e )
+		{
+			// Log error but don't fail the migration
+			error_log( "Failed to dump schema: " . $e->getMessage() );
+			return false;
+		}
+	}
+
+	/**
 	 * Execute a Phinx command
 	 *
 	 * @param string $command Command name (migrate, rollback, status, etc.)
@@ -305,6 +355,12 @@ class MigrationManager
 						$result = "All migrations have been run\n";
 					}
 
+					// Auto-dump schema if enabled and not a fake migration
+					if( !$fake && $this->isAutoDumpSchemaEnabled() )
+					{
+						$this->dumpSchema();
+					}
+
 					return [0, $result];
 
 				case 'rollback':
@@ -319,6 +375,12 @@ class MigrationManager
 					if( empty( trim( $result ) ) )
 					{
 						$result = "Rollback completed successfully\n";
+					}
+
+					// Auto-dump schema if enabled and not a fake rollback
+					if( !$fake && $this->isAutoDumpSchemaEnabled() )
+					{
+						$this->dumpSchema();
 					}
 
 					return [0, $result];

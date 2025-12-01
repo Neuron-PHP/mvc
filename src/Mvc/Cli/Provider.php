@@ -61,5 +61,11 @@ class Provider
 			'db:seed',
 			'Neuron\\Mvc\\Cli\\Commands\\Migrate\\SeedCommand'
 		);
+
+		// Schema export commands
+		$registry->register(
+			'db:schema:dump',
+			'Neuron\\Mvc\\Cli\\Commands\\Schema\\DumpCommand'
+		);
 	}
 }
