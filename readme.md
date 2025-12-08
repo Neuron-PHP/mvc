@@ -1,4 +1,5 @@
 [![CI](https://github.com/Neuron-PHP/mvc/actions/workflows/ci.yml/badge.svg)](https://github.com/Neuron-PHP/mvc/actions)
+[![codecov](https://codecov.io/gh/Neuron-PHP/mvc/graph/badge.svg)](https://codecov.io/gh/Neuron-PHP/mvc)
 # Neuron-PHP MVC
 
 A lightweight MVC (Model-View-Controller) framework component for PHP 8.4+ that provides core MVC functionality including controllers, views, routing integration, request handling, and a powerful view caching system.
