@@ -1,10 +1,8 @@
 <html>
 	<head></head>
-	<title><?= $Title ?? '' ?></title>
+	<title><?= $title ?? '' ?></title>
 	<body>
 		<h1>Test Layout</h1>
-		<?php
-		require_once( $View );
-		?>
+		<?= $content ?? '' ?>
 	</body>
 </html>

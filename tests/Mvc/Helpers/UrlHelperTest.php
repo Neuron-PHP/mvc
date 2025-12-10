@@ -230,4 +230,17 @@ class UrlHelperTest extends TestCase
 		// Assert - Should return relative URL when no base URL is available
 		$this->assertEquals( '/users/123', $url );
 	}
+
+	public function testConstructorWithExplicitRouter(): void
+	{
+		// Arrange
+		$customRouter = new Router();
+
+		// Act
+		$urlHelper = new UrlHelper( $customRouter );
+
+		// Assert
+		$this->assertSame( $customRouter, $urlHelper->getRouter() );
+	}
+
 }

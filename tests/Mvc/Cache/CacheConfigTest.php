@@ -174,14 +174,180 @@ class CacheConfigTest extends TestCase
 			'html' => true,
 			'json' => true
 		];
-		
+
 		$Config = new CacheConfig( $Settings );
-		
+
 		// Global cache is disabled
 		$this->assertFalse( $Config->isEnabled() );
-		
+
 		// But view types can still have their settings
 		$this->assertTrue( $Config->isViewTypeEnabled( 'html' ) );
 		$this->assertTrue( $Config->isViewTypeEnabled( 'json' ) );
+	}
+
+	/**
+	 * Test Redis configuration defaults
+	 */
+	public function testRedisConfigDefaults()
+	{
+		$Config = new CacheConfig( [] );
+
+		$this->assertEquals( '127.0.0.1', $Config->getRedisHost() );
+		$this->assertEquals( 6379, $Config->getRedisPort() );
+		$this->assertEquals( 0, $Config->getRedisDatabase() );
+		$this->assertEquals( 'neuron_cache_', $Config->getRedisPrefix() );
+		$this->assertEquals( 2.0, $Config->getRedisTimeout() );
+		$this->assertNull( $Config->getRedisAuth() );
+		$this->assertFalse( $Config->getRedisPersistent() );
+	}
+
+	/**
+	 * Test Redis configuration with custom values
+	 */
+	public function testRedisConfigCustomValues()
+	{
+		$Settings = [
+			'redis_host' => '192.168.1.100',
+			'redis_port' => 6380,
+			'redis_database' => 2,
+			'redis_prefix' => 'myapp_',
+			'redis_timeout' => 5.0,
+			'redis_auth' => 'mypassword',
+			'redis_persistent' => true
+		];
+
+		$Config = new CacheConfig( $Settings );
+
+		$this->assertEquals( '192.168.1.100', $Config->getRedisHost() );
+		$this->assertEquals( 6380, $Config->getRedisPort() );
+		$this->assertEquals( 2, $Config->getRedisDatabase() );
+		$this->assertEquals( 'myapp_', $Config->getRedisPrefix() );
+		$this->assertEquals( 5.0, $Config->getRedisTimeout() );
+		$this->assertEquals( 'mypassword', $Config->getRedisAuth() );
+		$this->assertTrue( $Config->getRedisPersistent() );
+	}
+
+	/**
+	 * Test Redis persistent connection variations
+	 */
+	public function testRedisPersistentVariations()
+	{
+		// Test with true
+		$Config1 = new CacheConfig( ['redis_persistent' => true] );
+		$this->assertTrue( $Config1->getRedisPersistent() );
+
+		// Test with 'true' string
+		$Config2 = new CacheConfig( ['redis_persistent' => 'true'] );
+		$this->assertTrue( $Config2->getRedisPersistent() );
+
+		// Test with '1' string
+		$Config3 = new CacheConfig( ['redis_persistent' => '1'] );
+		$this->assertTrue( $Config3->getRedisPersistent() );
+
+		// Test with false
+		$Config4 = new CacheConfig( ['redis_persistent' => false] );
+		$this->assertFalse( $Config4->getRedisPersistent() );
+
+		// Test with '0' string
+		$Config5 = new CacheConfig( ['redis_persistent' => '0'] );
+		$this->assertFalse( $Config5->getRedisPersistent() );
+	}
+
+	/**
+	 * Test getRedisConfig returns complete configuration
+	 */
+	public function testGetRedisConfig()
+	{
+		$Settings = [
+			'redis_host' => 'redis.example.com',
+			'redis_port' => 6379,
+			'redis_database' => 1,
+			'redis_prefix' => 'test_',
+			'redis_timeout' => 3.0,
+			'redis_auth' => 'secret',
+			'redis_persistent' => true
+		];
+
+		$Config = new CacheConfig( $Settings );
+		$redisConfig = $Config->getRedisConfig();
+
+		$this->assertIsArray( $redisConfig );
+		$this->assertEquals( 'redis.example.com', $redisConfig['host'] );
+		$this->assertEquals( 6379, $redisConfig['port'] );
+		$this->assertEquals( 1, $redisConfig['database'] );
+		$this->assertEquals( 'test_', $redisConfig['prefix'] );
+		$this->assertEquals( 3.0, $redisConfig['timeout'] );
+		$this->assertEquals( 'secret', $redisConfig['auth'] );
+		$this->assertTrue( $redisConfig['persistent'] );
+	}
+
+	/**
+	 * Test fromSettings with Redis configuration
+	 */
+	public function testFromSettingsWithRedisConfig()
+	{
+		$Settings = new Memory();
+		$Settings->set( 'cache', 'enabled', 'true' );
+		$Settings->set( 'cache', 'storage', 'redis' );
+		$Settings->set( 'cache', 'redis_host', 'redis-server' );
+		$Settings->set( 'cache', 'redis_port', '6380' );
+		$Settings->set( 'cache', 'redis_database', '3' );
+		$Settings->set( 'cache', 'redis_prefix', 'cache_' );
+		$Settings->set( 'cache', 'redis_timeout', '4.5' );
+		$Settings->set( 'cache', 'redis_auth', 'password123' );
+		$Settings->set( 'cache', 'redis_persistent', 'true' );
+
+		$Config = CacheConfig::fromSettings( $Settings );
+
+		$this->assertEquals( 'redis', $Config->getStorageType() );
+		$this->assertEquals( 'redis-server', $Config->getRedisHost() );
+		$this->assertEquals( 6380, $Config->getRedisPort() );
+		$this->assertEquals( 3, $Config->getRedisDatabase() );
+		$this->assertEquals( 'cache_', $Config->getRedisPrefix() );
+		$this->assertEquals( 4.5, $Config->getRedisTimeout() );
+		$this->assertEquals( 'password123', $Config->getRedisAuth() );
+		$this->assertTrue( $Config->getRedisPersistent() );
+	}
+
+	/**
+	 * Test type casting for numeric Redis settings
+	 */
+	public function testRedisNumericTypeCasting()
+	{
+		$Settings = [
+			'redis_port' => '6380',      // String should be cast to int
+			'redis_database' => '5',     // String should be cast to int
+			'redis_timeout' => '3.5'     // String should be cast to float
+		];
+
+		$Config = new CacheConfig( $Settings );
+
+		$this->assertIsInt( $Config->getRedisPort() );
+		$this->assertEquals( 6380, $Config->getRedisPort() );
+
+		$this->assertIsInt( $Config->getRedisDatabase() );
+		$this->assertEquals( 5, $Config->getRedisDatabase() );
+
+		$this->assertIsFloat( $Config->getRedisTimeout() );
+		$this->assertEquals( 3.5, $Config->getRedisTimeout() );
+	}
+
+	/**
+	 * Test fromSettings with minimal Redis configuration
+	 */
+	public function testFromSettingsMinimalRedisConfig()
+	{
+		$Settings = new Memory();
+		$Settings->set( 'cache', 'enabled', 'true' );
+		$Settings->set( 'cache', 'storage', 'redis' );
+		// Don't set any Redis-specific parameters
+
+		$Config = CacheConfig::fromSettings( $Settings );
+
+		// Should use defaults
+		$this->assertEquals( '127.0.0.1', $Config->getRedisHost() );
+		$this->assertEquals( 6379, $Config->getRedisPort() );
+		$this->assertEquals( 0, $Config->getRedisDatabase() );
+		$this->assertEquals( 'neuron_cache_', $Config->getRedisPrefix() );
 	}
 }
