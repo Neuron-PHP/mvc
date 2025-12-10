@@ -152,4 +152,150 @@ class MarkdownTest extends TestCase
 
 		$this->assertInstanceOf( \League\CommonMark\MarkdownConverter::class, $converter );
 	}
+
+	public function testRenderWithFallbackViewsPath()
+	{
+		// Don't set Views.Path to test fallback to Base.Path
+		// The code will append /resources/views to Base.Path, but our views are at examples/views
+		// So we need to create a temp structure that matches
+		$tmpDir = sys_get_temp_dir() . '/neuron_markdown_base_test_' . uniqid();
+		mkdir( $tmpDir, 0777, true );
+		mkdir( $tmpDir . '/resources/views/base', 0777, true );
+		mkdir( $tmpDir . '/resources/views/layouts', 0777, true );
+
+		// Copy test files
+		copy( 'examples/views/base/index.md', $tmpDir . '/resources/views/base/index.md' );
+		copy( 'examples/views/layouts/default.php', $tmpDir . '/resources/views/layouts/default.php' );
+
+		Registry::getInstance()->set( "Base.Path", $tmpDir );
+		Registry::getInstance()->set( "Views.Path", null );
+
+		$markdown = new \Neuron\Mvc\Views\Markdown();
+		$markdown->setController( 'Base' );
+		$markdown->setPage( 'index' );
+		$markdown->setLayout( 'default' );
+
+		$Result = $markdown->render( [] );
+
+		$this->assertStringContainsString( "<h2>Header 2</h2>", $Result );
+
+		// Clean up
+		unlink( $tmpDir . '/resources/views/base/index.md' );
+		unlink( $tmpDir . '/resources/views/layouts/default.php' );
+		rmdir( $tmpDir . '/resources/views/base' );
+		rmdir( $tmpDir . '/resources/views/layouts' );
+		rmdir( $tmpDir . '/resources/views' );
+		rmdir( $tmpDir . '/resources' );
+		rmdir( $tmpDir );
+	}
+
+	public function testRenderThrowsExceptionForMissingLayout()
+	{
+		$this->expectException( \Neuron\Core\Exceptions\NotFound::class );
+		$this->expectExceptionMessage( 'View notfound:' );
+
+		Registry::getInstance()->set( "Views.Path", "examples/views" );
+
+		$markdown = new \Neuron\Mvc\Views\Markdown();
+		$markdown->setController( 'Base' );
+		$markdown->setPage( 'markdown' );
+		$markdown->setLayout( 'nonexistent_layout' );
+
+		$markdown->render( [] );
+	}
+
+	public function testRenderWithCaching()
+	{
+		Registry::getInstance()->set( "Views.Path", "examples/views" );
+
+		// Create a mock ViewCache
+		$mockCache = $this->createMock( \Neuron\Mvc\Cache\ViewCache::class );
+
+		// Configure mock to be enabled
+		$mockCache->method( 'isEnabled' )
+			->willReturn( true );
+
+		// Configure mock to generate a key
+		$mockCache->method( 'generateKey' )
+			->willReturn( 'test_cache_key' );
+
+		// Cache miss, should call get() and return null, then call set()
+		$mockCache->expects( $this->once() )
+			->method( 'get' )
+			->with( 'test_cache_key' )
+			->willReturn( null );
+
+		$mockCache->expects( $this->once() )
+			->method( 'set' )
+			->with(
+				'test_cache_key',
+				$this->stringContains( '<h2>Header 2</h2>' )
+			);
+
+		Registry::getInstance()->set( "ViewCache", $mockCache );
+
+		$markdown = new \Neuron\Mvc\Views\Markdown();
+		$markdown->setController( 'Base' );
+		$markdown->setPage( 'index' );
+		$markdown->setLayout( 'default' );
+		$markdown->setCacheEnabled( true );
+
+		$result = $markdown->render( [] );
+
+		$this->assertStringContainsString( "<h2>Header 2</h2>", $result );
+	}
+
+	public function testRenderWithCacheHit()
+	{
+		Registry::getInstance()->set( "Views.Path", "examples/views" );
+
+		// Create a mock ViewCache that returns cached content
+		$mockCache = $this->createMock( \Neuron\Mvc\Cache\ViewCache::class );
+
+		$cachedContent = '<html><body><p>Cached content</p></body></html>';
+
+		// Configure mock to be enabled
+		$mockCache->method( 'isEnabled' )
+			->willReturn( true );
+
+		// Configure mock to generate a key
+		$mockCache->method( 'generateKey' )
+			->willReturn( 'test_cache_key' );
+
+		$mockCache->expects( $this->once() )
+			->method( 'get' )
+			->with( 'test_cache_key' )
+			->willReturn( $cachedContent );
+
+		// set() should not be called since we got a cache hit
+		$mockCache->expects( $this->never() )
+			->method( 'set' );
+
+		Registry::getInstance()->set( "ViewCache", $mockCache );
+
+		$markdown = new \Neuron\Mvc\Views\Markdown();
+		$markdown->setController( 'Base' );
+		$markdown->setPage( 'index' );
+		$markdown->setLayout( 'default' );
+		$markdown->setCacheEnabled( true );
+
+		$result = $markdown->render( [] );
+
+		$this->assertEquals( $cachedContent, $result );
+	}
+
+	public function testRenderThrowsExceptionForMissingView()
+	{
+		$this->expectException( \Neuron\Core\Exceptions\NotFound::class );
+		$this->expectExceptionMessage( 'View notfound: nonexistent.md' );
+
+		Registry::getInstance()->set( "Views.Path", "examples/views" );
+
+		$markdown = new \Neuron\Mvc\Views\Markdown();
+		$markdown->setController( 'Base' );
+		$markdown->setPage( 'nonexistent' );
+		$markdown->setLayout( 'default' );
+
+		$markdown->render( [] );
+	}
 }

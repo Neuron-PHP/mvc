@@ -15,5 +15,4 @@ test.log
 CLAUDE.md
 /cache/
 /.claude/
-
-coverage.xml
+coverage*

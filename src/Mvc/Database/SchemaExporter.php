@@ -2,6 +2,8 @@
 
 namespace Neuron\Mvc\Database;
 
+use Neuron\Core\System\IFileSystem;
+use Neuron\Core\System\RealFileSystem;
 use Phinx\Config\Config;
 use Phinx\Db\Adapter\AdapterInterface;
 use Phinx\Db\Adapter\AdapterFactory;
@@ -16,15 +18,18 @@ class SchemaExporter
 	private AdapterInterface $_Adapter;
 	private string $_MigrationTable;
 	private string $_AdapterType;
+	private IFileSystem $fs;
 
 	/**
 	 * @param Config $PhinxConfig Phinx configuration
 	 * @param string $Environment Environment name
 	 * @param string $MigrationTable Migration tracking table name
+	 * @param IFileSystem|null $fs File system implementation (null = use real file system)
 	 */
-	public function __construct( Config $PhinxConfig, string $Environment, string $MigrationTable = 'phinx_log' )
+	public function __construct( Config $PhinxConfig, string $Environment, string $MigrationTable = 'phinx_log', ?IFileSystem $fs = null )
 	{
 		$this->_MigrationTable = $MigrationTable;
+		$this->fs = $fs ?? new RealFileSystem();
 
 		// Create database adapter from Phinx config
 		$options = $PhinxConfig->getEnvironment( $Environment );
@@ -63,12 +68,14 @@ class SchemaExporter
 		$yaml = $this->export();
 
 		$directory = dirname( $FilePath );
-		if( !is_dir( $directory ) )
+		if( !$this->fs->isDir( $directory ) )
 		{
-			mkdir( $directory, 0755, true );
+			$this->fs->mkdir( $directory, 0755, true );
 		}
 
-		return file_put_contents( $FilePath, $yaml ) !== false;
+		$result = $this->fs->writeFile( $FilePath, $yaml );
+
+		return $result !== false;
 	}
 
 	/**

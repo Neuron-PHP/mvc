@@ -2,6 +2,8 @@
 namespace Neuron\Mvc;
 
 use Neuron\Core\Exceptions\NotFound;
+use Neuron\Core\System\IFileSystem;
+use Neuron\Core\System\RealFileSystem;
 use Neuron\Data\Filters\Get;
 use Neuron\Data\Filters\Server;
 use Neuron\Data\Objects\Version;
@@ -101,11 +103,14 @@ function clearExpiredCache( Application $app ) : int
  * This function looks for a file named _{name}.php in the shared views directory.
  * @param string $name The name of the partial (without underscore prefix or .php extension)
  * @param array $data Optional data array to pass to the partial as variables
+ * @param IFileSystem|null $fs File system implementation (null = use real file system)
  * @return void
  * @throws NotFound
  */
-function partial( string $name, array $data = [] ) : void
+function partial( string $name, array $data = [], ?IFileSystem $fs = null ) : void
 {
+	$fs = $fs ?? new RealFileSystem();
+
 	$path = Registry::getInstance()
 						 ->get( "Views.Path" );
 
@@ -117,7 +122,7 @@ function partial( string $name, array $data = [] ) : void
 
 	$view = "$path/shared/_$name.php";
 
-	if( !file_exists( $view ) )
+	if( !$fs->fileExists( $view ) )
 	{
 		throw new NotFound( "Partial not found: $view" );
 	}

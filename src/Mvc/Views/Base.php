@@ -2,6 +2,9 @@
 
 namespace Neuron\Mvc\Views;
 
+use Neuron\Core\System\IFileSystem;
+use Neuron\Core\System\RealFileSystem;
+
 /**
  * Base view class for the Neuron MVC framework.
  * 
@@ -44,9 +47,12 @@ class Base
 	private string $_controller;
 	private string $_page;
 	private ?bool $_cacheEnabled = null;
+	protected IFileSystem $fs;
 
-	public function __construct()
-	{}
+	public function __construct( ?IFileSystem $fs = null )
+	{
+		$this->fs = $fs ?? new RealFileSystem();
+	}
 
 	/**
 	 * @return string
