@@ -1,7 +1,9 @@
 <?php
 namespace Neuron\Mvc\Cache\Storage;
 
+use Neuron\Core\System\IClock;
 use Neuron\Core\System\IFileSystem;
+use Neuron\Core\System\RealClock;
 use Neuron\Core\System\RealFileSystem;
 use Neuron\Log\Log;
 use Neuron\Mvc\Cache\Exceptions\CacheException;
@@ -10,18 +12,21 @@ class FileCacheStorage implements ICacheStorage
 {
 	private string $_BasePath;
 	private IFileSystem $fs;
+	private IClock $clock;
 
 	/**
 	 * FileCacheStorage constructor
 	 *
 	 * @param string $BasePath
 	 * @param IFileSystem|null $fs File system implementation (null = use real file system)
+	 * @param IClock|null $clock Clock implementation (null = use real clock)
 	 * @throws CacheException
 	 */
-	public function __construct( string $BasePath, ?IFileSystem $fs = null )
+	public function __construct( string $BasePath, ?IFileSystem $fs = null, ?IClock $clock = null )
 	{
 		$this->_BasePath = rtrim( $BasePath, DIRECTORY_SEPARATOR );
 		$this->fs = $fs ?? new RealFileSystem();
+		$this->clock = $clock ?? new RealClock();
 		$this->ensureDirectoryExists( $this->_BasePath );
 	}
 
@@ -76,9 +81,9 @@ class FileCacheStorage implements ICacheStorage
 		}
 
 		$MetaData = [
-			'created' => time(),
+			'created' => $this->clock->time(),
 			'ttl' => $Ttl,
-			'expires' => time() + $Ttl
+			'expires' => $this->clock->time() + $Ttl
 		];
 
 		$MetaWritten = $this->fs->writeFile( $MetaPath, json_encode( $MetaData ) ) !== false;
@@ -177,7 +182,7 @@ class FileCacheStorage implements ICacheStorage
 			return true;
 		}
 
-		return time() > $MetaData['expires'];
+		return $this->clock->time() > $MetaData['expires'];
 	}
 
 	/**
@@ -334,7 +339,7 @@ class FileCacheStorage implements ICacheStorage
 				{
 					$MetaData = json_decode( $MetaContent, true );
 
-					if( $MetaData && isset( $MetaData['expires'] ) && time() > $MetaData['expires'] )
+					if( $MetaData && isset( $MetaData['expires'] ) && $this->clock->time() > $MetaData['expires'] )
 					{
 						Log::debug( "Cache entry expired for key: $ItemPath" );
 
