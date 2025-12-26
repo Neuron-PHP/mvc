@@ -1,9 +1,8 @@
 ## 0.9.20
+* Adds fluent ViewContext class.
 
 ## 0.9.19 2025-12-01
-
 ## 0.9.18 2025-12-01
-
 ## 0.9.17 2025-12-01
 * Adds db:schema:dump command.
 
