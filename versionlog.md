@@ -1,3 +1,5 @@
+## 0.9.22
+
 ## 0.9.21 2025-12-26
 * Adds exception bubbling.
 
