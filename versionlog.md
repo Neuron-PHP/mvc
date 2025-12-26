@@ -1,4 +1,5 @@
 ## 0.9.21
+* Adds exception bubbling.
 
 ## 0.9.20 2025-12-25
 * Adds fluent ViewContext class.
