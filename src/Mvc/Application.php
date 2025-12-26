@@ -332,6 +332,15 @@ class Application extends Base
 		}
 		catch( \Throwable $e )
 		{
+			// Check if this exception should bubble up to application-level handlers
+			// Applications can register exception classes via Registry 'BubbleExceptions'
+			$bubbleExceptions = Registry::getInstance()->get( 'BubbleExceptions' ) ?? [];
+
+			if( in_array( get_class( $e ), $bubbleExceptions ) )
+			{
+				throw $e;
+			}
+
 			Log::error( "Exception in controller: " . $e->getMessage() );
 
 			Event::emit(

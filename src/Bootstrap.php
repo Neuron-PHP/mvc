@@ -83,15 +83,11 @@ function dispatch( Application $app ) : void
 	}
 	catch( \Throwable $e )
 	{
-		// Re-throw CMS-specific exceptions so they can be handled by public/index.php
-		// These exceptions require special handling (redirects, specific error pages)
-		$cmsExceptions = [
-			'Neuron\\Cms\\Exceptions\\UnauthenticatedException',
-			'Neuron\\Cms\\Exceptions\\EmailVerificationRequiredException',
-			'Neuron\\Cms\\Exceptions\\CsrfValidationException'
-		];
+		// Check if this exception should bubble up to caller (e.g., public/index.php)
+		// Applications can register exception classes via Registry 'BubbleExceptions'
+		$bubbleExceptions = Registry::getInstance()->get( 'BubbleExceptions' ) ?? [];
 
-		if( in_array( get_class( $e ), $cmsExceptions ) )
+		if( in_array( get_class( $e ), $bubbleExceptions ) )
 		{
 			throw $e;
 		}
