@@ -18,6 +18,7 @@ use Neuron\Mvc\Responses\HttpResponseStatus;
 use Neuron\Mvc\Views\Html;
 use Neuron\Mvc\Views\Json;
 use Neuron\Mvc\Views\Markdown;
+use Neuron\Mvc\Views\ViewContext;
 use Neuron\Mvc\Views\ViewDataProvider;
 use Neuron\Mvc\Views\Xml;
 use Neuron\Patterns\Registry;
@@ -56,6 +57,35 @@ class Base implements IController
 			$this->setRouter( $app->getRouter() );
 			$this->setApplication( $app );
 		}
+	}
+
+	/**
+	 * Create a new fluent ViewContext for building and rendering views.
+	 *
+	 * This provides a clean, chainable API for constructing view data and rendering.
+	 *
+	 * @return ViewContext A new view context instance
+	 *
+	 * @example
+	 * ```php
+	 * // Basic usage
+	 * return $this->view()
+	 *     ->title('Dashboard')
+	 *     ->description('Admin Dashboard')
+	 *     ->with('posts', $posts)
+	 *     ->render('index', 'admin');
+	 *
+	 * // With auto-injection
+	 * return $this->view()
+	 *     ->title('Profile')
+	 *     ->withCurrentUser()
+	 *     ->withCsrfToken()
+	 *     ->render('profile');
+	 * ```
+	 */
+	protected function view(): ViewContext
+	{
+		return new ViewContext( $this );
 	}
 
 	/**

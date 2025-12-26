@@ -1,6 +1,7 @@
 <?php
 namespace Mvc\Cache;
 
+use Neuron\Core\System\FrozenClock;
 use Neuron\Mvc\Cache\Exceptions\CacheException;
 use Neuron\Mvc\Cache\Storage\FileCacheStorage;
 use PHPUnit\Framework\TestCase;
@@ -8,6 +9,7 @@ use org\bovigo\vfs\vfsStream;
 
 /**
  * Tests FileCacheStorage using vfsStream for isolation and speed.
+ * Uses FrozenClock for instant time-based tests without sleep().
  * Note: Some operations like clear() don't work with vfsStream due to its limitations.
  * See FileCacheStorageRealTest for tests using real filesystem.
  */
@@ -15,11 +17,13 @@ class FileCacheStorageTest extends TestCase
 {
 	private $Root;
 	private FileCacheStorage $Storage;
+	private FrozenClock $Clock;
 
 	protected function setUp(): void
 	{
 		$this->Root = vfsStream::setup( 'cache' );
-		$this->Storage = new FileCacheStorage( vfsStream::url( 'cache' ) );
+		$this->Clock = new FrozenClock( 1000000 ); // Start at a fixed time
+		$this->Storage = new FileCacheStorage( vfsStream::url( 'cache' ), null, $this->Clock );
 	}
 
 	public function testWriteAndRead()
@@ -71,12 +75,13 @@ class FileCacheStorageTest extends TestCase
 	{
 		$Key = 'test_expired';
 		$Content = 'Test content';
-		
+
 		$this->Storage->write( $Key, $Content, 1 );
 		$this->assertFalse( $this->Storage->isExpired( $Key ) );
-		
-		sleep( 2 );
-		
+
+		// Advance time by 2 seconds (instant, no actual sleeping)
+		$this->Clock->advance( 2 );
+
 		$this->assertTrue( $this->Storage->isExpired( $Key ) );
 		$this->assertNull( $this->Storage->read( $Key ) );
 	}
@@ -181,20 +186,20 @@ class FileCacheStorageTest extends TestCase
 		$this->Storage->write( 'keep2', 'content2', 3600 ); // Keep for 1 hour
 		$this->Storage->write( 'expire1', 'content3', 1 ); // Expire in 1 second
 		$this->Storage->write( 'expire2', 'content4', 1 ); // Expire in 1 second
-		
+
 		// All should exist initially
 		$this->assertTrue( $this->Storage->exists( 'keep1' ) );
 		$this->assertTrue( $this->Storage->exists( 'keep2' ) );
 		$this->assertTrue( $this->Storage->exists( 'expire1' ) );
 		$this->assertTrue( $this->Storage->exists( 'expire2' ) );
-		
-		// Wait for some entries to expire
-		sleep( 2 );
-		
+
+		// Advance time by 2 seconds (instant, no actual sleeping)
+		$this->Clock->advance( 2 );
+
 		// Run garbage collection
 		$Removed = $this->Storage->gc();
 		$this->assertEquals( 2, $Removed );
-		
+
 		// Check that only non-expired entries remain
 		$this->assertTrue( $this->Storage->exists( 'keep1' ) );
 		$this->assertTrue( $this->Storage->exists( 'keep2' ) );
@@ -212,9 +217,10 @@ class FileCacheStorageTest extends TestCase
 	{
 		$Key = 'test_read_expired';
 		$this->Storage->write( $Key, 'content', 1 );
-		
-		sleep( 2 );
-		
+
+		// Advance time by 2 seconds (instant, no actual sleeping)
+		$this->Clock->advance( 2 );
+
 		// Reading expired entry should return null and delete it
 		$this->assertNull( $this->Storage->read( $Key ) );
 		$this->assertFalse( $this->Storage->exists( $Key ) );
@@ -277,7 +283,7 @@ class FileCacheStorageTest extends TestCase
 			->withContent( 'content' );
 		vfsStream::newFile( $Hash . '.meta' )
 			->at( $Dir )
-			->withContent( json_encode( [ 'created' => time() ] ) );
+			->withContent( json_encode( [ 'created' => $this->Clock->time() ] ) );
 		
 		// Should be considered expired if meta data is incomplete
 		$this->assertTrue( $this->Storage->isExpired( $Key ) );

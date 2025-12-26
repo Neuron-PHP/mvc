@@ -60,12 +60,19 @@ class Markdown extends Base implements IView
 
 		$layout = "$path/layouts/{$this->getLayout()}.php";
 
-		if( !file_exists( $layout ) )
+		if( !$this->fs->fileExists( $layout ) )
 		{
 			throw new NotFound( "View notfound: $layout" );
 		}
 
-		$content = $this->getCommonmarkConverter()->convert( file_get_contents( $view ) );
+		$markdownContent = $this->fs->readFile( $view );
+
+		if( $markdownContent === false )
+		{
+			throw new NotFound( "Failed to read markdown file: $view" );
+		}
+
+		$content = $this->getCommonmarkConverter()->convert( $markdownContent );
 
 		ob_start();
 		require( $layout );
@@ -89,7 +96,7 @@ class Markdown extends Base implements IView
 	 */
 	protected function findMarkdownFile( string $basePath, string $pageName ): ?string
 	{
-		if( !is_dir( $basePath ) )
+		if( !$this->fs->isDir( $basePath ) )
 		{
 			return null;
 		}
@@ -107,7 +114,7 @@ class Markdown extends Base implements IView
 		$fullPath = "$basePath/$pageName.md";
 
 		// Return path if file exists
-		if( file_exists( $fullPath ) )
+		if( $this->fs->fileExists( $fullPath ) )
 		{
 			return $fullPath;
 		}

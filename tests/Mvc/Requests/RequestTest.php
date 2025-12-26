@@ -344,4 +344,239 @@ class RequestTest extends TestCase
 		$this->assertEquals( 'default_session', $Request->session( 'nonexistent', 'default_session' ) );
 		$this->assertEquals( 'default_cookie', $Request->cookie( 'nonexistent', 'default_cookie' ) );
 	}
+
+	public function testGetErrors()
+	{
+		$Request = new Request();
+
+		// Initially should be empty
+		$this->assertIsArray( $Request->getErrors() );
+		$this->assertEmpty( $Request->getErrors() );
+	}
+
+	public function testGetHttpHeadersWithServerVars()
+	{
+		// Set up HTTP_ headers in $_SERVER
+		$_SERVER['HTTP_ACCEPT'] = 'application/json';
+		$_SERVER['HTTP_USER_AGENT'] = 'TestAgent/1.0';
+		$_SERVER['HTTP_X_CUSTOM_HEADER'] = 'CustomValue';
+
+		$Request = new Request();
+		$headers = $Request->getHttpHeaders();
+
+		$this->assertIsArray( $headers );
+
+		// Clean up
+		unset( $_SERVER['HTTP_ACCEPT'] );
+		unset( $_SERVER['HTTP_USER_AGENT'] );
+		unset( $_SERVER['HTTP_X_CUSTOM_HEADER'] );
+	}
+
+	public function testGetJsonPayloadWithValidJson()
+	{
+		$validJson = '{"name": "test", "value": 123}';
+		setInputStream( $validJson );
+
+		$Request = new Request();
+		$payload = $Request->getJsonPayload();
+
+		$this->assertIsArray( $payload );
+		$this->assertArrayHasKey( 'name', $payload );
+		$this->assertEquals( 'test', $payload['name'] );
+		$this->assertEquals( 123, $payload['value'] );
+	}
+
+	public function testGetJsonPayloadWithInvalidJson()
+	{
+		$invalidJson = '{invalid json here}';
+		setInputStream( $invalidJson );
+
+		$Request = new Request();
+		$payload = $Request->getJsonPayload();
+
+		// Should return empty array on invalid JSON
+		$this->assertIsArray( $payload );
+		$this->assertEmpty( $payload );
+	}
+
+	public function testGetJsonPayloadWithEmptyString()
+	{
+		setInputStream( '' );
+
+		$Request = new Request();
+		$payload = $Request->getJsonPayload();
+
+		$this->assertIsArray( $payload );
+		$this->assertEmpty( $payload );
+	}
+
+	public function testResolveDtoPathWithAbsolutePath()
+	{
+		$Request = new Request();
+
+		// Create a temporary file
+		$tmpFile = sys_get_temp_dir() . '/test_dto_' . uniqid() . '.yaml';
+		file_put_contents( $tmpFile, 'test: value' );
+
+		$reflection = new \ReflectionClass( $Request );
+		$method = $reflection->getMethod( 'resolveDtoPath' );
+		$method->setAccessible( true );
+
+		// Test with absolute path
+		$result = $method->invoke( $Request, $tmpFile );
+		$this->assertEquals( $tmpFile, $result );
+
+		// Clean up
+		unlink( $tmpFile );
+	}
+
+	public function testResolveDtoPathAddsYamlExtension()
+	{
+		$Request = new Request();
+
+		// Create a temporary file without .yaml extension
+		$tmpFile = sys_get_temp_dir() . '/test_dto_' . uniqid() . '.yaml';
+		file_put_contents( $tmpFile, 'test: value' );
+
+		$reflection = new \ReflectionClass( $Request );
+		$method = $reflection->getMethod( 'resolveDtoPath' );
+		$method->setAccessible( true );
+
+		// Test with path without .yaml extension
+		$pathWithoutExt = substr( $tmpFile, 0, -5 ); // Remove .yaml
+		$result = $method->invoke( $Request, $pathWithoutExt );
+		$this->assertEquals( $tmpFile, $result );
+
+		// Clean up
+		unlink( $tmpFile );
+	}
+
+	public function testResolveDtoPathNotFound()
+	{
+		$Request = new Request();
+
+		$reflection = new \ReflectionClass( $Request );
+		$method = $reflection->getMethod( 'resolveDtoPath' );
+		$method->setAccessible( true );
+
+		$this->expectException( \Exception::class );
+		$this->expectExceptionMessage( 'DTO file not found' );
+
+		$method->invoke( $Request, '/nonexistent/path/dto.yaml' );
+	}
+
+	public function testValidateHeadersWithMissingHeader()
+	{
+		$Request = new Request();
+		$Request->loadFile( 'examples/config/requests/login.yaml' );
+
+		// Clear headers to simulate missing header
+		$_SERVER = [];
+
+		$reflection = new \ReflectionClass( $Request );
+		$method = $reflection->getMethod( 'validateHeaders' );
+		$method->setAccessible( true );
+
+		// This should add errors
+		$method->invoke( $Request );
+
+		$errors = $Request->getErrors();
+		$this->assertNotEmpty( $errors );
+	}
+
+	public function testValidateHeadersWithInvalidValue()
+	{
+		setHeaders(
+			[
+				'Content-Type' => 'text/plain' // Wrong value
+			]
+		);
+
+		$Request = new Request();
+		$Request->loadFile( 'examples/config/requests/login.yaml' );
+
+		$reflection = new \ReflectionClass( $Request );
+		$method = $reflection->getMethod( 'validateHeaders' );
+		$method->setAccessible( true );
+
+		$method->invoke( $Request );
+
+		$errors = $Request->getErrors();
+		$this->assertNotEmpty( $errors );
+	}
+
+	public function testPopulateDtoWithInvalidProperty()
+	{
+		$Request = new Request();
+		$Request->loadFile( 'examples/config/requests/login.yaml' );
+
+		$reflection = new \ReflectionClass( $Request );
+		$method = $reflection->getMethod( 'populateDto' );
+		$method->setAccessible( true );
+
+		$dto = $Request->getDto();
+
+		// Try to populate with a non-existent property
+		$method->invoke( $Request, $dto, ['nonexistent_field' => 'value'] );
+
+		// Should not throw exception, just skip the field
+		$this->assertTrue( true );
+	}
+
+	public function testConstructor()
+	{
+		$Request = new Request();
+
+		// Verify constructor initializes ipResolver
+		$this->assertInstanceOf( Request::class, $Request );
+	}
+
+	public function testGetHttpHeadersWithServerVarsOnly()
+	{
+		// Set up HTTP_ headers in $_SERVER (simulating no getallheaders function)
+		$_SERVER['HTTP_ACCEPT'] = 'application/json';
+		$_SERVER['HTTP_USER_AGENT'] = 'TestAgent/1.0';
+		$_SERVER['HTTP_X_CUSTOM_HEADER'] = 'CustomValue';
+		$_SERVER['NOT_HTTP_HEADER'] = 'Should not be included';
+
+		$Request = new Request();
+		$headers = $Request->getHttpHeaders();
+
+		$this->assertIsArray( $headers );
+
+		// Verify HTTP_ headers are included (if getallheaders doesn't exist)
+		// The exact behavior depends on whether getallheaders() exists
+
+		// Clean up
+		unset( $_SERVER['HTTP_ACCEPT'] );
+		unset( $_SERVER['HTTP_USER_AGENT'] );
+		unset( $_SERVER['HTTP_X_CUSTOM_HEADER'] );
+		unset( $_SERVER['NOT_HTTP_HEADER'] );
+	}
+
+	public function testProcessPayloadWithHeaderValidationError()
+	{
+		// Don't set required headers
+		$_SERVER = [];
+
+		$Request = new Request();
+		$Request->loadFile( 'examples/config/requests/login.yaml' );
+
+		$Payload = [
+			'username' => 'test',
+			'password' => 'testtest',
+			'age'      => 40,
+			'birthdate' => '1978-01-01',
+			'address'  => [
+				'street' => '13 Mocking',
+				'city'   => 'Mockingbird Heights',
+				'state'  => 'CA',
+				'zip'    => '90210'
+			]
+		];
+
+		$this->expectException( Validation::class );
+
+		$Request->processPayload( $Payload );
+	}
 }

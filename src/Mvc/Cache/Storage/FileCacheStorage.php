@@ -1,22 +1,32 @@
 <?php
 namespace Neuron\Mvc\Cache\Storage;
 
+use Neuron\Core\System\IClock;
+use Neuron\Core\System\IFileSystem;
+use Neuron\Core\System\RealClock;
+use Neuron\Core\System\RealFileSystem;
 use Neuron\Log\Log;
 use Neuron\Mvc\Cache\Exceptions\CacheException;
 
 class FileCacheStorage implements ICacheStorage
 {
 	private string $_BasePath;
+	private IFileSystem $fs;
+	private IClock $clock;
 
 	/**
 	 * FileCacheStorage constructor
 	 *
 	 * @param string $BasePath
+	 * @param IFileSystem|null $fs File system implementation (null = use real file system)
+	 * @param IClock|null $clock Clock implementation (null = use real clock)
 	 * @throws CacheException
 	 */
-	public function __construct( string $BasePath )
+	public function __construct( string $BasePath, ?IFileSystem $fs = null, ?IClock $clock = null )
 	{
 		$this->_BasePath = rtrim( $BasePath, DIRECTORY_SEPARATOR );
+		$this->fs = $fs ?? new RealFileSystem();
+		$this->clock = $clock ?? new RealClock();
 		$this->ensureDirectoryExists( $this->_BasePath );
 	}
 
@@ -36,14 +46,14 @@ class FileCacheStorage implements ICacheStorage
 		}
 
 		$FilePath = $this->getFilePath( $Key );
-		
-		if( !file_exists( $FilePath ) )
+
+		if( !$this->fs->fileExists( $FilePath ) )
 		{
 			return null;
 		}
 
-		$Content = file_get_contents( $FilePath );
-		
+		$Content = $this->fs->readFile( $FilePath );
+
 		return $Content !== false ? $Content : null;
 	}
 
@@ -60,27 +70,27 @@ class FileCacheStorage implements ICacheStorage
 	{
 		$FilePath = $this->getFilePath( $Key );
 		$MetaPath = $this->getMetaPath( $Key );
-		
+
 		$this->ensureDirectoryExists( dirname( $FilePath ) );
 
-		$FileWritten = file_put_contents( $FilePath, $Content ) !== false;
-		
+		$FileWritten = $this->fs->writeFile( $FilePath, $Content ) !== false;
+
 		if( !$FileWritten )
 		{
 			throw CacheException::unableToWrite( $FilePath );
 		}
 
 		$MetaData = [
-			'created' => time(),
+			'created' => $this->clock->time(),
 			'ttl' => $Ttl,
-			'expires' => time() + $Ttl
+			'expires' => $this->clock->time() + $Ttl
 		];
 
-		$MetaWritten = file_put_contents( $MetaPath, json_encode( $MetaData ) ) !== false;
-		
+		$MetaWritten = $this->fs->writeFile( $MetaPath, json_encode( $MetaData ) ) !== false;
+
 		if( !$MetaWritten )
 		{
-			unlink( $FilePath );
+			$this->fs->unlink( $FilePath );
 			throw CacheException::unableToWrite( $MetaPath );
 		}
 
@@ -95,7 +105,7 @@ class FileCacheStorage implements ICacheStorage
 	 */
 	public function exists( string $Key ): bool
 	{
-		return file_exists( $this->getFilePath( $Key ) ) && !$this->isExpired( $Key );
+		return $this->fs->fileExists( $this->getFilePath( $Key ) ) && !$this->isExpired( $Key );
 	}
 
 	/**
@@ -108,18 +118,18 @@ class FileCacheStorage implements ICacheStorage
 	{
 		$FilePath = $this->getFilePath( $Key );
 		$MetaPath = $this->getMetaPath( $Key );
-		
+
 		$FileDeleted = true;
 		$MetaDeleted = true;
 
-		if( file_exists( $FilePath ) )
+		if( $this->fs->fileExists( $FilePath ) )
 		{
-			$FileDeleted = unlink( $FilePath );
+			$FileDeleted = $this->fs->unlink( $FilePath );
 		}
 
-		if( file_exists( $MetaPath ) )
+		if( $this->fs->fileExists( $MetaPath ) )
 		{
-			$MetaDeleted = unlink( $MetaPath );
+			$MetaDeleted = $this->fs->unlink( $MetaPath );
 		}
 
 		return $FileDeleted && $MetaDeleted;
@@ -132,14 +142,14 @@ class FileCacheStorage implements ICacheStorage
 	 */
 	public function clear(): bool
 	{
-		if( !is_dir( $this->_BasePath ) )
+		if( !$this->fs->isDir( $this->_BasePath ) )
 		{
 			return true;
 		}
-		
+
 		// Delete all contents but keep the base directory
 		$this->recursiveDelete( $this->_BasePath, false );
-		
+
 		return true;
 	}
 
@@ -152,27 +162,27 @@ class FileCacheStorage implements ICacheStorage
 	public function isExpired( string $Key ): bool
 	{
 		$MetaPath = $this->getMetaPath( $Key );
-		
-		if( !file_exists( $MetaPath ) )
+
+		if( !$this->fs->fileExists( $MetaPath ) )
 		{
 			return true;
 		}
 
-		$MetaContent = file_get_contents( $MetaPath );
-		
+		$MetaContent = $this->fs->readFile( $MetaPath );
+
 		if( $MetaContent === false )
 		{
 			return true;
 		}
 
 		$MetaData = json_decode( $MetaContent, true );
-		
+
 		if( !$MetaData || !isset( $MetaData['expires'] ) )
 		{
 			return true;
 		}
 
-		return time() > $MetaData['expires'];
+		return $this->clock->time() > $MetaData['expires'];
 	}
 
 	/**
@@ -184,14 +194,14 @@ class FileCacheStorage implements ICacheStorage
 	{
 		Log::debug( "FileCacheStorage gc" );
 		$Count = 0;
-		
-		if( !is_dir( $this->_BasePath ) )
+
+		if( !$this->fs->isDir( $this->_BasePath ) )
 		{
 			return 0;
 		}
-		
+
 		$this->scanAndClean( $this->_BasePath, $Count );
-		
+
 		return $Count;
 	}
 
@@ -232,9 +242,9 @@ class FileCacheStorage implements ICacheStorage
 	 */
 	private function ensureDirectoryExists( string $Path ): void
 	{
-		if( !is_dir( $Path ) )
+		if( !$this->fs->isDir( $Path ) )
 		{
-			if( !mkdir( $Path, 0755, true ) && !is_dir( $Path ) )
+			if( !$this->fs->mkdir( $Path, 0755, true ) && !$this->fs->isDir( $Path ) )
 			{
 				throw CacheException::unableToCreateDirectory( $Path );
 			}
@@ -250,41 +260,41 @@ class FileCacheStorage implements ICacheStorage
 	 */
 	private function recursiveDelete( string $Path, bool $DeleteSelf = true ): bool
 	{
-		if( !is_dir( $Path ) )
+		if( !$this->fs->isDir( $Path ) )
 		{
 			return false;
 		}
 
-		// Use scandir for better compatibility with vfsStream
-		$Items = scandir( $Path );
-		
+		// Use scandir for better compatibility
+		$Items = $this->fs->scandir( $Path );
+
 		if( $Items === false )
 		{
 			return false;
 		}
-		
+
 		foreach( $Items as $Item )
 		{
 			if( $Item === '.' || $Item === '..' )
 			{
 				continue;
 			}
-			
+
 			$ItemPath = $Path . DIRECTORY_SEPARATOR . $Item;
-			
-			if( is_dir( $ItemPath ) )
+
+			if( $this->fs->isDir( $ItemPath ) )
 			{
 				$this->recursiveDelete( $ItemPath, true );
 			}
 			else
 			{
-				@unlink( $ItemPath );
+				$this->fs->unlink( $ItemPath );
 			}
 		}
-		
+
 		if( $DeleteSelf )
 		{
-			@rmdir( $Path );
+			$this->fs->rmdir( $Path );
 		}
 
 		return true;
@@ -299,23 +309,23 @@ class FileCacheStorage implements ICacheStorage
 	 */
 	private function scanAndClean( string $Dir, int &$Count ): void
 	{
-		$Items = scandir( $Dir );
-		
+		$Items = $this->fs->scandir( $Dir );
+
 		if( $Items === false )
 		{
 			return;
 		}
-		
+
 		foreach( $Items as $Item )
 		{
 			if( $Item === '.' || $Item === '..' )
 			{
 				continue;
 			}
-			
+
 			$ItemPath = $Dir . DIRECTORY_SEPARATOR . $Item;
-			
-			if( is_dir( $ItemPath ) )
+
+			if( $this->fs->isDir( $ItemPath ) )
 			{
 				// Recursively scan subdirectories
 				$this->scanAndClean( $ItemPath, $Count );
@@ -323,36 +333,36 @@ class FileCacheStorage implements ICacheStorage
 			elseif( substr( $Item, -5 ) === '.meta' )
 			{
 				// Check if this meta file indicates an expired entry
-				$MetaContent = file_get_contents( $ItemPath );
-				
+				$MetaContent = $this->fs->readFile( $ItemPath );
+
 				if( $MetaContent !== false )
 				{
 					$MetaData = json_decode( $MetaContent, true );
-					
-					if( $MetaData && isset( $MetaData['expires'] ) && time() > $MetaData['expires'] )
+
+					if( $MetaData && isset( $MetaData['expires'] ) && $this->clock->time() > $MetaData['expires'] )
 					{
 						Log::debug( "Cache entry expired for key: $ItemPath" );
 
 						// Remove the meta file
-						@unlink( $ItemPath );
-						
+						$this->fs->unlink( $ItemPath );
+
 						// Remove the corresponding cache file
 						$CachePath = substr( $ItemPath, 0, -5 ) . '.cache';
-						if( file_exists( $CachePath ) )
+						if( $this->fs->fileExists( $CachePath ) )
 						{
-							@unlink( $CachePath );
+							$this->fs->unlink( $CachePath );
 						}
-						
+
 						$Count++;
 					}
 				}
 			}
 		}
-		
+
 		// Try to remove empty subdirectories (but not the base directory)
 		if( $Dir !== $this->_BasePath )
 		{
-			@rmdir( $Dir );
+			$this->fs->rmdir( $Dir );
 		}
 	}
 }

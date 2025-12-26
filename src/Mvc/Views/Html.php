@@ -51,7 +51,7 @@ class Html extends Base implements IView
 
 		$view = "$path/$controllerName/{$this->getPage()}.php";
 
-		if( !file_exists( $view ) )
+		if( !$this->fs->fileExists( $view ) )
 		{
 			throw new NotFound( "View notfound: $view" );
 		}
@@ -60,7 +60,7 @@ class Html extends Base implements IView
 
 		$layout = "$path/layouts/{$this->getLayout()}.php";
 
-		if( !file_exists( $layout ) )
+		if( !$this->fs->fileExists( $layout ) )
 		{
 			throw new NotFound( "View notfound: $layout" );
 		}

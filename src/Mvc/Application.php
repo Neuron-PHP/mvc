@@ -8,6 +8,8 @@ use Neuron\Core\Exceptions\BadRequestMethod;
 use Neuron\Core\Exceptions\MissingMethod;
 use Neuron\Core\Exceptions\NotFound;
 use Neuron\Core\Exceptions\Validation;
+use Neuron\Core\System\IFileSystem;
+use Neuron\Core\System\RealFileSystem;
 use Neuron\Data\Settings\Source\ISettingSource;
 use Neuron\Log\Log;
 use Neuron\Mvc\Controllers\Factory;
@@ -32,17 +34,20 @@ class Application extends Base
 	private array $_requests = [];
 	private bool $_captureOutput = false;
 	private ?string $_output = '';
+	private IFileSystem $fs;
 
 	/**
 	 * Application constructor.
 	 * @param string $version
 	 * @param ISettingSource|null $source
+	 * @param IFileSystem|null $fs File system implementation (null = use real file system)
 	 * @throws Exception
 	 */
-	public function __construct( string $version ="1.0.0", ?ISettingSource $source = null )
+	public function __construct( string $version ="1.0.0", ?ISettingSource $source = null, ?IFileSystem $fs = null )
 	{
 		$this->setHandleFatal( true );
 		$this->setHandleErrors( true );
+		$this->fs = $fs ?? new RealFileSystem();
 
 		parent::__construct( $version, $source );
 
@@ -118,7 +123,14 @@ class Application extends Base
 			$requestPath = $this->getRegistryObject( 'Requests.Path' );
 		}
 
-		foreach( glob($requestPath . '/*.yaml') as $filename )
+		$files = $this->fs->glob($requestPath . '/*.yaml');
+
+		if( $files === false )
+		{
+			return;
+		}
+
+		foreach( $files as $filename )
 		{
 			$name = pathinfo( $filename )['filename'];
 
@@ -374,15 +386,25 @@ class Application extends Base
 			$file = $this->getRoutesPath();
 		}
 
-		if( !file_exists( $file . '/routes.yaml' ) )
+		$routesFile = $file . '/routes.yaml';
+
+		if( !$this->fs->fileExists( $routesFile ) )
 		{
 			Log::debug( "routes.yaml not found." );
 			return;
 		}
 
+		$content = $this->fs->readFile( $routesFile );
+
+		if( $content === false )
+		{
+			Log::error( "Failed to read routes.yaml" );
+			return;
+		}
+
 		try
 		{
-			$data = Yaml::parseFile( $file . '/routes.yaml' );
+			$data = Yaml::parse( $content );
 		}
 		catch( ParseException $exception )
 		{
