@@ -16,6 +16,7 @@ use Neuron\Mvc\Controllers\Factory;
 use Neuron\Mvc\Events\Http404;
 use Neuron\Mvc\Events\Http500;
 use Neuron\Mvc\Requests\Request;
+use Neuron\Patterns\Container\IContainer;
 use Neuron\Patterns\Registry;
 use Neuron\Routing\RequestMethod;
 use Neuron\Routing\Router;
@@ -35,6 +36,7 @@ class Application extends Base
 	private bool $_captureOutput = false;
 	private ?string $_output = '';
 	private IFileSystem $fs;
+	private ?IContainer $_container = null;
 
 	/**
 	 * Application constructor.
@@ -628,6 +630,43 @@ class Application extends Base
 		{
 			return $this->beautifyException( $e );
 		}
+	}
+
+	/**
+	 * Set the dependency injection container
+	 *
+	 * @param IContainer $container
+	 * @return void
+	 */
+	public function setContainer( IContainer $container ): void
+	{
+		$this->_container = $container;
+	}
+
+	/**
+	 * Get the dependency injection container
+	 *
+	 * @return IContainer
+	 * @throws Exception If container has not been set
+	 */
+	public function getContainer(): IContainer
+	{
+		if( $this->_container === null )
+		{
+			throw new Exception( 'Container has not been set on Application' );
+		}
+
+		return $this->_container;
+	}
+
+	/**
+	 * Check if container has been set
+	 *
+	 * @return bool
+	 */
+	public function hasContainer(): bool
+	{
+		return $this->_container !== null;
 	}
 }
 
