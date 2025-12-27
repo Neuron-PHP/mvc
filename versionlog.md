@@ -3,17 +3,18 @@
 ## 0.9.23 2025-12-26
 
 ## 0.9.22 2025-12-26
+* Added support for multiple route filters.
 
 ## 0.9.21 2025-12-26
-* Adds exception bubbling.
+* Added exception bubbling.
 
 ## 0.9.20 2025-12-25
-* Adds fluent ViewContext class.
+* Added fluent ViewContext class.
 
 ## 0.9.19 2025-12-01
 ## 0.9.18 2025-12-01
 ## 0.9.17 2025-12-01
-* Adds db:schema:dump command.
+* Added db:schema:dump command.
 
 ## 0.9.16 2025-11-28
 ## 0.9.15 2025-11-27
