@@ -146,13 +146,13 @@ class Application extends Base
 	 * @param string $route
 	 * @param string $controllerMethod
 	 * @param string $request
-	 * @param string $filter
+	 * @param string|array $filters
 	 * @return \Neuron\Routing\RouteMap
 	 *
 	 * @throws BadRequestMethod
 	 * @throws Exception
 	 */
-	public function addRoute( string $method, string $route, string $controllerMethod, string $request = '', string $filter = '' ) : \Neuron\Routing\RouteMap
+	public function addRoute( string $method, string $route, string $controllerMethod, string $request = '', string|array $filters = '' ) : \Neuron\Routing\RouteMap
 	{
 		switch( RequestMethod::getType( $method ) )
 		{
@@ -163,7 +163,7 @@ class Application extends Base
 					{
 						return $this->executeController( $parameters, $request );
 					},
-					$filter
+					$filters
 				);
 
 				break;
@@ -175,7 +175,7 @@ class Application extends Base
 					{
 						return $this->executeController( $parameters, $request );
 					},
-					$filter
+					$filters
 				);
 				break;
 
@@ -186,7 +186,7 @@ class Application extends Base
 					{
 						return $this->executeController( $parameters, $request );
 					},
-					$filter
+					$filters
 				);
 				break;
 
@@ -197,7 +197,7 @@ class Application extends Base
 					{
 						return $this->executeController( $parameters, $request );
 					},
-					$filter
+					$filters
 				);
 				break;
 
@@ -424,14 +424,24 @@ class Application extends Base
 		foreach( $data[ 'routes' ] as $routeName => $route )
 		{
 			$request = $route[ 'request' ] ?? '';
-			$filter = $route[ 'filter' ] ?? '';
+
+			// Support both 'filter' (string, backward compat) and 'filters' (array, new)
+			$filters = '';
+			if( isset( $route[ 'filters' ] ) )
+			{
+				$filters = $route[ 'filters' ]; // Already an array
+			}
+			elseif( isset( $route[ 'filter' ] ) )
+			{
+				$filters = $route[ 'filter' ]; // String, will be converted to array
+			}
 
 			$routeMap = $this->addRoute(
 				$route[ 'method' ],
 				$route[ 'route' ],
 				$route[ 'controller' ],
 				$request,
-				$filter
+				$filters
 			);
 			$routeMap->setName( $routeName );
 		}
