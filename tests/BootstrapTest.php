@@ -256,6 +256,64 @@ YAML;
 	}
 
 	/**
+	 * Test Dispatch function with bubble exception (should re-throw)
+	 */
+	public function testDispatchWithBubbleException()
+	{
+		// Register a custom exception class to bubble
+		Registry::getInstance()->set( 'BubbleExceptions', [
+			'RuntimeException'
+		] );
+
+		// Create mock application that throws RuntimeException
+		$App = $this->createMock( Application::class );
+		$App->expects( $this->once() )
+			->method( 'run' )
+			->willThrowException( new \RuntimeException( 'Auth required' ) );
+
+		// handleException should NOT be called because exception bubbles up
+		$App->expects( $this->never() )
+			->method( 'handleException' );
+
+		// Expect the exception to be re-thrown
+		$this->expectException( \RuntimeException::class );
+		$this->expectExceptionMessage( 'Auth required' );
+
+		dispatch( $App );
+	}
+
+	/**
+	 * Test Dispatch function with non-bubble exception (should handle normally)
+	 */
+	public function testDispatchWithNonBubbleException()
+	{
+		// Register a specific exception class to bubble (not the one we'll throw)
+		Registry::getInstance()->set( 'BubbleExceptions', [
+			'LogicException'  // Different from what we'll throw
+		] );
+
+		// Create mock application that throws RuntimeException (not registered to bubble)
+		$App = $this->createMock( Application::class );
+		$App->expects( $this->once() )
+			->method( 'run' )
+			->willThrowException( new \RuntimeException( 'Test error' ) );
+
+		// handleException SHOULD be called because this exception doesn't bubble
+		$App->expects( $this->once() )
+			->method( 'handleException' )
+			->willReturnCallback( function( $e ) {
+				return "Handled: " . $e->getMessage();
+			} );
+
+		// Capture output
+		ob_start();
+		dispatch( $App );
+		$Output = ob_get_clean();
+
+		$this->assertStringContainsString( 'Handled: Test error', $Output );
+	}
+
+	/**
 	 * Test ClearExpiredCache function
 	 */
 	public function testClearExpiredCache()
