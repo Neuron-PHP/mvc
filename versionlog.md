@@ -1,4 +1,4 @@
-## 0.9.25
+## 0.9.25 2025-12-27
 
 ## 0.9.24 2025-12-27
 * Added support for multiple route filters.
