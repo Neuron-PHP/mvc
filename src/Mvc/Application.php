@@ -288,7 +288,15 @@ class Application extends Base
 
 		try
 		{
-			$controller = Factory::create( $this, $controller );
+			// Use container if available for dependency injection, otherwise fallback to Factory
+			if( $this->hasContainer() )
+			{
+				$controller = $this->getContainer()->make( $controller );
+			}
+			else
+			{
+				$controller = Factory::create( $this, $controller );
+			}
 
 			if( !method_exists( $controller, $method ) )
 			{
