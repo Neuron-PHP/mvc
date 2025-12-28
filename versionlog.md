@@ -1,4 +1,4 @@
-## 0.9.27
+## 0.9.27 2025-12-27
 * Added attribute based route definitions.
 
 ## 0.9.26 2025-12-27
