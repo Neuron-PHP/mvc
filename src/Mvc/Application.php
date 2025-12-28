@@ -20,6 +20,8 @@ use Neuron\Patterns\Container\IContainer;
 use Neuron\Patterns\Registry;
 use Neuron\Routing\RequestMethod;
 use Neuron\Routing\Router;
+use Neuron\Routing\RouteScanner;
+use Neuron\Routing\RouteDefinition;
 use Symfony\Component\Yaml\Exception\ParseException;
 use Symfony\Component\Yaml\Yaml;
 
@@ -454,6 +456,80 @@ class Application extends Base
 				$filters
 			);
 			$routeMap->setName( $routeName );
+		}
+
+		// Load routes from controller attributes if configured
+		$this->loadAttributeRoutes();
+	}
+
+	/**
+	 * Load routes from controller attributes
+	 *
+	 * @return void
+	 * @throws Exception
+	 */
+	protected function loadAttributeRoutes(): void
+	{
+		// Get controller paths from settings
+		$controllerPaths = $this->getSetting( 'routing', 'controller_paths' );
+
+		if( !$controllerPaths || !is_array( $controllerPaths ) )
+		{
+			return;
+		}
+
+		$scanner = new RouteScanner();
+		$basePath = $this->getBasePath();
+
+		foreach( $controllerPaths as $pathConfig )
+		{
+			$directory = $basePath . '/' . $pathConfig['path'];
+			$namespace = $pathConfig['namespace'];
+
+			if( !is_dir( $directory ) )
+			{
+				Log::debug( "Controller directory not found: $directory" );
+				continue;
+			}
+
+			try
+			{
+				$routeDefinitions = $scanner->scanDirectory( $directory, $namespace );
+
+				foreach( $routeDefinitions as $def )
+				{
+					$this->registerAttributeRoute( $def );
+				}
+
+				Log::debug( "Loaded " . count( $routeDefinitions ) . " attribute routes from $directory" );
+			}
+			catch( \Exception $e )
+			{
+				Log::error( "Failed to scan directory $directory: " . $e->getMessage() );
+			}
+		}
+	}
+
+	/**
+	 * Register a single route from an attribute definition
+	 *
+	 * @param RouteDefinition $def
+	 * @return void
+	 * @throws Exception
+	 */
+	protected function registerAttributeRoute( RouteDefinition $def ): void
+	{
+		$routeMap = $this->addRoute(
+			$def->method,
+			$def->path,
+			$def->getControllerMethod(),
+			'', // No request validation for attribute routes
+			$def->filters
+		);
+
+		if( $def->name )
+		{
+			$routeMap->setName( $def->name );
 		}
 	}
 
