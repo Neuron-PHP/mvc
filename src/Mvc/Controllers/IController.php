@@ -3,7 +3,7 @@
 namespace Neuron\Mvc\Controllers;
 
 use Neuron\Data\Settings\Source\ISettingSource;
-use Neuron\Mvc\Application;
+use Neuron\Mvc\IMvcApplication;
 use Neuron\Mvc\Responses\HttpResponseStatus;
 use Neuron\Routing\Router;
 
@@ -21,9 +21,9 @@ interface IController
 	/**
 	 * Constructor for the controller.
 	 *
-	 * @param Application|null $app The application instance.
+	 * @param IMvcApplication $app The application instance.
 	 */
-	public function __construct( ?Application $app );
+	public function __construct( IMvcApplication $app );
 
 	/**
 	 * Renders an HTML response.

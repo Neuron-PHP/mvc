@@ -2,10 +2,12 @@
 
 namespace Tests\Mvc\Controllers;
 
+use Neuron\Mvc\Application;
 use Neuron\Mvc\Cache\CacheConfig;
 use Neuron\Mvc\Cache\Storage\FileCacheStorage;
 use Neuron\Mvc\Cache\ViewCache;
 use Neuron\Mvc\Controllers\Base;
+use Neuron\Mvc\IMvcApplication;
 use Neuron\Mvc\Responses\HttpResponseStatus;
 use Neuron\Mvc\Views\Html;
 use Neuron\Mvc\Views\Json;
@@ -28,18 +30,23 @@ class DynamicCacheControlTest extends TestCase
 	private $Root;
 	private $Router;
 	private $OriginalRegistry;
-	
+	private IMvcApplication $MockApp;
+
 	protected function setUp(): void
 	{
 		parent::setUp();
-		
+
 		// Create virtual filesystem
 		$this->Root = vfsStream::setup( 'test' );
 		vfsStream::newDirectory( 'cache' )->at( $this->Root );
 		vfsStream::newDirectory( 'resources/views' )->at( $this->Root );
-		
+
 		// Create mock router
 		$this->Router = $this->createMock( Router::class );
+
+		// Create mock application
+		$this->MockApp = $this->createMock( IMvcApplication::class );
+		$this->MockApp->method( 'getRouter' )->willReturn( $this->Router );
 		
 		// Store original registry values
 		$this->OriginalRegistry = [
@@ -88,7 +95,7 @@ class DynamicCacheControlTest extends TestCase
 	 */
 	private function createTestController(): Base
 	{
-		return new dynamic_test_cache_controller();
+		return new dynamic_test_cache_controller( $this->MockApp );
 	}
 	
 	/**

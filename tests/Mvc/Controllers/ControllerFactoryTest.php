@@ -4,6 +4,7 @@ namespace Mvc\Controllers;
 
 use Neuron\Core\Exceptions\NotFound;
 use Neuron\Mvc\Application;
+use Neuron\Mvc\IMvcApplication;
 use Neuron\Mvc\Controllers\Factory;
 use Neuron\Mvc\Controllers\IController;
 use Neuron\Mvc\Responses\HttpResponseStatus;
@@ -12,9 +13,9 @@ use PHPUnit\Framework\TestCase;
 
 class TestController implements IController
 {
-	private Application $_app;
-	
-	public function __construct( ?Application $app )
+	private IMvcApplication $_app;
+
+	public function __construct( IMvcApplication $app )
 	{
 		$this->_app = $app;
 	}
@@ -56,11 +57,12 @@ class InvalidController
 class ControllerFactoryTest extends TestCase
 {
 	private Application $App;
-	
+
 	protected function setUp(): void
 	{
 		$this->App = $this->createMock( Application::class );
 		$this->App->method( 'getRouter' )->willReturn( new Router() );
+		$this->App->method( 'hasContainer' )->willReturn( false );
 	}
 	
 	public function testCreateValidController()

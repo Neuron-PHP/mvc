@@ -30,7 +30,7 @@ use Symfony\Component\Yaml\Yaml;
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class Application extends Base
+class Application extends Base implements IMvcApplication
 {
 	private string $_routesPath;
 	private Router $_router;

@@ -417,16 +417,17 @@ class BaseTest extends TestCase
 
 	public function testGetAndSetApplication()
 	{
-		$Controller = new ControllerTest();
+		$App1 = new Application( "test-app1" );
+		$Controller = new ControllerTest( $App1 );
 
-		$App = new Application( "test-app" );
-		$result = $Controller->setApplication( $App );
+		$App2 = new Application( "test-app2" );
+		$result = $Controller->setApplication( $App2 );
 
 		// Fluent interface - should return $this
 		$this->assertSame( $Controller, $result );
 
 		// Verify application was set
-		$this->assertSame( $App, $Controller->getApplication() );
+		$this->assertSame( $App2, $Controller->getApplication() );
 	}
 
 	public function testConstructorWithApplication()
@@ -438,17 +439,11 @@ class BaseTest extends TestCase
 		$this->assertSame( $App->getRouter(), $Controller->getRouter() );
 	}
 
-	public function testConstructorWithoutApplication()
-	{
-		$Controller = new ControllerTest();
-
-		// Should not throw exception
-		$this->assertInstanceOf( ControllerTest::class, $Controller );
-	}
-
 	public function testUrlForWithoutRouter()
 	{
-		$Controller = new ControllerTest();
+		$App = new Application( "test" );
+		$Controller = new ControllerTest( $App );
+		$Controller->setRouter( null );
 
 		$reflection = new \ReflectionClass( $Controller );
 		$method = $reflection->getMethod( 'urlFor' );
@@ -465,7 +460,9 @@ class BaseTest extends TestCase
 
 	public function testUrlForAbsoluteWithoutRouter()
 	{
-		$Controller = new ControllerTest();
+		$App = new Application( "test" );
+		$Controller = new ControllerTest( $App );
+		$Controller->setRouter( null );
 
 		$reflection = new \ReflectionClass( $Controller );
 		$method = $reflection->getMethod( 'urlForAbsolute' );
@@ -478,7 +475,9 @@ class BaseTest extends TestCase
 
 	public function testUrlHelperWithoutRouter()
 	{
-		$Controller = new ControllerTest();
+		$App = new Application( "test" );
+		$Controller = new ControllerTest( $App );
+		$Controller->setRouter( null );
 
 		$reflection = new \ReflectionClass( $Controller );
 		$method = $reflection->getMethod( 'urlHelper' );
@@ -491,7 +490,9 @@ class BaseTest extends TestCase
 
 	public function testRouteExistsWithoutRouter()
 	{
-		$Controller = new ControllerTest();
+		$App = new Application( "test" );
+		$Controller = new ControllerTest( $App );
+		$Controller->setRouter( null );
 
 		$reflection = new \ReflectionClass( $Controller );
 		$method = $reflection->getMethod( 'routeExists' );
@@ -504,7 +505,9 @@ class BaseTest extends TestCase
 
 	public function testInjectHelpersWithoutRouter()
 	{
-		$Controller = new ControllerTest();
+		$App = new Application( "test" );
+		$Controller = new ControllerTest( $App );
+		$Controller->setRouter( null );
 
 		$reflection = new \ReflectionClass( $Controller );
 		$method = $reflection->getMethod( 'injectHelpers' );

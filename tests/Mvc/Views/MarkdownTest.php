@@ -3,6 +3,7 @@
 namespace Mvc\Views;
 
 use Neuron\Mvc\Controllers\Base;
+use Neuron\Mvc\IMvcApplication;
 use Neuron\Mvc\Responses\HttpResponseStatus;
 use Neuron\Patterns\Registry;
 use Neuron\Routing\Router;
@@ -11,11 +12,18 @@ use PHPUnit\Framework\TestCase;
 
 class MarkdownTest extends TestCase
 {
+	private IMvcApplication $MockApp;
+
 	protected function setUp(): void
 	{
 		// Clear any existing registry values
 		Registry::getInstance()->set( "Views.Path", null );
 		Registry::getInstance()->set( "ViewCache", null );
+
+		// Create mock application
+		$router = $this->createMock( Router::class );
+		$this->MockApp = $this->createMock( IMvcApplication::class );
+		$this->MockApp->method( 'getRouter' )->willReturn( $router );
 	}
 
 	protected function tearDown(): void
@@ -27,7 +35,7 @@ class MarkdownTest extends TestCase
 
 	public function testRender()
 	{
-		$Base = new Base();
+		$Base = new Base( $this->MockApp );
 
 		Registry::getInstance()->set( "Views.Path", "examples/views" );
 

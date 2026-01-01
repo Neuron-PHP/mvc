@@ -3,14 +3,17 @@
 namespace Tests\Mvc\Controllers;
 
 use Neuron\Mvc\Controllers\HttpCodes;
+use Neuron\Mvc\IMvcApplication;
 use Neuron\Mvc\Requests\Request;
 use Neuron\Mvc\Responses\HttpResponseStatus;
 use Neuron\Patterns\Registry;
+use Neuron\Routing\Router;
 use PHPUnit\Framework\TestCase;
 
 class HttpCodesTest extends TestCase
 {
 	private HttpCodes $controller;
+	private IMvcApplication $MockApp;
 
 	protected function setUp(): void
 	{
@@ -19,7 +22,12 @@ class HttpCodesTest extends TestCase
 		// Set up the base path for views
 		Registry::getInstance()->set( 'Base.Path', dirname( __DIR__, 3 ) );
 
-		$this->controller = new HttpCodes();
+		// Create mock application
+		$router = $this->createMock( Router::class );
+		$this->MockApp = $this->createMock( IMvcApplication::class );
+		$this->MockApp->method( 'getRouter' )->willReturn( $router );
+
+		$this->controller = new HttpCodes( $this->MockApp );
 	}
 
 	protected function tearDown(): void
