@@ -474,8 +474,11 @@ class Application extends Base
 
 		if( !$controllerPaths || !is_array( $controllerPaths ) )
 		{
+			Log::debug( "No controller_paths configured in routing settings" );
 			return;
 		}
+
+		Log::debug( "Found " . count( $controllerPaths ) . " controller path(s) to scan" );
 
 		$scanner = new RouteScanner();
 		$basePath = $this->getBasePath();
