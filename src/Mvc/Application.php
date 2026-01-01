@@ -409,53 +409,52 @@ class Application extends Base
 
 		$routesFile = $file . '/routes.yaml';
 
-		if( !$this->fs->fileExists( $routesFile ) )
+		// Load routes from YAML file if it exists
+		if( $this->fs->fileExists( $routesFile ) )
 		{
-			Log::debug( "routes.yaml not found." );
-			return;
-		}
+			$content = $this->fs->readFile( $routesFile );
 
-		$content = $this->fs->readFile( $routesFile );
-
-		if( $content === false )
-		{
-			Log::error( "Failed to read routes.yaml" );
-			return;
-		}
-
-		try
-		{
-			$data = Yaml::parse( $content );
-		}
-		catch( ParseException $exception )
-		{
-			Log::error( "Failed to load routes: ".$exception->getMessage() );
-			throw new Validation( $exception->getMessage(), [] );
-		}
-
-		foreach( $data[ 'routes' ] as $routeName => $route )
-		{
-			$request = $route[ 'request' ] ?? '';
-
-			// Support both 'filter' (string, backward compat) and 'filters' (array, new)
-			$filters = '';
-			if( isset( $route[ 'filters' ] ) )
+			if( $content === false )
 			{
-				$filters = $route[ 'filters' ]; // Already an array
+				Log::error( "Failed to read routes.yaml" );
 			}
-			elseif( isset( $route[ 'filter' ] ) )
+			else
 			{
-				$filters = $route[ 'filter' ]; // String, will be converted to array
-			}
+				try
+				{
+					$data = Yaml::parse( $content );
 
-			$routeMap = $this->addRoute(
-				$route[ 'method' ],
-				$route[ 'route' ],
-				$route[ 'controller' ],
-				$request,
-				$filters
-			);
-			$routeMap->setName( $routeName );
+					foreach( $data[ 'routes' ] as $routeName => $route )
+					{
+						$request = $route[ 'request' ] ?? '';
+
+						// Support both 'filter' (string, backward compat) and 'filters' (array, new)
+						$filters = '';
+						if( isset( $route[ 'filters' ] ) )
+						{
+							$filters = $route[ 'filters' ]; // Already an array
+						}
+						elseif( isset( $route[ 'filter' ] ) )
+						{
+							$filters = $route[ 'filter' ]; // String, will be converted to array
+						}
+
+						$routeMap = $this->addRoute(
+							$route[ 'method' ],
+							$route[ 'route' ],
+							$route[ 'controller' ],
+							$request,
+							$filters
+						);
+						$routeMap->setName( $routeName );
+					}
+				}
+				catch( ParseException $exception )
+				{
+					Log::error( "Failed to load routes: ".$exception->getMessage() );
+					throw new Validation( $exception->getMessage(), [] );
+				}
+			}
 		}
 
 		// Load routes from controller attributes if configured
