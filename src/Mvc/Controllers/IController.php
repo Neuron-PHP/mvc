@@ -19,13 +19,6 @@ use Neuron\Routing\Router;
 interface IController
 {
 	/**
-	 * Constructor for the controller.
-	 *
-	 * @param IMvcApplication $app The application instance.
-	 */
-	public function __construct( IMvcApplication $app );
-
-	/**
 	 * Renders an HTML response.
 	 *
 	 * @param HttpResponseStatus $responseCode The HTTP response status code.
