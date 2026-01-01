@@ -7,6 +7,7 @@ use Neuron\Core\System\RealFileSystem;
 use Neuron\Data\Filters\Get;
 use Neuron\Data\Filters\Server;
 use Neuron\Data\Objects\Version;
+use Neuron\Data\Settings\Source\ISettingSource;
 use Neuron\Data\Settings\Source\Yaml;
 use Neuron\Patterns\Registry;
 
@@ -20,7 +21,7 @@ use Neuron\Patterns\Registry;
 
 function boot( string $configPath ) : Application
 {
-	/** @var Neuron\Data\Settings\Source\ISettingSource $settings */
+	/** @var ISettingSource $settings */
 
 	try
 	{
