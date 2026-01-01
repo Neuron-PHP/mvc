@@ -350,6 +350,22 @@ YAML;
 	}
 	
 	/**
+	 * Test that beautifyException can be called statically from bootstrap context
+	 */
+	public function testBeautifyExceptionStaticCallFromBootstrap()
+	{
+		$exception = new \Exception( 'Bootstrap test exception' );
+
+		// This mimics exactly what Bootstrap.php does on line 45
+		$output = Application::beautifyException( $exception );
+
+		$this->assertIsString( $output );
+		$this->assertStringContainsString( 'Bootstrap test exception', $output );
+		$this->assertStringContainsString( '<html>', $output );
+		$this->assertStringContainsString( 'Exception: Exception', $output );
+	}
+
+	/**
 	 * Keep original tests for backward compatibility
 	 */
 	public function testLegacyBootstrap()
@@ -357,7 +373,7 @@ YAML;
 		$App = boot( 'examples/config' );
 		$this->assertInstanceOf( Application::class, $App );
 	}
-	
+
 	public function testLegacyMissingConfig()
 	{
 		// With the fix, this now falls back to environment/default path

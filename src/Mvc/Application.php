@@ -678,7 +678,7 @@ class Application extends Base
 		return 0;
 	}
 
-	public function beautifyException( \Throwable $e ): string
+	public static function beautifyException( \Throwable $e ): string
 	{
 		// this function should return a nicely formatted HTML representation of the exception
 		$exceptionType = get_class( $e );
@@ -707,12 +707,12 @@ class Application extends Base
 	{
 		if( $this->getCaptureOutput() )
 		{
-			$this->_output .= $this->beautifyException( $e );
+			$this->_output .= self::beautifyException( $e );
 			return $this->_output;
 		}
 		else
 		{
-			return $this->beautifyException( $e );
+			return self::beautifyException( $e );
 		}
 	}
 
