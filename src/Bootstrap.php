@@ -27,24 +27,21 @@ function boot( string $configPath ) : Application
 	{
 		$settings = new Yaml( "$configPath/neuron.yaml" );
 		$basePath = $settings->get( 'system', 'base_path' );
+
+		// If base_path not in settings, use environment variable or current directory
+		if( empty( $basePath ) )
+		{
+			$basePath = getenv( 'SYSTEM_BASE_PATH' ) ?: '.';
+		}
 	}
 	catch( \Exception $e )
 	{
 		$settings = null;
-		$basePath = getenv( 'SYSTEM_BASE_PATH' ) ? : '.';
+		$basePath = getenv( 'SYSTEM_BASE_PATH' ) ?: '.';
 	}
 
 	$version = \Neuron\Data\Factories\Version::fromFile( "$basePath/.version.json" );
-
-	try
-	{
-		$app = new Application( $version->getAsString(), $settings );
-	}
-	catch( \Throwable $e )
-	{
-		echo Application::beautifyException( $e );
-		exit( 1 );
-	}
+	$app = new Application( $version->getAsString(), $settings );
 
 	return $app;
 }

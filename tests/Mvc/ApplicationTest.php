@@ -457,4 +457,90 @@ class ApplicationTest extends TestCase
 
 		$this->assertNull( $NonExistentRoute, 'Non-existent route should return null' );
 	}
+
+	/**
+	 * Test that beautifyException is callable as a static method
+	 * This is critical for the bootstrap process
+	 */
+	public function testBeautifyExceptionIsStatic()
+	{
+		$exception = new \Exception( 'Test exception message' );
+
+		// Test that it can be called statically (as used in Bootstrap.php)
+		$output = Application::beautifyException( $exception );
+
+		$this->assertIsString( $output, 'beautifyException should return a string' );
+		$this->assertStringContainsString( 'Test exception message', $output, 'Output should contain exception message' );
+		$this->assertStringContainsString( '<html>', $output, 'Output should be HTML' );
+		$this->assertStringContainsString( 'Exception: Exception', $output, 'Output should contain exception type' );
+	}
+
+	/**
+	 * Test beautifyException output format
+	 */
+	public function testBeautifyExceptionFormat()
+	{
+		$exception = new \RuntimeException( 'Runtime error occurred', 500 );
+
+		$output = Application::beautifyException( $exception );
+
+		// Verify HTML structure
+		$this->assertStringContainsString( '<html>', $output );
+		$this->assertStringContainsString( '</html>', $output );
+		$this->assertStringContainsString( '<body>', $output );
+		$this->assertStringContainsString( '</body>', $output );
+
+		// Verify exception details are present
+		$this->assertStringContainsString( 'Runtime error occurred', $output );
+		$this->assertStringContainsString( 'RuntimeException', $output );
+		$this->assertStringContainsString( 'Stack Trace:', $output );
+
+		// Verify HTML escaping (security check)
+		$this->assertStringNotContainsString( '<script>', $output );
+	}
+
+	/**
+	 * Test beautifyException with special characters (XSS protection)
+	 */
+	public function testBeautifyExceptionXssProtection()
+	{
+		$exception = new \Exception( '<script>alert("XSS")</script>' );
+
+		$output = Application::beautifyException( $exception );
+
+		// Verify that HTML special characters are escaped
+		$this->assertStringNotContainsString( '<script>alert("XSS")</script>', $output );
+		$this->assertStringContainsString( 'alert(&quot;XSS&quot;)', $output );
+	}
+
+	/**
+	 * Test handleException method uses beautifyException correctly
+	 */
+	public function testHandleExceptionUsesBeautifyException()
+	{
+		$exception = new \Exception( 'Handled exception test' );
+
+		$this->App->setCaptureOutput( true );
+
+		$output = $this->App->handleException( $exception );
+
+		$this->assertStringContainsString( 'Handled exception test', $output );
+		$this->assertStringContainsString( '<html>', $output );
+		$this->assertStringContainsString( 'Exception: Exception', $output );
+	}
+
+	/**
+	 * Test handleException with output capture disabled
+	 */
+	public function testHandleExceptionWithoutCaptureOutput()
+	{
+		$exception = new \Exception( 'Non-captured exception' );
+
+		$this->App->setCaptureOutput( false );
+
+		$output = $this->App->handleException( $exception );
+
+		$this->assertStringContainsString( 'Non-captured exception', $output );
+		$this->assertStringContainsString( '<html>', $output );
+	}
 }
