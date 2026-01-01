@@ -8,7 +8,7 @@ use Neuron\Core\Exceptions\NotFound;
 use Neuron\Core\NString;
 use Neuron\Data\Settings\SettingManager;
 use Neuron\Log\Log;
-use Neuron\Mvc\Application;
+use Neuron\Mvc\IMvcApplication;
 use Neuron\Mvc\Cache\CacheConfig;
 use Neuron\Mvc\Cache\Exceptions\CacheException;
 use Neuron\Mvc\Cache\Storage\CacheStorageFactory;
@@ -26,37 +26,34 @@ use Neuron\Routing\Router;
 
 class Base implements IController
 {
-	private Router  $_router;
-	private Application $_app;
+	private ?Router $_router = null;
+	private IMvcApplication $_app;
 
 	/**
-	 * @return Application
+	 * @return IMvcApplication
 	 */
-	public function getApplication(): Application
+	public function getApplication(): IMvcApplication
 	{
 		return $this->_app;
 	}
 
 	/**
-	 * @param Application $app
+	 * @param IMvcApplication $app
 	 * @return Base
 	 */
-	public function setApplication( Application $app ): Base
+	public function setApplication( IMvcApplication $app ): Base
 	{
 		$this->_app = $app;
 		return $this;
 	}
 
 	/**
-	 * @param Application|null $app
+	 * @param IMvcApplication $app
 	 */
-	public function __construct( ?Application $app = null )
+	public function __construct( IMvcApplication $app )
 	{
-		if( $app )
-		{
-			$this->setRouter( $app->getRouter() );
-			$this->setApplication( $app );
-		}
+		$this->setRouter( $app->getRouter() );
+		$this->setApplication( $app );
 	}
 
 	/**
@@ -206,10 +203,10 @@ class Base implements IController
 	}
 
 	/**
-	 * @param Router $router
+	 * @param Router|null $router
 	 * @return Base
 	 */
-	public function setRouter( Router $router ): Base
+	public function setRouter( ?Router $router ): Base
 	{
 		$this->_router = $router;
 		return $this;
@@ -653,11 +650,11 @@ class Base implements IController
 	 * Update
 	 * Delete
 	 *
-	 * @param Application $app
+	 * @param IMvcApplication $app
 	 * @param string $route
 	 * @throws BadRequestMethod
 	 */
-	public static function register( Application $app, string $route = '' ): void
+	public static function register( IMvcApplication $app, string $route = '' ): void
 	{
 		if( $route == '' )
 		{
@@ -680,7 +677,7 @@ class Base implements IController
 	 * @return void
 	 * @throws BadRequestMethod
 	 */
-	protected static function registerIndex( Application $app, string $controller, string $route ): void
+	protected static function registerIndex( IMvcApplication $app, string $controller, string $route ): void
 	{
 		if( method_exists( $controller, 'index' ) )
 		{
@@ -699,7 +696,7 @@ class Base implements IController
 	 * @return void
 	 * @throws BadRequestMethod
 	 */
-	protected static function registerAdd( Application $app, string $controller, string $route ): void
+	protected static function registerAdd( IMvcApplication $app, string $controller, string $route ): void
 	{
 		if( method_exists( $controller, 'add' ) )
 		{
@@ -718,7 +715,7 @@ class Base implements IController
 	 * @return void
 	 * @throws BadRequestMethod
 	 */
-	protected static function registerShow( Application $app, string $controller, string $route ): void
+	protected static function registerShow( IMvcApplication $app, string $controller, string $route ): void
 	{
 		if( method_exists( $controller, 'show' ) )
 		{
@@ -737,7 +734,7 @@ class Base implements IController
 	 * @return void
 	 * @throws BadRequestMethod
 	 */
-	protected static function registerCreate( Application $app, string $controller, string $route ): void
+	protected static function registerCreate( IMvcApplication $app, string $controller, string $route ): void
 	{
 		if( method_exists( $controller, 'create' ) )
 		{
@@ -756,7 +753,7 @@ class Base implements IController
 	 * @return void
 	 * @throws BadRequestMethod
 	 */
-	protected static function registerEdit( Application $app, string $controller, string $route ): void
+	protected static function registerEdit( IMvcApplication $app, string $controller, string $route ): void
 	{
 		if( method_exists( $controller, 'edit' ) )
 		{
@@ -775,7 +772,7 @@ class Base implements IController
 	 * @return void
 	 * @throws BadRequestMethod
 	 */
-	protected static function registerUpdate( Application $app, string $controller, string $route ): void
+	protected static function registerUpdate( IMvcApplication $app, string $controller, string $route ): void
 	{
 		if( method_exists( $controller, 'update' ) )
 		{
@@ -794,7 +791,7 @@ class Base implements IController
 	 * @return void
 	 * @throws BadRequestMethod
 	 */
-	protected static function registerDelete( Application $app, string $controller, string $route ): void
+	protected static function registerDelete( IMvcApplication $app, string $controller, string $route ): void
 	{
 		if( method_exists( $controller, 'delete' ) )
 		{

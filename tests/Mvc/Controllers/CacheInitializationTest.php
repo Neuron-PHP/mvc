@@ -2,11 +2,11 @@
 
 namespace Tests\Mvc\Controllers;
 
-use Neuron\Mvc\Application;
 use Neuron\Mvc\Cache\CacheConfig;
 use Neuron\Mvc\Cache\Storage\FileCacheStorage;
 use Neuron\Mvc\Cache\ViewCache;
 use Neuron\Mvc\Controllers\Base;
+use Neuron\Mvc\IMvcApplication;
 use Neuron\Mvc\Responses\HttpResponseStatus;
 use Neuron\Patterns\Registry;
 use Neuron\Routing\Router;
@@ -15,10 +15,16 @@ use PHPUnit\Framework\TestCase;
 class CacheInitializationTest extends TestCase
 {
 	private string $TempCacheDir;
-	
+	private IMvcApplication $MockApp;
+
 	protected function setUp(): void
 	{
 		parent::setUp();
+
+		// Create mock application
+		$router = $this->createMock( Router::class );
+		$this->MockApp = $this->createMock( IMvcApplication::class );
+		$this->MockApp->method( 'getRouter' )->willReturn( $router );
 		
 		// Clear registry keys we'll use
 		$Registry = Registry::getInstance();
@@ -68,7 +74,7 @@ class CacheInitializationTest extends TestCase
 		$Registry->set( 'Base.Path', $this->TempCacheDir );
 		
 		// Create test controller
-		$Controller = new CacheInitTestController();
+		$Controller = new CacheInitTestController( $this->MockApp );
 		
 		// Test initialization
 		$ViewCache = $Controller->testInitializeViewCache();
@@ -90,7 +96,7 @@ class CacheInitializationTest extends TestCase
 		$Registry->set( 'ViewCache', $ExistingCache );
 		
 		// Create test controller
-		$Controller = new CacheInitTestController( new Application() );
+		$Controller = new CacheInitTestController( $this->MockApp );
 		
 		// Test initialization returns existing instance
 		$ViewCache = $Controller->testInitializeViewCache();
@@ -117,7 +123,7 @@ class CacheInitializationTest extends TestCase
 		$Registry->set( 'Settings', $Settings );
 
 		// Create test controller
-		$Controller = new CacheInitTestController( new Application() );
+		$Controller = new CacheInitTestController( $this->MockApp );
 
 		// Test initialization returns null
 		$ViewCache = $Controller->testInitializeViewCache();
@@ -140,7 +146,7 @@ class CacheInitializationTest extends TestCase
 		$Registry->set( 'ViewCache', $ViewCache );
 		
 		// Create test controller
-		$Controller = new CacheInitTestController();
+		$Controller = new CacheInitTestController( $this->MockApp );
 		
 		// Test hasViewCache
 		$this->assertTrue( $Controller->testHasViewCache( 'testpage', ['id' => 123] ) );
@@ -170,7 +176,7 @@ class CacheInitializationTest extends TestCase
 		$this->assertNull( $Registry->get( 'ViewCache' ) );
 		
 		// Create test controller
-		$Controller = new CacheInitTestController();
+		$Controller = new CacheInitTestController( $this->MockApp );
 		
 		// Call hasViewCache should initialize cache
 		$Result = $Controller->testHasViewCache( 'testpage', [] );
@@ -195,7 +201,7 @@ class CacheInitializationTest extends TestCase
 		$Registry->set( 'ViewCache', $ViewCache );
 		
 		// Create test controller
-		$Controller = new CacheInitTestController( new Application() );
+		$Controller = new CacheInitTestController( $this->MockApp );
 		
 		// Test getViewCache
 		$CachedContent = $Controller->testGetViewCache( 'testpage', ['id' => 123] );
@@ -228,7 +234,7 @@ class CacheInitializationTest extends TestCase
 		$this->assertNull( $Registry->get( 'ViewCache' ) );
 		
 		// Create test controller
-		$Controller = new CacheInitTestController();
+		$Controller = new CacheInitTestController( $this->MockApp );
 		
 		// Call getViewCache should initialize cache
 		$Result = $Controller->testGetViewCache( 'testpage', [] );
@@ -240,10 +246,10 @@ class CacheInitializationTest extends TestCase
 	
 	public function testGetControllerNameReturnsCorrectName()
 	{
-		$Controller = new CacheInitTestController( new Application() );
+		$Controller = new CacheInitTestController( $this->MockApp );
 		$this->assertEquals( 'CacheInitTestController', $Controller->testGetControllerName() );
 		
-		$Controller2 = new CacheInitAnotherTestController( new Application() );
+		$Controller2 = new CacheInitAnotherTestController( $this->MockApp );
 		$this->assertEquals( 'CacheInitAnotherTestController', $Controller2->testGetControllerName() );
 	}
 	

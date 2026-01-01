@@ -15,8 +15,10 @@ class ViewContextTest extends TestCase
 
 	protected function setUp(): void
 	{
-		// Create a mock controller
-		$this->mockController = $this->createMock( Base::class );
+		// Create a mock controller (disable constructor since it requires IMvcApplication)
+		$this->mockController = $this->getMockBuilder( Base::class )
+			->disableOriginalConstructor()
+			->getMock();
 
 		// Create a test registry
 		$this->mockRegistry = new Registry();
@@ -163,7 +165,9 @@ class ViewContextTest extends TestCase
 
 	public function testRenderHtmlCallsControllerRenderHtml()
 	{
-		$mockController = $this->createMock( Base::class );
+		$mockController = $this->getMockBuilder( Base::class )
+			->disableOriginalConstructor()
+			->getMock();
 		$mockController->expects( $this->once() )
 			->method( 'renderHtml' )
 			->with(
@@ -183,7 +187,9 @@ class ViewContextTest extends TestCase
 
 	public function testRenderMarkdownCallsControllerRenderMarkdown()
 	{
-		$mockController = $this->createMock( Base::class );
+		$mockController = $this->getMockBuilder( Base::class )
+			->disableOriginalConstructor()
+			->getMock();
 		$mockController->expects( $this->once() )
 			->method( 'renderMarkdown' )
 			->with(
@@ -203,7 +209,9 @@ class ViewContextTest extends TestCase
 
 	public function testRenderJsonCallsControllerRenderJson()
 	{
-		$mockController = $this->createMock( Base::class );
+		$mockController = $this->getMockBuilder( Base::class )
+			->disableOriginalConstructor()
+			->getMock();
 		$mockController->expects( $this->once() )
 			->method( 'renderJson' )
 			->with(
@@ -220,7 +228,9 @@ class ViewContextTest extends TestCase
 
 	public function testRenderXmlCallsControllerRenderXml()
 	{
-		$mockController = $this->createMock( Base::class );
+		$mockController = $this->getMockBuilder( Base::class )
+			->disableOriginalConstructor()
+			->getMock();
 		$mockController->expects( $this->once() )
 			->method( 'renderXml' )
 			->with(
@@ -237,7 +247,9 @@ class ViewContextTest extends TestCase
 
 	public function testRenderIsAliasForRenderHtml()
 	{
-		$mockController = $this->createMock( Base::class );
+		$mockController = $this->getMockBuilder( Base::class )
+			->disableOriginalConstructor()
+			->getMock();
 		$mockController->expects( $this->once() )
 			->method( 'renderHtml' )
 			->with(
@@ -259,6 +271,7 @@ class ViewContextTest extends TestCase
 	{
 		// Create a controller that has getName method
 		$mockController = $this->getMockBuilder( Base::class )
+			->disableOriginalConstructor()
 			->onlyMethods(['renderHtml'])
 			->addMethods(['getName'])
 			->getMock();
@@ -282,7 +295,9 @@ class ViewContextTest extends TestCase
 
 	public function testTitleWithoutSiteName()
 	{
-		$mockController = $this->createMock( Base::class );
+		$mockController = $this->getMockBuilder( Base::class )
+			->disableOriginalConstructor()
+			->getMock();
 
 		// Capture the data passed to renderHtml
 		$capturedData = null;
@@ -301,7 +316,9 @@ class ViewContextTest extends TestCase
 
 	public function testDescriptionIsAddedToViewData()
 	{
-		$mockController = $this->createMock( Base::class );
+		$mockController = $this->getMockBuilder( Base::class )
+			->disableOriginalConstructor()
+			->getMock();
 
 		// Capture the data passed to renderHtml
 		$capturedData = null;
@@ -322,7 +339,9 @@ class ViewContextTest extends TestCase
 		$mockUser = (object)['id' => 123, 'name' => 'Test User'];
 		$this->mockRegistry->set( 'Auth.User', $mockUser );
 
-		$mockController = $this->createMock( Base::class );
+		$mockController = $this->getMockBuilder( Base::class )
+			->disableOriginalConstructor()
+			->getMock();
 
 		// Capture the data passed to renderHtml
 		$capturedData = null;
@@ -340,7 +359,9 @@ class ViewContextTest extends TestCase
 
 	public function testWithCurrentUserDoesNotInjectIfUserNotInRegistry()
 	{
-		$mockController = $this->createMock( Base::class );
+		$mockController = $this->getMockBuilder( Base::class )
+			->disableOriginalConstructor()
+			->getMock();
 
 		// Capture the data passed to renderHtml
 		$capturedData = null;
@@ -360,7 +381,9 @@ class ViewContextTest extends TestCase
 	{
 		$this->mockRegistry->set( 'Auth.CsrfToken', 'test-token-123' );
 
-		$mockController = $this->createMock( Base::class );
+		$mockController = $this->getMockBuilder( Base::class )
+			->disableOriginalConstructor()
+			->getMock();
 
 		// Capture the data passed to renderHtml
 		$capturedData = null;
@@ -378,7 +401,9 @@ class ViewContextTest extends TestCase
 
 	public function testWithCsrfTokenDoesNotInjectIfTokenNotInRegistry()
 	{
-		$mockController = $this->createMock( Base::class );
+		$mockController = $this->getMockBuilder( Base::class )
+			->disableOriginalConstructor()
+			->getMock();
 
 		// Capture the data passed to renderHtml
 		$capturedData = null;
@@ -400,7 +425,9 @@ class ViewContextTest extends TestCase
 		$this->mockRegistry->set( 'Auth.User', $mockUser );
 		$this->mockRegistry->set( 'Auth.CsrfToken', 'token-123' );
 
-		$mockController = $this->createMock( Base::class );
+		$mockController = $this->getMockBuilder( Base::class )
+			->disableOriginalConstructor()
+			->getMock();
 
 		// Capture the data passed to renderHtml
 		$capturedData = null;
@@ -428,7 +455,9 @@ class ViewContextTest extends TestCase
 
 	public function testJsonRenderingOmitsMetadata()
 	{
-		$mockController = $this->createMock( Base::class );
+		$mockController = $this->getMockBuilder( Base::class )
+			->disableOriginalConstructor()
+			->getMock();
 
 		// Capture the data passed to renderJson
 		$capturedData = null;
@@ -454,7 +483,9 @@ class ViewContextTest extends TestCase
 
 	public function testXmlRenderingOmitsMetadata()
 	{
-		$mockController = $this->createMock( Base::class );
+		$mockController = $this->getMockBuilder( Base::class )
+			->disableOriginalConstructor()
+			->getMock();
 
 		// Capture the data passed to renderXml
 		$capturedData = null;

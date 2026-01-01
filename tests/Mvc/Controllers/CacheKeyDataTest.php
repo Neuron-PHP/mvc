@@ -5,6 +5,7 @@ namespace Tests\Mvc\Controllers;
 use Neuron\Mvc\Cache\Storage\FileCacheStorage;
 use Neuron\Mvc\Cache\ViewCache;
 use Neuron\Mvc\Controllers\Base;
+use Neuron\Mvc\IMvcApplication;
 use Neuron\Mvc\Responses\HttpResponseStatus;
 use Neuron\Patterns\Registry;
 use Neuron\Routing\Router;
@@ -14,10 +15,16 @@ class CacheKeyDataTest extends TestCase
 {
 	private string $TempCacheDir;
 	private string $TempViewsDir;
-	
+	private IMvcApplication $MockApp;
+
 	protected function setUp(): void
 	{
 		parent::setUp();
+
+		// Create mock application
+		$router = $this->createMock( Router::class );
+		$this->MockApp = $this->createMock( IMvcApplication::class );
+		$this->MockApp->method( 'getRouter' )->willReturn( $router );
 		
 		// Clear registry keys we'll use
 		$Registry = Registry::getInstance();
@@ -102,7 +109,7 @@ class CacheKeyDataTest extends TestCase
 		Registry::getInstance()->set( 'ViewCache', $ViewCache );
 		
 		// Create controller and test
-		$Controller = new CacheKeyTestController();
+		$Controller = new CacheKeyTestController( $this->MockApp );
 		
 		// Should find cache with empty key
 		$this->assertTrue( $Controller->testHasViewCacheByKey( 'static', [] ) );
@@ -125,7 +132,7 @@ class CacheKeyDataTest extends TestCase
 		Registry::getInstance()->set( 'ViewCache', $ViewCache );
 		
 		// Create controller and test
-		$Controller = new CacheKeyTestController();
+		$Controller = new CacheKeyTestController( $this->MockApp );
 		
 		// Should find cache with exact key
 		$this->assertTrue( $Controller->testHasViewCacheByKey( 'product', ['product_id' => 123, 'variant' => 'blue'] ) );
@@ -150,7 +157,7 @@ class CacheKeyDataTest extends TestCase
 		Registry::getInstance()->set( 'ViewCache', $ViewCache );
 		
 		// Create controller and test
-		$Controller = new CacheKeyTestController();
+		$Controller = new CacheKeyTestController( $this->MockApp );
 		
 		// Should get cached content with correct key
 		$CachedContent = $Controller->testGetViewCacheByKey( 'product', ['id' => 789] );
@@ -174,7 +181,7 @@ class CacheKeyDataTest extends TestCase
 		Registry::getInstance()->set( 'ViewCache', $ViewCache );
 		
 		// Create controller
-		$Controller = new CacheKeyTestController();
+		$Controller = new CacheKeyTestController( $this->MockApp );
 		
 		// Render with empty view data - should use cache
 		$Result = $Controller->renderHtmlWithCacheKey(
@@ -197,7 +204,7 @@ class CacheKeyDataTest extends TestCase
 		Registry::getInstance()->set( 'ViewCache', $ViewCache );
 		
 		// Create controller
-		$Controller = new CacheKeyTestController();
+		$Controller = new CacheKeyTestController( $this->MockApp );
 		
 		// Cache key data (determines cache uniqueness)
 		$CacheKeyData = ['product_id' => 456];
@@ -247,7 +254,7 @@ class CacheKeyDataTest extends TestCase
 		Registry::getInstance()->set( 'ViewCache', $ViewCache );
 		
 		// Create controller
-		$Controller = new CacheKeyTestController();
+		$Controller = new CacheKeyTestController( $this->MockApp );
 		
 		// Render with empty view data - should use cache
 		$Result = $Controller->renderMarkdownWithCacheKey(
@@ -294,7 +301,7 @@ class CacheKeyDataTest extends TestCase
 		Registry::getInstance()->set( 'ViewCache', $ViewCache );
 		
 		// Create controller
-		$Controller = new CacheKeyTestController();
+		$Controller = new CacheKeyTestController( $this->MockApp );
 		
 		// Simple cache key data (just the ID)
 		$CacheKeyData = ['id' => 100];
@@ -342,7 +349,7 @@ class CacheKeyDataTest extends TestCase
 		// No cache setup - cache is disabled
 		
 		// Create controller
-		$Controller = new CacheKeyTestController();
+		$Controller = new CacheKeyTestController( $this->MockApp );
 		
 		$ViewData = ['product_name' => 'Test', 'price' => 50];
 		$CacheKeyData = ['id' => 1];
@@ -372,7 +379,7 @@ class CacheKeyDataTest extends TestCase
 		Registry::getInstance()->set( 'ViewCache', $ViewCache );
 		
 		// Create controller
-		$Controller = new CacheKeyTestController();
+		$Controller = new CacheKeyTestController( $this->MockApp );
 		
 		$ViewData = ['product_name' => 'Default Test', 'price' => 75];
 		$CacheKeyData = ['id' => 999];
@@ -413,7 +420,7 @@ class CacheKeyDataTest extends TestCase
 		Registry::getInstance()->set( 'ViewCache', $ViewCache );
 		
 		// Create controller
-		$Controller = new CacheKeyTestController();
+		$Controller = new CacheKeyTestController( $this->MockApp );
 		
 		$ViewData = ['product_name' => 'Disabled Test', 'price' => 25];
 		$CacheKeyData = ['id' => 888];
@@ -442,7 +449,7 @@ class CacheKeyDataTest extends TestCase
 		Registry::getInstance()->set( 'ViewCache', $ViewCache );
 		
 		// Create controller
-		$Controller = new CacheKeyTestController();
+		$Controller = new CacheKeyTestController( $this->MockApp );
 		
 		$ViewData = ['product_name' => 'Override Test', 'price' => 100];
 		$CacheKeyData = ['id' => 777];

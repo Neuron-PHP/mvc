@@ -6,6 +6,7 @@ use Neuron\Mvc\Cache\CacheConfig;
 use Neuron\Mvc\Cache\Storage\FileCacheStorage;
 use Neuron\Mvc\Cache\ViewCache;
 use Neuron\Mvc\Controllers\Base;
+use Neuron\Mvc\IMvcApplication;
 use Neuron\Mvc\Responses\HttpResponseStatus;
 use Neuron\Mvc\Views\Html;
 use Neuron\Mvc\Views\Markdown;
@@ -18,16 +19,22 @@ class CacheControlTest extends TestCase
 {
 	private $Root;
 	private $Registry;
+	private IMvcApplication $MockApp;
 	
 	protected function setUp(): void
 	{
 		parent::setUp();
-		
+
 		// Create virtual filesystem
 		$this->Root = vfsStream::setup( 'test' );
-		
+
 		// Set up registry
 		$this->Registry = Registry::getInstance();
+
+		// Create mock application
+		$router = $this->createMock( Router::class );
+		$this->MockApp = $this->createMock( IMvcApplication::class );
+		$this->MockApp->method( 'getRouter' )->willReturn( $router );
 		
 		// Clear any existing cache from registry
 		$this->Registry->set( 'ViewCache', null );
@@ -169,11 +176,8 @@ class CacheControlTest extends TestCase
 		$Cache = new ViewCache( $Storage, true );
 		$this->Registry->set( 'ViewCache', $Cache );
 		
-		// Create mock router
-		$Router = $this->createMock( Router::class );
-		
 		// Create test controller
-		$Controller = new TestControllerWithCache();
+		$Controller = new TestControllerWithCache( $this->MockApp );
 		
 		// Test rendering with cache disabled
 		$HtmlContent = $Controller->renderHtml( 
@@ -231,7 +235,7 @@ class CacheControlTest extends TestCase
 			$this->Registry->set( 'ViewCache', $Cache );
 
 			// Create test controller
-			$Controller = new TestControllerWithCache();
+			$Controller = new TestControllerWithCache( $this->MockApp );
 
 			// Test rendering with cache enabled
 			$MarkdownContent = $Controller->renderMarkdown(

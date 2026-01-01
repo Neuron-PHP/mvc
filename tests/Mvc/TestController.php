@@ -2,7 +2,7 @@
 namespace Mvc;
 
 use Neuron\Log\Log;
-use Neuron\Mvc\Application;
+use Neuron\Mvc\IMvcApplication;
 use Neuron\Mvc\Controllers\Base;
 use Neuron\Mvc\Controllers\IController;
 use Neuron\Mvc\Requests\Request;
@@ -41,7 +41,7 @@ class TestController extends Base
 	}
 
 
-	public function __construct( ?Application $app = null )
+	public function __construct( IMvcApplication $app )
 	{
 		parent::__construct( $app );
 	}
