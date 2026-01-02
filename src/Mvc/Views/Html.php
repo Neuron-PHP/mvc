@@ -6,6 +6,7 @@ namespace Neuron\Mvc\Views;
 
 use Neuron\Core\Exceptions\NotFound;
 use Neuron\Core\NString;
+use Neuron\Log\Log;
 use Neuron\Patterns\Registry;
 
 /**
@@ -48,6 +49,11 @@ class Html extends Base implements IView
 			$controllerParts
 		);
 		$controllerName = implode( '/', $snakeCaseParts );
+
+		// Debug logging
+		Log::debug( "Controller: " . $this->getController() );
+		Log::debug( "Page: " . $this->getPage() );
+		Log::debug( "Controller Name: " . $controllerName );
 
 		$view = "$path/$controllerName/{$this->getPage()}.php";
 
