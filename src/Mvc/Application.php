@@ -66,6 +66,13 @@ class Application extends Base implements IMvcApplication
 			$this->setRoutesPath( $routesPath );
 		}
 
+		// Load passthrough exceptions configuration
+		$passthroughExceptions = $this->getSetting( 'exceptions', 'passthrough' );
+		if( $passthroughExceptions && is_array( $passthroughExceptions ) )
+		{
+			Registry::getInstance()->set( 'PassthroughExceptions', $passthroughExceptions );
+		}
+
 		$this->loadRequests();
 		$this->loadRoutes();
 	}
@@ -344,11 +351,11 @@ class Application extends Base implements IMvcApplication
 		}
 		catch( \Throwable $e )
 		{
-			// Check if this exception should bubble up to application-level handlers
-			// Applications can register exception classes via Registry 'BubbleExceptions'
-			$bubbleExceptions = Registry::getInstance()->get( 'BubbleExceptions' ) ?? [];
+			// Check if this exception should pass through to application-level handlers
+			// Applications can configure exception classes via neuron.yaml under 'exceptions.passthrough'
+			$passthroughExceptions = Registry::getInstance()->get( 'PassthroughExceptions' ) ?? [];
 
-			if( in_array( get_class( $e ), $bubbleExceptions ) )
+			if( in_array( get_class( $e ), $passthroughExceptions ) )
 			{
 				throw $e;
 			}
