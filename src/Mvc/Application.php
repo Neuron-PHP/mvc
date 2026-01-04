@@ -68,9 +68,14 @@ class Application extends Base implements IMvcApplication
 
 		// Load passthrough exceptions configuration
 		$passthroughExceptions = $this->getSetting( 'exceptions', 'passthrough' );
-		if( $passthroughExceptions && is_array( $passthroughExceptions ) )
+		if( is_array( $passthroughExceptions ) )
 		{
 			Registry::getInstance()->set( 'PassthroughExceptions', $passthroughExceptions );
+		}
+		else
+		{
+			// No exceptions configured, set to empty array
+			Registry::getInstance()->set( 'PassthroughExceptions', [] );
 		}
 
 		$this->loadRequests();
