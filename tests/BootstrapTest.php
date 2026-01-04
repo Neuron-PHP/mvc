@@ -256,12 +256,12 @@ YAML;
 	}
 
 	/**
-	 * Test Dispatch function with bubble exception (should re-throw)
+	 * Test Dispatch function with passthrough exception (should re-throw)
 	 */
-	public function testDispatchWithBubbleException()
+	public function testDispatchWithPassthroughException()
 	{
-		// Register a custom exception class to bubble
-		Registry::getInstance()->set( 'BubbleExceptions', [
+		// Register a custom exception class to pass through
+		Registry::getInstance()->set( 'PassthroughExceptions', [
 			'RuntimeException'
 		] );
 
@@ -271,7 +271,7 @@ YAML;
 			->method( 'run' )
 			->willThrowException( new \RuntimeException( 'Auth required' ) );
 
-		// handleException should NOT be called because exception bubbles up
+		// handleException should NOT be called because exception passes through
 		$App->expects( $this->never() )
 			->method( 'handleException' );
 
@@ -283,22 +283,22 @@ YAML;
 	}
 
 	/**
-	 * Test Dispatch function with non-bubble exception (should handle normally)
+	 * Test Dispatch function with non-passthrough exception (should handle normally)
 	 */
-	public function testDispatchWithNonBubbleException()
+	public function testDispatchWithNonPassthroughException()
 	{
-		// Register a specific exception class to bubble (not the one we'll throw)
-		Registry::getInstance()->set( 'BubbleExceptions', [
+		// Register a specific exception class to pass through (not the one we'll throw)
+		Registry::getInstance()->set( 'PassthroughExceptions', [
 			'LogicException'  // Different from what we'll throw
 		] );
 
-		// Create mock application that throws RuntimeException (not registered to bubble)
+		// Create mock application that throws RuntimeException (not registered to pass through)
 		$App = $this->createMock( Application::class );
 		$App->expects( $this->once() )
 			->method( 'run' )
 			->willThrowException( new \RuntimeException( 'Test error' ) );
 
-		// handleException SHOULD be called because this exception doesn't bubble
+		// handleException SHOULD be called because this exception doesn't pass through
 		$App->expects( $this->once() )
 			->method( 'handleException' )
 			->willReturnCallback( function( $e ) {

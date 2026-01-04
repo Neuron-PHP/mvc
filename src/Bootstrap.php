@@ -81,11 +81,11 @@ function dispatch( Application $app ) : void
 	}
 	catch( \Throwable $e )
 	{
-		// Check if this exception should bubble up to caller (e.g., public/index.php)
-		// Applications can register exception classes via Registry 'BubbleExceptions'
-		$bubbleExceptions = Registry::getInstance()->get( 'BubbleExceptions' ) ?? [];
+		// Check if this exception should pass through to caller (e.g., public/index.php)
+		// Applications can configure exception classes via neuron.yaml under 'exceptions.passthrough'
+		$passthroughExceptions = Registry::getInstance()->get( 'PassthroughExceptions' ) ?? [];
 
-		if( in_array( get_class( $e ), $bubbleExceptions ) )
+		if( in_array( get_class( $e ), $passthroughExceptions ) )
 		{
 			throw $e;
 		}

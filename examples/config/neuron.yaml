@@ -56,3 +56,12 @@ system:
   timezone: US/Eastern
   base_path: examples
   routes_path: examples/config
+
+# Exception handling configuration
+exceptions:
+  # Exceptions that should pass through to application-level handlers
+  # instead of being caught by the framework's error handler
+  passthrough:
+    # - RuntimeException
+    # - LogicException
+    # - InvalidArgumentException
