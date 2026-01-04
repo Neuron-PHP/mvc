@@ -4,7 +4,8 @@ namespace Neuron\Mvc\Cli\Commands\Routes;
 
 use Neuron\Cli\Commands\Command;
 use Neuron\Data\Settings\Source\Yaml;
-use Symfony\Component\Yaml\Yaml as YamlParser;
+use Neuron\Routing\RouteScanner;
+use Neuron\Log\Log;
 
 /**
  * CLI command for listing MVC routes.
@@ -86,150 +87,89 @@ class ListCommand extends Command
 	}
 	
 	/**
-	 * Load routes from configuration
-	 * 
+	 * Load routes from controller attributes
+	 *
 	 * @param string $configPath
 	 * @return array
 	 */
 	private function loadRoutes( string $configPath ): array
 	{
 		$routes = [];
-		
-		// Check for routes file location from config
-		$configFile = $configPath . '/neuron.yaml';
-		$routesPath = $configPath;
 
-		if( file_exists( $configFile ) )
+		// Load neuron.yaml configuration
+		$configFile = $configPath . '/neuron.yaml';
+
+		if( !file_exists( $configFile ) )
 		{
-			try
-			{
-				$settings = new Yaml( $configFile );
-				$customRoutesPath = $settings->get( 'system', 'routes_path' );
-				if( $customRoutesPath )
-				{
-					// Make path absolute if relative
-					if( !str_starts_with( $customRoutesPath, '/' ) )
-					{
-						$basePath = $settings->get( 'system', 'base_path' ) ?? dirname( $configPath );
-						$customRoutesPath = $basePath . '/' . $customRoutesPath;
-					}
-					if( is_dir( $customRoutesPath ) )
-					{
-						$routesPath = $customRoutesPath;
-					}
-				}
-			}
-			catch( \Exception $e )
-			{
-				$this->output->warning( 'Could not load neuron.yaml: ' . $e->getMessage() );
-			}
-		}
-		
-		// Load routes.yaml
-		$routesFile = $routesPath . '/routes.yaml';
-		
-		if( !file_exists( $routesFile ) )
-		{
-			$this->output->error( 'Routes file not found: ' . $routesFile );
+			$this->output->error( 'Configuration file not found: ' . $configFile );
 			return [];
 		}
-		
+
 		try
 		{
-			$data = YamlParser::parseFile( $routesFile );
-			
-			if( !is_array( $data ) )
+			$settings = new Yaml( $configFile );
+
+			// Get base path
+			$basePath = $settings->get( 'system', 'base_path' ) ?? dirname( $configPath );
+
+			// Get controller paths from configuration
+			$controllerPathsConfig = $settings->get( 'controllers', 'paths' );
+
+			if( empty( $controllerPathsConfig ) )
 			{
-				$this->output->error( 'Invalid routes file format' );
+				$this->output->warning( 'No controller paths configured in neuron.yaml' );
+				$this->output->info( 'Add controller paths to neuron.yaml under controllers.paths:' );
+				$this->output->info( '  controllers:' );
+				$this->output->info( '    paths:' );
+				$this->output->info( '      - path: app/Controllers' );
+				$this->output->info( '        namespace: App\\Controllers' );
 				return [];
 			}
-			
-			// Check if routes are nested under 'routes' key
-			if( isset( $data['routes'] ) && is_array( $data['routes'] ) )
+
+			// Scan controllers using RouteScanner
+			$scanner = new RouteScanner();
+
+			foreach( $controllerPathsConfig as $pathConfig )
 			{
-				$data = $data['routes'];
-			}
-			
-			foreach( $data as $routeName => $routeConfig )
-			{
-				// Parse route configuration
-				$route = $this->parseRoute( $routeName, $routeConfig );
-				if( $route )
+				$directory = $basePath . '/' . $pathConfig['path'];
+				$namespace = $pathConfig['namespace'];
+
+				if( !is_dir( $directory ) )
 				{
-					$routes[] = $route;
+					$this->output->warning( "Controller directory not found: $directory" );
+					continue;
+				}
+
+				try
+				{
+					$routeDefinitions = $scanner->scanDirectory( $directory, $namespace );
+
+					foreach( $routeDefinitions as $def )
+					{
+						$routes[] = [
+							'name' => $def->name ?? '-',
+							'pattern' => $def->path,
+							'method' => $def->method,
+							'controller' => $def->controller,
+							'action' => $def->action,
+							'filters' => $def->filters,
+						];
+					}
+				}
+				catch( \Exception $e )
+				{
+					$this->output->warning( "Error scanning $directory: " . $e->getMessage() );
 				}
 			}
 		}
 		catch( \Exception $e )
 		{
-			$this->output->error( 'Error loading routes: ' . $e->getMessage() );
+			$this->output->error( 'Error loading configuration: ' . $e->getMessage() );
 			return [];
 		}
-		
+
 		return $routes;
 	}
-	
-	/**
-	 * Parse a single route configuration
-	 * 
-	 * @param string $routeName
-	 * @param mixed $config
-	 * @return array|null
-	 */
-	private function parseRoute( string $routeName, $config ): ?array
-	{
-		if( !is_array( $config ) )
-		{
-			return null;
-		}
-		
-		// Extract the actual route pattern
-		$pattern = $config['route'] ?? $routeName;
-		
-		// Extract controller and action from controller string (e.g., "App\Controllers\StaticPages@index")
-		$controllerString = $config['controller'] ?? 'Unknown';
-		if( strpos( $controllerString, '@' ) !== false )
-		{
-			list( $controller, $action ) = explode( '@', $controllerString, 2 );
-		}
-		else
-		{
-			$controller = $controllerString;
-			$action = $config['action'] ?? 'index';
-		}
-		
-		// Extract HTTP method
-		$httpMethod = strtoupper( $config['method'] ?? $config['type'] ?? 'GET' );
-		
-		// Extract parameters from route pattern (e.g., :page, :title)
-		$parameters = [];
-		if( preg_match_all( '/:(\w+)/', $pattern, $matches ) )
-		{
-			$parameters = $matches[1];
-		}
-		
-		// Also check for explicit request parameters
-		if( isset( $config['request'] ) && is_array( $config['request'] ) )
-		{
-			foreach( $config['request'] as $param => $rules )
-			{
-				if( !in_array( $param, $parameters ) )
-				{
-					$parameters[] = $param;
-				}
-			}
-		}
-		
-		return [
-			'name' => $routeName,
-			'pattern' => $pattern,
-			'controller' => $controller,
-			'action' => $action,
-			'method' => $httpMethod,
-			'parameters' => $parameters,
-		];
-	}
-	
 	/**
 	 * Filter routes based on command options
 	 * 
@@ -268,45 +208,59 @@ class ListCommand extends Command
 	
 	/**
 	 * Output routes in table format
-	 * 
+	 *
 	 * @param array $routes
 	 * @return void
 	 */
 	private function outputTable( array $routes ): void
 	{
-		$this->output->title( 'MVC Routes' );
-		
+		$this->output->title( 'MVC Routes (Attribute-Based)' );
+
 		// Prepare table headers
-		$headers = ['Name', 'Pattern', 'Method', 'Controller', 'Action'];
-		
+		$headers = ['Name', 'Method', 'Pattern', 'Controller', 'Action', 'Filters'];
+
 		// Prepare table rows
 		$rows = [];
 		$namedRoutes = 0;
-		
+
 		foreach( $routes as $route )
 		{
 			$routeName = $route['name'] ?? '';
-			if( !empty( $routeName ) )
+			if( !empty( $routeName ) && $routeName !== '-' )
 			{
 				$namedRoutes++;
 			}
-			
+
+			// Format filters for display
+			$filters = $route['filters'] ?? [];
+			$filtersStr = is_array( $filters ) ? implode( ', ', $filters ) : $filters;
+			if( empty( $filtersStr ) )
+			{
+				$filtersStr = '-';
+			}
+
+			// Shorten controller name for display
+			$controller = $route['controller'];
+			$controllerParts = explode( '\\', $controller );
+			$shortController = end( $controllerParts );
+
 			$rows[] = [
 				$routeName ?: '-',
-				$route['pattern'],
 				$route['method'],
-				$route['controller'],
-				$route['action']
+				$route['pattern'],
+				$shortController,
+				$route['action'],
+				$filtersStr
 			];
 		}
-		
+
 		// Display the table using Output's table method
 		$this->output->table( $headers, $rows );
-		
+
 		$this->output->newLine();
 		$this->output->info( 'Total routes: ' . count( $routes ) );
 		$this->output->info( 'Named routes: ' . $namedRoutes );
-		
+
 		// Show method distribution
 		$methods = array_count_values( array_column( $routes, 'method' ) );
 		$methodStr = [];
