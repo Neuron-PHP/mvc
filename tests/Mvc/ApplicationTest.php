@@ -19,6 +19,7 @@ $ControllerState = false;
 class ApplicationTest extends TestCase
 {
 	public Application $App;
+	private int $initialBufferLevel = 0;
 
 	/**
 	 * @throws \Exception
@@ -26,6 +27,9 @@ class ApplicationTest extends TestCase
 	protected function setUp() : void
 	{
 		parent::setUp();
+
+		// Store the initial output buffer level
+		$this->initialBufferLevel = ob_get_level();
 
 		// Clear any previous output buffers to ensure clean state
 		while( ob_get_level() > 0 )
@@ -65,7 +69,7 @@ class ApplicationTest extends TestCase
 
 		$this->App->run(
 			[
-				"type"  => "GET",
+				"type"  => "POST",
 				"route" => "/test"
 			]
 		);
