@@ -15,7 +15,6 @@ class SimpleOutputBufferTest extends TestCase
 		$this->assertGreaterThanOrEqual( 0, $level );
 
 		// PHPUnit typically starts with level 1
-		error_log( "Initial buffer level in test: $level" );
 	}
 
 	public function testNoOutputBuffer(): void
