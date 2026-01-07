@@ -19,6 +19,10 @@ $ControllerState = false;
 class ApplicationTest extends TestCase
 {
 	public Application $App;
+
+	/**
+	 * @var int Stores the initial output buffer level to restore it in tearDown
+	 */
 	private int $initialBufferLevel = 0;
 
 	/**
@@ -28,14 +32,8 @@ class ApplicationTest extends TestCase
 	{
 		parent::setUp();
 
-		// Store the initial output buffer level
+		// Capture the initial output buffer level for restoration in tearDown()
 		$this->initialBufferLevel = ob_get_level();
-
-		// Clear any previous output buffers to ensure clean state
-		while( ob_get_level() > 0 )
-		{
-			ob_end_clean();
-		}
 
 		// Reset Registry singleton state to avoid pollution between tests
 		$registry = Registry::getInstance();
@@ -51,11 +49,29 @@ class ApplicationTest extends TestCase
 		unset( $_SERVER['HTTP_CONTENT_TYPE'] );
 		unset( $_SERVER['HTTP_AUTHORIZATION'] );
 
-		// Clean up any leftover output buffers that tests may have opened
-		while( ob_get_level() > 0 )
+		// Restore output buffer level to what it was before the test
+		$currentLevel = ob_get_level();
+
+		// Clean up any output buffers opened during the test
+		while( $currentLevel > $this->initialBufferLevel )
 		{
 			ob_end_clean();
+			$currentLevel--;
 		}
+
+		// If somehow we have fewer buffers than we started with, restore them
+		while( $currentLevel < $this->initialBufferLevel )
+		{
+			ob_start();
+			$currentLevel++;
+		}
+
+		// Verify we restored to the correct level
+		$this->assertEquals(
+			$this->initialBufferLevel,
+			ob_get_level(),
+			'Output buffer level should be restored to initial state'
+		);
 
 		parent::tearDown();
 	}

@@ -198,7 +198,12 @@ trait ApiResponseTrait
 			$extensions['remaining'] = $remaining;
 		}
 
-		return ProblemDetailsResponse::rateLimitExceeded($retryAfter, $detail)->send();
+		return $this->problemResponse(
+			type: ProblemType::RATE_LIMIT_EXCEEDED,
+			detail: $detail,
+			extensions: $extensions,
+			headers: ['Retry-After' => (string) $retryAfter]
+		);
 	}
 
 	/**
