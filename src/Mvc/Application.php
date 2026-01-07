@@ -5,14 +5,18 @@ use Exception;
 use Neuron\Application\Base;
 use Neuron\Application\CrossCutting\Event;
 use Neuron\Core\Exceptions\BadRequestMethod;
+use Neuron\Core\Exceptions\Forbidden;
 use Neuron\Core\Exceptions\MissingMethod;
 use Neuron\Core\Exceptions\NotFound;
+use Neuron\Core\Exceptions\Unauthorized;
 use Neuron\Core\Exceptions\Validation;
 use Neuron\Core\System\IFileSystem;
 use Neuron\Core\System\RealFileSystem;
 use Neuron\Data\Settings\Source\ISettingSource;
 use Neuron\Log\Log;
 use Neuron\Mvc\Controllers\Factory;
+use Neuron\Mvc\Events\Http401;
+use Neuron\Mvc\Events\Http403;
 use Neuron\Mvc\Events\Http404;
 use Neuron\Mvc\Events\Http500;
 use Neuron\Mvc\Requests\Request;
@@ -300,6 +304,12 @@ class Application extends Base implements IMvcApplication
 		$controller = $parts[ 0 ];
 		$method     = $parts[ 1 ];
 
+		// Check if we're already handling an error to prevent infinite recursion
+		$isErrorHandler = in_array( $controller, [
+			'Neuron\Mvc\Controllers\HttpCodes',
+			'Neuron\\Mvc\\Controllers\\HttpCodes'
+		] );
+
 		try
 		{
 			// Use container if available for dependency injection, otherwise fallback to Factory
@@ -339,8 +349,66 @@ class Application extends Base implements IMvcApplication
 
 			return $controller->$method( $request );
 		}
+		catch( Unauthorized $e )
+		{
+			// If we're already in error handler, re-throw to avoid recursion
+			if( $isErrorHandler )
+			{
+				throw $e;
+			}
+
+			Log::warning( "Authentication required: " . $e->getMessage() );
+
+			Event::emit( new Http401(
+				$parameters['route'] ?? 'unknown',
+				$e->getRealm()
+			) );
+
+			return $this->executeController(
+				array_merge(
+					$parameters,
+					[
+						"Controller" => "Neuron\Mvc\Controllers\HttpCodes@code401",
+						"realm" => $e->getRealm()
+					]
+				)
+			);
+		}
+		catch( Forbidden $e )
+		{
+			// If we're already in error handler, re-throw to avoid recursion
+			if( $isErrorHandler )
+			{
+				throw $e;
+			}
+
+			Log::warning( "Access forbidden: " . $e->getMessage() );
+
+			Event::emit( new Http403(
+				$parameters['route'] ?? 'unknown',
+				$e->getResource(),
+				$e->getPermission()
+			) );
+
+			return $this->executeController(
+				array_merge(
+					$parameters,
+					[
+						"Controller" => "Neuron\Mvc\Controllers\HttpCodes@code403",
+						"resource" => $e->getResource(),
+						"permission" => $e->getPermission()
+					]
+				)
+			);
+		}
 		catch( NotFound $e )
 		{
+			// If we're already in error handler, re-throw to avoid recursion
+			if( $isErrorHandler )
+			{
+				throw $e;
+			}
+
 			Log::warning( "Resource not found: " . $e->getMessage() );
 
 			Event::emit( new Http404( $parameters['route'] ?? 'unknown' ) );

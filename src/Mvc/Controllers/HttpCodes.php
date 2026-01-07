@@ -21,6 +21,37 @@ class HttpCodes extends Base
 		);
 	}
 
+	public function code401( Request $request ) : string
+	{
+		return $this->renderHtml(
+			HttpResponseStatus::UNAUTHORIZED,
+			array_merge(
+				$request->getRouteParameters(),
+				[
+					"title" => "Authentication Required",
+					"realm" => $request->getRouteParameter( "realm" )
+				]
+			),
+			'401'
+		);
+	}
+
+	public function code403( Request $request ) : string
+	{
+		return $this->renderHtml(
+			HttpResponseStatus::FORBIDDEN,
+			array_merge(
+				$request->getRouteParameters(),
+				[
+					"title" => "Access Forbidden",
+					"resource" => $request->getRouteParameter( "resource" ),
+					"permission" => $request->getRouteParameter( "permission" )
+				]
+			),
+			'403'
+		);
+	}
+
 	public function code500( Request $request ) : string
 	{
 		return $this->renderHtml(

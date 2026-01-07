@@ -2,6 +2,8 @@
 
 namespace Tests\Mvc\Events;
 
+use Neuron\Mvc\Events\Http401;
+use Neuron\Mvc\Events\Http403;
 use Neuron\Mvc\Events\Http404;
 use Neuron\Mvc\Events\Http500;
 use Neuron\Mvc\Events\RequestReceivedEvent;
@@ -12,6 +14,91 @@ use PHPUnit\Framework\TestCase;
 
 class EventsTest extends TestCase
 {
+	public function testHttp401Event(): void
+	{
+		// Test without realm
+		$event = new Http401( '/protected/resource' );
+		$this->assertEquals( '/protected/resource', $event->route );
+		$this->assertNull( $event->realm );
+
+		// Test with realm
+		$eventWithRealm = new Http401( '/admin/dashboard', 'Admin Area' );
+		$this->assertEquals( '/admin/dashboard', $eventWithRealm->route );
+		$this->assertEquals( 'Admin Area', $eventWithRealm->realm );
+	}
+
+	public function testHttp401EventWithDifferentRealms(): void
+	{
+		$realms = [
+			'Basic Auth',
+			'API Access',
+			'Administrator Portal',
+			'User Dashboard'
+		];
+
+		foreach( $realms as $realm )
+		{
+			$event = new Http401( '/test', $realm );
+			$this->assertEquals( $realm, $event->realm );
+		}
+	}
+
+	public function testHttp403Event(): void
+	{
+		// Test without resource or permission
+		$event = new Http403( '/forbidden/path' );
+		$this->assertEquals( '/forbidden/path', $event->route );
+		$this->assertNull( $event->resource );
+		$this->assertNull( $event->permission );
+
+		// Test with resource
+		$eventWithResource = new Http403( '/documents/123', 'Document #123' );
+		$this->assertEquals( '/documents/123', $eventWithResource->route );
+		$this->assertEquals( 'Document #123', $eventWithResource->resource );
+		$this->assertNull( $eventWithResource->permission );
+
+		// Test with resource and permission
+		$eventComplete = new Http403( '/admin/users', 'User Management', 'admin.users.edit' );
+		$this->assertEquals( '/admin/users', $eventComplete->route );
+		$this->assertEquals( 'User Management', $eventComplete->resource );
+		$this->assertEquals( 'admin.users.edit', $eventComplete->permission );
+	}
+
+	public function testHttp403EventWithVariousPermissions(): void
+	{
+		$permissions = [
+			'admin.read',
+			'posts.edit',
+			'users.delete',
+			'settings.modify',
+			'api.write'
+		];
+
+		foreach( $permissions as $permission )
+		{
+			$event = new Http403( '/test', 'Test Resource', $permission );
+			$this->assertEquals( $permission, $event->permission );
+			$this->assertEquals( 'Test Resource', $event->resource );
+		}
+	}
+
+	public function testHttp403EventWithVariousResources(): void
+	{
+		$resources = [
+			'User Profile',
+			'System Settings',
+			'API Endpoint',
+			'Private Document',
+			'Admin Dashboard'
+		];
+
+		foreach( $resources as $resource )
+		{
+			$event = new Http403( '/test', $resource );
+			$this->assertEquals( $resource, $event->resource );
+		}
+	}
+
 	public function testHttp404Event(): void
 	{
 		$event = new Http404( '/test/route' );
