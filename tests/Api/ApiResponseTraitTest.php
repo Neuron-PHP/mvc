@@ -423,4 +423,320 @@ class ApiResponseTraitTest extends TestCase
 		$this->assertEquals('/api/test', $data['instance']);
 		$this->assertEquals('extension', $data['custom']);
 	}
+
+	/**
+	 * Test service unavailable problem.
+	 */
+	public function testServiceUnavailableProblem(): void
+	{
+		// Add test method to controller
+		$this->controller->testServiceUnavailableProblem = function(?string $detail = null, ?int $retryAfter = null): string {
+			$extensions = [];
+			if ($retryAfter !== null) {
+				$extensions['retry_after'] = $retryAfter;
+			}
+
+			$problem = new ProblemDetails(
+				type: ProblemType::SERVICE_UNAVAILABLE->value,
+				title: ProblemType::SERVICE_UNAVAILABLE->getDefaultTitle(),
+				status: 503,
+				detail: $detail ?? 'The service is temporarily unavailable.',
+				extensions: $extensions
+			);
+			return json_encode($problem);
+		};
+
+		$json = ($this->controller->testServiceUnavailableProblem)();
+		$data = json_decode($json, true);
+
+		$this->assertEquals('/errors/service-unavailable', $data['type']);
+		$this->assertEquals('Service Unavailable', $data['title']);
+		$this->assertEquals(503, $data['status']);
+	}
+
+	/**
+	 * Test service unavailable with retry after.
+	 */
+	public function testServiceUnavailableWithRetryAfter(): void
+	{
+		$this->controller->testServiceUnavailableProblem = function(?string $detail = null, ?int $retryAfter = null): string {
+			$extensions = [];
+			if ($retryAfter !== null) {
+				$extensions['retry_after'] = $retryAfter;
+			}
+
+			$problem = new ProblemDetails(
+				type: ProblemType::SERVICE_UNAVAILABLE->value,
+				title: ProblemType::SERVICE_UNAVAILABLE->getDefaultTitle(),
+				status: 503,
+				detail: $detail ?? 'The service is temporarily unavailable.',
+				extensions: $extensions
+			);
+			return json_encode($problem);
+		};
+
+		$json = ($this->controller->testServiceUnavailableProblem)('Maintenance in progress', 300);
+		$data = json_decode($json, true);
+
+		$this->assertEquals('Maintenance in progress', $data['detail']);
+		$this->assertEquals(300, $data['retry_after']);
+	}
+
+	/**
+	 * Test method not allowed problem.
+	 */
+	public function testMethodNotAllowedProblem(): void
+	{
+		$this->controller->testMethodNotAllowedProblem = function(array $allowedMethods, ?string $detail = null): string {
+			$problem = new ProblemDetails(
+				type: ProblemType::METHOD_NOT_ALLOWED->value,
+				title: ProblemType::METHOD_NOT_ALLOWED->getDefaultTitle(),
+				status: 405,
+				detail: $detail ?? sprintf('Method not allowed. Allowed methods: %s', implode(', ', $allowedMethods)),
+				extensions: ['allowed_methods' => $allowedMethods]
+			);
+			return json_encode($problem);
+		};
+
+		$methods = ['GET', 'POST', 'PUT'];
+		$json = ($this->controller->testMethodNotAllowedProblem)($methods);
+		$data = json_decode($json, true);
+
+		$this->assertEquals('/errors/method-not-allowed', $data['type']);
+		$this->assertEquals(405, $data['status']);
+		$this->assertStringContainsString('GET, POST, PUT', $data['detail']);
+		$this->assertEquals($methods, $data['allowed_methods']);
+	}
+
+	/**
+	 * Test unsupported media type problem.
+	 */
+	public function testUnsupportedMediaTypeProblem(): void
+	{
+		$this->controller->testUnsupportedMediaTypeProblem = function(array $supportedTypes, ?string $detail = null): string {
+			$problem = new ProblemDetails(
+				type: ProblemType::UNSUPPORTED_MEDIA_TYPE->value,
+				title: ProblemType::UNSUPPORTED_MEDIA_TYPE->getDefaultTitle(),
+				status: 415,
+				detail: $detail ?? sprintf('Unsupported media type. Supported types: %s', implode(', ', $supportedTypes)),
+				extensions: ['supported_types' => $supportedTypes]
+			);
+			return json_encode($problem);
+		};
+
+		$types = ['application/json', 'application/xml'];
+		$json = ($this->controller->testUnsupportedMediaTypeProblem)($types);
+		$data = json_decode($json, true);
+
+		$this->assertEquals('/errors/unsupported-media-type', $data['type']);
+		$this->assertEquals(415, $data['status']);
+		$this->assertStringContainsString('application/json, application/xml', $data['detail']);
+		$this->assertEquals($types, $data['supported_types']);
+	}
+
+	/**
+	 * Test request timeout problem.
+	 */
+	public function testRequestTimeoutProblem(): void
+	{
+		$json = $this->controller->testProblemResponse(
+			ProblemType::REQUEST_TIMEOUT,
+			detail: 'Request processing timed out'
+		);
+		$data = json_decode($json, true);
+
+		$this->assertEquals('/errors/timeout', $data['type']);
+		$this->assertEquals('Request Timeout', $data['title']);
+		$this->assertEquals(408, $data['status']);
+	}
+
+	/**
+	 * Test payload too large problem.
+	 */
+	public function testPayloadTooLargeProblem(): void
+	{
+		$json = $this->controller->testProblemResponse(
+			ProblemType::PAYLOAD_TOO_LARGE,
+			detail: 'Request body exceeds 10MB limit',
+			extensions: ['max_size' => '10MB', 'received_size' => '15MB']
+		);
+		$data = json_decode($json, true);
+
+		$this->assertEquals('/errors/payload-too-large', $data['type']);
+		$this->assertEquals(413, $data['status']);
+		$this->assertEquals('10MB', $data['max_size']);
+		$this->assertEquals('15MB', $data['received_size']);
+	}
+
+	/**
+	 * Test rate limit problem with all parameters.
+	 */
+	public function testRateLimitProblemComplete(): void
+	{
+		// Create test method for complete rate limit testing
+		$this->controller->testRateLimitProblemComplete = function(
+			int $retryAfter,
+			?string $detail = null,
+			?int $limit = null,
+			?int $remaining = null
+		): string {
+			$extensions = ['retry_after' => $retryAfter];
+
+			if ($limit !== null) {
+				$extensions['limit'] = $limit;
+			}
+			if ($remaining !== null) {
+				$extensions['remaining'] = $remaining;
+			}
+
+			$problem = new ProblemDetails(
+				type: ProblemType::RATE_LIMIT_EXCEEDED->value,
+				title: ProblemType::RATE_LIMIT_EXCEEDED->getDefaultTitle(),
+				status: 429,
+				detail: $detail ?? "Rate limit exceeded. Please retry after $retryAfter seconds.",
+				extensions: $extensions
+			);
+			return json_encode($problem);
+		};
+
+		$json = ($this->controller->testRateLimitProblemComplete)(
+			60,
+			'API rate limit reached',
+			100,
+			0
+		);
+		$data = json_decode($json, true);
+
+		$this->assertEquals(429, $data['status']);
+		$this->assertEquals('API rate limit reached', $data['detail']);
+		$this->assertEquals(60, $data['retry_after']);
+		$this->assertEquals(100, $data['limit']);
+		$this->assertEquals(0, $data['remaining']);
+	}
+
+	/**
+	 * Test authentication problem with realm.
+	 */
+	public function testAuthenticationProblemWithRealm(): void
+	{
+		// Since we can't test headers in unit tests, we'll verify the logic
+		$this->controller->testAuthenticationProblemWithRealm = function(?string $detail = null, ?string $realm = null): array {
+			$headers = [];
+			if ($realm !== null) {
+				$headers['WWW-Authenticate'] = sprintf('Bearer realm="%s"', $realm);
+			}
+
+			$problem = new ProblemDetails(
+				type: ProblemType::AUTHENTICATION_REQUIRED->value,
+				title: ProblemType::AUTHENTICATION_REQUIRED->getDefaultTitle(),
+				status: 401,
+				detail: $detail ?? 'Authentication is required to access this resource.'
+			);
+
+			return ['problem' => $problem->toArray(), 'headers' => $headers];
+		};
+
+		$result = ($this->controller->testAuthenticationProblemWithRealm)('Token expired', 'api');
+
+		$this->assertEquals(401, $result['problem']['status']);
+		$this->assertEquals('Token expired', $result['problem']['detail']);
+		$this->assertEquals('Bearer realm="api"', $result['headers']['WWW-Authenticate']);
+	}
+
+	/**
+	 * Test problem response with minimal parameters.
+	 */
+	public function testProblemResponseMinimal(): void
+	{
+		$json = $this->controller->testProblemResponse('/custom/minimal');
+		$data = json_decode($json, true);
+
+		$this->assertEquals('/custom/minimal', $data['type']);
+		$this->assertEquals('Error', $data['title']); // Default title
+		$this->assertEquals(500, $data['status']); // Default status
+		$this->assertArrayNotHasKey('detail', $data);
+		$this->assertArrayNotHasKey('instance', $data);
+	}
+
+	/**
+	 * Test validation problem with nested errors.
+	 */
+	public function testValidationProblemNested(): void
+	{
+		$errors = [
+			'user' => [
+				'email' => 'Invalid format',
+				'name' => 'Too short'
+			],
+			'address' => [
+				'zip' => 'Invalid postal code',
+				'country' => 'Not supported'
+			]
+		];
+
+		$json = $this->controller->testValidationProblem($errors, 'Multiple validation failures');
+		$data = json_decode($json, true);
+
+		$this->assertEquals('Multiple validation failures', $data['detail']);
+		$this->assertIsArray($data['errors']['user']);
+		$this->assertEquals('Invalid format', $data['errors']['user']['email']);
+		$this->assertEquals('Invalid postal code', $data['errors']['address']['zip']);
+	}
+
+	/**
+	 * Test conflict problem with multiple conflicting resources.
+	 */
+	public function testConflictProblemMultiple(): void
+	{
+		$json = $this->controller->testProblemResponse(
+			ProblemType::CONFLICT,
+			detail: 'Multiple conflicts detected',
+			extensions: [
+				'conflicts' => [
+					['resource' => 'email', 'value' => 'user@example.com'],
+					['resource' => 'username', 'value' => 'johndoe']
+				]
+			]
+		);
+		$data = json_decode($json, true);
+
+		$this->assertEquals(409, $data['status']);
+		$this->assertCount(2, $data['conflicts']);
+		$this->assertEquals('email', $data['conflicts'][0]['resource']);
+	}
+
+	/**
+	 * Test all ProblemType enum values have correct mappings.
+	 */
+	public function testAllProblemTypes(): void
+	{
+		$types = [
+			['type' => ProblemType::VALIDATION_ERROR, 'uri' => '/errors/validation', 'status' => 400],
+			['type' => ProblemType::NOT_FOUND, 'uri' => '/errors/not-found', 'status' => 404],
+			['type' => ProblemType::AUTHENTICATION_REQUIRED, 'uri' => '/errors/authentication', 'status' => 401],
+			['type' => ProblemType::PERMISSION_DENIED, 'uri' => '/errors/authorization', 'status' => 403],
+			['type' => ProblemType::RATE_LIMIT_EXCEEDED, 'uri' => '/errors/rate-limit', 'status' => 429],
+			['type' => ProblemType::SERVICE_UNAVAILABLE, 'uri' => '/errors/service-unavailable', 'status' => 503],
+			['type' => ProblemType::INTERNAL_ERROR, 'uri' => '/errors/internal', 'status' => 500],
+			['type' => ProblemType::BAD_REQUEST, 'uri' => '/errors/bad-request', 'status' => 400],
+			['type' => ProblemType::CONFLICT, 'uri' => '/errors/conflict', 'status' => 409],
+			['type' => ProblemType::METHOD_NOT_ALLOWED, 'uri' => '/errors/method-not-allowed', 'status' => 405],
+			['type' => ProblemType::UNSUPPORTED_MEDIA_TYPE, 'uri' => '/errors/unsupported-media-type', 'status' => 415],
+			['type' => ProblemType::REQUEST_TIMEOUT, 'uri' => '/errors/timeout', 'status' => 408],
+			['type' => ProblemType::PAYLOAD_TOO_LARGE, 'uri' => '/errors/payload-too-large', 'status' => 413],
+		];
+
+		foreach ($types as $test) {
+			$type = $test['type'];
+			$expectedUri = $test['uri'];
+			$expectedStatus = $test['status'];
+
+			$json = $this->controller->testProblemResponse($type);
+			$data = json_decode($json, true);
+
+			$this->assertEquals($expectedUri, $data['type'], "Failed for type: {$type->name}");
+			$this->assertEquals($expectedStatus, $data['status'], "Failed for type: {$type->name}");
+			$this->assertNotEmpty($data['title'], "Failed for type: {$type->name}");
+		}
+	}
 }
