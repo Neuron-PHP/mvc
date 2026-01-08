@@ -59,8 +59,13 @@ class SqlWhereValidator
 		}
 
 		// Check for balanced quotes (basic check)
-		$singleQuotes = substr_count( $whereClause, "'" ) - substr_count( $whereClause, "\\'" );
-		$doubleQuotes = substr_count( $whereClause, '"' ) - substr_count( $whereClause, '\\"' );
+		// Account for both backslash-escaped quotes and SQL-style doubled quotes
+		$singleQuotes = substr_count( $whereClause, "'" )
+			- substr_count( $whereClause, "\\'" )
+			- (2 * substr_count( $whereClause, "''" )); // SQL-style escaped single quotes
+		$doubleQuotes = substr_count( $whereClause, '"' )
+			- substr_count( $whereClause, '\\"' )
+			- (2 * substr_count( $whereClause, '""' )); // SQL-style escaped double quotes
 
 		if( $singleQuotes % 2 !== 0 || $doubleQuotes % 2 !== 0 )
 		{

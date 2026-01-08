@@ -4,6 +4,7 @@ namespace Mvc\Database;
 
 use PHPUnit\Framework\TestCase;
 use Phinx\Db\Adapter\AdapterFactory;
+use Mvc\Database\DataImporterUnitTest;
 
 /**
  * Test to verify AdapterFactory singleton restoration between tests

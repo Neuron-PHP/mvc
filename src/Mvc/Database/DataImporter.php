@@ -961,12 +961,38 @@ class DataImporter
 	 * Escape string for SQL
 	 *
 	 * @param string $value Value to escape
-	 * @return string Escaped value
+	 * @return string Escaped value (without surrounding quotes)
 	 */
 	private function escapeString( string $value ): string
 	{
-		// Use the adapter's quote method if available
-		// Otherwise use basic escaping
+		// Try to use the adapter's native quoting mechanism
+		if( method_exists( $this->_Adapter, 'getConnection' ) )
+		{
+			try
+			{
+				$connection = $this->_Adapter->getConnection();
+				if( $connection instanceof \PDO )
+				{
+					// PDO::quote adds quotes around the string, but our callers
+					// add quotes themselves, so we need to strip them
+					$quoted = $connection->quote( $value );
+					// Remove the surrounding quotes that PDO adds
+					if( strlen( $quoted ) >= 2 )
+					{
+						// Strip first and last character (the quotes)
+						return substr( $quoted, 1, -1 );
+					}
+					return $value;
+				}
+			}
+			catch( \Exception $e )
+			{
+				// Fall through to manual escaping if adapter method fails
+			}
+		}
+
+		// Fallback to manual escaping for adapters without PDO access
+		// or if the PDO method fails
 		return str_replace(
 			["\\", "'", '"', "\n", "\r", "\t", "\x00", "\x1a"],
 			["\\\\", "''", '\"', "\\n", "\\r", "\\t", "\\0", "\\Z"],

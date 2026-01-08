@@ -122,6 +122,22 @@ class SqlWhereValidatorTest extends TestCase
 				"Unbalanced quotes should fail: {$clause}"
 			);
 		}
+
+		// Test that SQL-style escaped quotes are properly balanced
+		$balancedWithSqlEscapes = [
+			"name = 'O''Brien'",                    // SQL-style escaped single quote
+			'name = "He said ""Hello"""',           // SQL-style escaped double quotes
+			"name = 'O''Brien' OR name = 'O''Connor'", // Multiple SQL-style escapes
+			"name = 'It''s John''s'",               // Multiple escapes in one value
+		];
+
+		foreach( $balancedWithSqlEscapes as $clause )
+		{
+			$this->assertTrue(
+				SqlWhereValidator::isValid( $clause ),
+				"SQL-style escaped quotes should be balanced: {$clause}"
+			);
+		}
 	}
 
 	/**
