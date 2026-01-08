@@ -15,7 +15,7 @@ use Phinx\Db\Adapter\AdapterFactory;
 class DataExporterComprehensiveTest extends TestCase
 {
 	private $tempDir;
-	private static $originalFactory;
+	private $originalFactory;
 
 	protected function setUp(): void
 	{
@@ -25,26 +25,20 @@ class DataExporterComprehensiveTest extends TestCase
 		$this->tempDir = sys_get_temp_dir() . '/dataexporter_test_' . uniqid();
 		mkdir( $this->tempDir, 0777, true );
 
-		// Capture original AdapterFactory
+		// Ensure clean state by resetting AdapterFactory at start of each test
 		$factoryClass = new \ReflectionClass( AdapterFactory::class );
 		$instanceProperty = $factoryClass->getProperty( 'instance' );
 		$instanceProperty->setAccessible( true );
-		self::$originalFactory = $instanceProperty->getValue();
+		$instanceProperty->setValue( null, null );
 	}
 
 	protected function tearDown(): void
 	{
-		// Clean up temp directory
-		if( is_dir( $this->tempDir ) )
-		{
-			$this->recursiveRemoveDir( $this->tempDir );
-		}
-
-		// Restore original AdapterFactory
+		// Reset AdapterFactory to null to ensure clean state
 		$factoryClass = new \ReflectionClass( AdapterFactory::class );
 		$instanceProperty = $factoryClass->getProperty( 'instance' );
 		$instanceProperty->setAccessible( true );
-		$instanceProperty->setValue( null, self::$originalFactory );
+		$instanceProperty->setValue( null, null );
 
 		parent::tearDown();
 	}
@@ -279,17 +273,46 @@ class DataExporterComprehensiveTest extends TestCase
 
 		// Create a PDO mock for testing WHERE clauses
 		$mockPdo = $this->createMock( \PDO::class );
-		$mockStmt = $this->createMock( \PDOStatement::class );
+
+		// We need different statement mocks for different queries
+		$tableStmt = $this->createMock( \PDOStatement::class );
+		$dataStmt = $this->createMock( \PDOStatement::class );
+		$countStmt = $this->createMock( \PDOStatement::class );
 
 		$mockAdapter->method( 'getConnection' )->willReturn( $mockPdo );
 
-		$mockPdo->method( 'prepare' )->willReturn( $mockStmt );
-		$mockStmt->method( 'execute' )->willReturn( true );
-		$mockStmt->method( 'fetchAll' )->willReturn( [
+		// Setup PDO to return different statements based on the SQL
+		$mockPdo->method( 'prepare' )->willReturnCallback( function( $sql ) use ( $tableStmt, $dataStmt, $countStmt ) {
+			// getTables query
+			if( strpos( $sql, 'information_schema.TABLES' ) !== false )
+			{
+				return $tableStmt;
+			}
+			// Count query
+			if( strpos( $sql, 'SELECT COUNT(*)' ) !== false )
+			{
+				return $countStmt;
+			}
+			// Data query
+			return $dataStmt;
+		} );
+
+		// Setup table statement to return table names
+		$tableStmt->method( 'execute' )->willReturn( true );
+		$tableStmt->method( 'fetchAll' )->willReturn( [
+			['TABLE_NAME' => 'users']
+		] );
+
+		// Setup data statement to return filtered data
+		$dataStmt->method( 'execute' )->willReturn( true );
+		$dataStmt->method( 'fetchAll' )->willReturn( [
 			['id' => 1, 'status' => 'active'],
 			['id' => 3, 'status' => 'active']
 		] );
-		$mockStmt->method( 'fetch' )->willReturn( ['count' => 2] );
+
+		// Setup count statement
+		$countStmt->method( 'execute' )->willReturn( true );
+		$countStmt->method( 'fetch' )->willReturn( ['count' => 2] );
 
 		$this->mockAdapterFactory( $mockAdapter );
 
@@ -310,6 +333,12 @@ class DataExporterComprehensiveTest extends TestCase
 		$this->assertFileExists( $outputPath );
 		$content = file_get_contents( $outputPath );
 		$data = json_decode( $content, true );
+
+		// Debug output to see actual structure
+		if( !isset($data['data']['users']) ) {
+			echo "\nActual JSON data keys: " . print_r(array_keys($data['data'] ?? []), true);
+			echo "\nFull JSON structure: " . print_r($data, true);
+		}
 
 		$this->assertArrayHasKey( 'data', $data );
 		$this->assertArrayHasKey( 'users', $data['data'] );
@@ -656,11 +685,21 @@ class DataExporterComprehensiveTest extends TestCase
 	{
 		$mockAdapter = $this->getMockBuilder( AdapterInterface::class )
 			->onlyMethods( get_class_methods( AdapterInterface::class ) )
+			->addMethods( ['getConnection'] )  // Add getConnection method
 			->getMock();
+
+		// Create a mock PDO object
+		$mockPdo = $this->createMock( \PDO::class );
+		$mockPdo->method( 'quote' )->willReturnCallback( function( $value ) {
+			// Simulate PDO::quote behavior
+			$escaped = str_replace( ["'", "\\"], ["''", "\\\\"], $value );
+			return "'{$escaped}'";
+		} );
 
 		$mockAdapter->method( 'connect' );
 		$mockAdapter->method( 'getAdapterType' )->willReturn( 'mysql' );
 		$mockAdapter->method( 'getOption' )->willReturn( 'test_db' );
+		$mockAdapter->method( 'getConnection' )->willReturn( $mockPdo );
 
 		return $mockAdapter;
 	}

@@ -135,10 +135,62 @@ class SchemaExporter
 		switch( $this->_AdapterType )
 		{
 			case 'mysql':
+				// Use PDO for parameter binding - Phinx adapters don't support it
+				if( method_exists( $this->_Adapter, 'getConnection' ) )
+				{
+					try
+					{
+						$connection = $this->_Adapter->getConnection();
+						if( $connection instanceof \PDO )
+						{
+							$sql = "SELECT TABLE_NAME FROM information_schema.TABLES
+									WHERE TABLE_SCHEMA = ? AND TABLE_TYPE = 'BASE TABLE'
+									ORDER BY TABLE_NAME";
+							$stmt = $connection->prepare( $sql );
+							if( $stmt !== false )
+							{
+								$stmt->execute( [$this->_Adapter->getOption( 'name' )] );
+								$rows = $stmt->fetchAll( \PDO::FETCH_ASSOC );
+								return array_column( $rows, 'TABLE_NAME' );
+							}
+						}
+					}
+					catch( \Exception $e )
+					{
+						// Fall through to fallback
+					}
+				}
+
+				// Fallback: Use quote method if available, or simple escaping
+				$dbName = $this->_Adapter->getOption( 'name' );
+				if( method_exists( $this->_Adapter, 'getConnection' ) )
+				{
+					try
+					{
+						$connection = $this->_Adapter->getConnection();
+						if( $connection instanceof \PDO )
+						{
+							// Use PDO quote (returns quoted string with surrounding quotes)
+							$quotedDbName = $connection->quote( $dbName );
+							$sql = "SELECT TABLE_NAME FROM information_schema.TABLES
+									WHERE TABLE_SCHEMA = {$quotedDbName} AND TABLE_TYPE = 'BASE TABLE'
+									ORDER BY TABLE_NAME";
+							$rows = $this->_Adapter->fetchAll( $sql );
+							return array_column( $rows, 'TABLE_NAME' );
+						}
+					}
+					catch( \Exception $e )
+					{
+						// Fall through to basic escaping
+					}
+				}
+
+				// Final fallback: Basic escaping (less secure)
+				$dbName = str_replace( ["'", "\\"], ["''", "\\\\"], $dbName ?? '' );
 				$sql = "SELECT TABLE_NAME FROM information_schema.TABLES
-						WHERE TABLE_SCHEMA = ? AND TABLE_TYPE = 'BASE TABLE'
+						WHERE TABLE_SCHEMA = '{$dbName}' AND TABLE_TYPE = 'BASE TABLE'
 						ORDER BY TABLE_NAME";
-				$rows = $this->_Adapter->fetchAll( $sql, [$this->_Adapter->getOption( 'name' )] );
+				$rows = $this->_Adapter->fetchAll( $sql );
 				return array_column( $rows, 'TABLE_NAME' );
 
 			case 'pgsql':

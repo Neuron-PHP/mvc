@@ -19,7 +19,7 @@ class DataImporterUnitTest extends TestCase
 	 *
 	 * @var mixed
 	 */
-	private static $originalFactory;
+	private $originalFactory;
 
 	/**
 	 * Set up test environment
@@ -32,7 +32,7 @@ class DataImporterUnitTest extends TestCase
 		$factoryClass = new \ReflectionClass( AdapterFactory::class );
 		$instanceProperty = $factoryClass->getProperty( 'instance' );
 		$instanceProperty->setAccessible( true );
-		self::$originalFactory = $instanceProperty->getValue();
+		$instanceProperty->setValue( null, null );
 	}
 
 	/**
@@ -40,11 +40,11 @@ class DataImporterUnitTest extends TestCase
 	 */
 	protected function tearDown(): void
 	{
-		// Restore the original AdapterFactory instance
+		// Reset AdapterFactory to null to ensure clean state
 		$factoryClass = new \ReflectionClass( AdapterFactory::class );
 		$instanceProperty = $factoryClass->getProperty( 'instance' );
 		$instanceProperty->setAccessible( true );
-		$instanceProperty->setValue( null, self::$originalFactory );
+		$instanceProperty->setValue( null, null );
 
 		parent::tearDown();
 	}
@@ -68,24 +68,6 @@ class DataImporterUnitTest extends TestCase
 		$this->assertEquals( 'replace', DataImporter::CONFLICT_REPLACE );
 		$this->assertEquals( 'append', DataImporter::CONFLICT_APPEND );
 		$this->assertEquals( 'skip', DataImporter::CONFLICT_SKIP );
-	}
-
-	/**
-	 * Test importFromFile checks if file exists
-	 */
-	public function testImportFromFileChecksFileExists(): void
-	{
-		// Skip this test as it requires specific IFileSystem interface methods
-		$this->markTestSkipped( 'Requires IFileSystem interface methods' );
-	}
-
-	/**
-	 * Test importFromFile handles compressed files
-	 */
-	public function testImportFromCompressedFile(): void
-	{
-		// Skip this test as it requires specific IFileSystem interface methods
-		$this->markTestSkipped( 'Requires IFileSystem interface methods' );
 	}
 
 	/**

@@ -4,6 +4,7 @@ namespace Neuron\Mvc\Database;
 
 use Neuron\Core\System\IFileSystem;
 use Neuron\Core\System\RealFileSystem;
+use Neuron\Log\Log;
 use Phinx\Config\Config;
 use Phinx\Db\Adapter\AdapterInterface;
 use Phinx\Db\Adapter\AdapterFactory;
@@ -237,17 +238,10 @@ class DataExporter
 	 */
 	private function writeCsvToHandle( $handle, array $row )
 	{
-		if( $this->_Options['compress'] )
-		{
-			// For compressed files, we need to format as CSV string and use gzwrite
-			$csvLine = $this->formatCsvLine( $row );
-			return gzwrite( $handle, $csvLine );
-		}
-		else
-		{
-			// PHP 8.4 requires the escape parameter to be explicitly set
-			return fputcsv( $handle, $row, ',', '"', '' );
-		}
+		// Always format as CSV string and use writeToHandle for consistency
+		// This ensures compression and other output-layer logic are honored
+		$csvLine = $this->formatCsvLine( $row );
+		return $this->writeToHandle( $handle, $csvLine );
 	}
 
 	/**
@@ -345,7 +339,8 @@ class DataExporter
 			// Drop table if requested
 			if( $this->_Options['drop_tables'] )
 			{
-				$sql[] = "DROP TABLE IF EXISTS `{$table}`;";
+				$quoted = $this->quoteIdentifier( $table );
+				$sql[] = "DROP TABLE IF EXISTS {$quoted};";
 			}
 
 			// Include schema if requested
@@ -355,7 +350,8 @@ class DataExporter
 			}
 
 			// Clear existing data
-			$sql[] = "DELETE FROM `{$table}`;";
+			$quoted = $this->quoteIdentifier( $table );
+			$sql[] = "DELETE FROM {$quoted};";
 
 			// Export data
 			$data = $this->getTableData( $table );
@@ -517,36 +513,32 @@ class DataExporter
 	 */
 	private function exportTableToCsv( string $table, string $filePath ): bool
 	{
-		$handle = fopen( $filePath, 'w' );
-		if( !$handle )
-		{
-			return false;
-		}
-
 		try
 		{
 			// Get table data
 			$data = $this->getTableData( $table );
 
+			// Build CSV content
+			$csvContent = '';
+
 			if( !empty( $data ) )
 			{
-				// Write header row
-				// PHP 8.4 requires the escape parameter to be explicitly set
-				fputcsv( $handle, array_keys( $data[0] ), ',', '"', '' );
+				// Add header row
+				$csvContent .= $this->formatCsvLine( array_keys( $data[0] ) );
 
-				// Write data rows
+				// Add data rows
 				foreach( $data as $row )
 				{
-					fputcsv( $handle, $row, ',', '"', '' );
+					$csvContent .= $this->formatCsvLine( $row );
 				}
 			}
 
-			fclose( $handle );
-			return true;
+			// Write to file using filesystem abstraction
+			$result = $this->fs->writeFile( $filePath, $csvContent );
+			return $result !== false;
 		}
 		catch( \Exception $e )
 		{
-			fclose( $handle );
 			throw $e;
 		}
 	}
@@ -586,9 +578,10 @@ class DataExporter
 			{
 				// Fallback: Use validation + direct SQL (less secure)
 				// Log a warning that prepared statements aren't available
-				error_log( "WARNING: PDO not available for prepared statements in DataExporter" );
+				Log::warning( "PDO not available for prepared statements in DataExporter" );
 
-				$sql = "SELECT * FROM `{$table}` WHERE " . $whereClause;
+				$quoted = $this->quoteIdentifier( $table );
+				$sql = "SELECT * FROM {$quoted} WHERE " . $whereClause;
 
 				if( $this->_Options['limit'] !== null )
 				{
@@ -601,7 +594,8 @@ class DataExporter
 		else
 		{
 			// No WHERE clause - safe to use direct SQL
-			$sql = "SELECT * FROM `{$table}`";
+			$quoted = $this->quoteIdentifier( $table );
+			$sql = "SELECT * FROM {$quoted}";
 
 			if( $this->_Options['limit'] !== null )
 			{
@@ -626,7 +620,8 @@ class DataExporter
 		// This is a simplified parser - production code should use a proper SQL parser
 		$parsed = $this->parseSimpleWhereClause( $whereClause );
 
-		$sql = "SELECT * FROM `{$table}` WHERE " . $parsed['sql'];
+		$quoted = $this->quoteIdentifier( $table );
+		$sql = "SELECT * FROM {$quoted} WHERE " . $parsed['sql'];
 
 		if( $this->_Options['limit'] !== null )
 		{
@@ -699,7 +694,8 @@ class DataExporter
 				$value = $match[4];
 
 				// Use placeholder for binding
-				$parameterizedParts[] = "`{$column}` {$operator} ?";
+				$quotedColumn = $this->quoteIdentifier( $column );
+				$parameterizedParts[] = "{$quotedColumn} {$operator} ?";
 				$bindings[] = $value;
 			}
 			else
@@ -748,28 +744,49 @@ class DataExporter
 				$pdo = $this->_Adapter->getConnection();
 				$parsed = $this->parseSimpleWhereClause( $whereClause );
 
-				$sql = "SELECT COUNT(*) as count FROM `{$table}` WHERE " . $parsed['sql'];
+				$quoted = $this->quoteIdentifier( $table );
+				$sql = "SELECT COUNT(*) as count FROM {$quoted} WHERE " . $parsed['sql'];
 				$stmt = $pdo->prepare( $sql );
 				$stmt->execute( $parsed['bindings'] );
 
 				$result = $stmt->fetch( \PDO::FETCH_ASSOC );
+				// Check if query failed or table doesn't exist
+				if( !$result || !isset( $result['count'] ) )
+				{
+					Log::warning( "Could not fetch row count for table '{$table}' - table may have been dropped" );
+					return 0;
+				}
 				return (int)$result['count'];
 			}
 			else
 			{
 				// Fallback: Use validation + direct SQL (less secure)
-				error_log( "WARNING: PDO not available for prepared statements in DataExporter::getTableRowCount" );
+				Log::warning( "PDO not available for prepared statements in DataExporter::getTableRowCount" );
 
-				$sql = "SELECT COUNT(*) as count FROM `{$table}` WHERE " . $whereClause;
+				$quoted = $this->quoteIdentifier( $table );
+				$sql = "SELECT COUNT(*) as count FROM {$quoted} WHERE " . $whereClause;
 				$result = $this->_Adapter->fetchRow( $sql );
+				// Check if query failed or table doesn't exist
+				if( !$result || !isset( $result['count'] ) )
+				{
+					Log::warning( "Could not fetch row count for table '{$table}' - table may have been dropped" );
+					return 0;
+				}
 				return (int)$result['count'];
 			}
 		}
 		else
 		{
 			// No WHERE clause - safe to use direct SQL
-			$sql = "SELECT COUNT(*) as count FROM `{$table}`";
+			$quoted = $this->quoteIdentifier( $table );
+			$sql = "SELECT COUNT(*) as count FROM {$quoted}";
 			$result = $this->_Adapter->fetchRow( $sql );
+			// Check if query failed or table doesn't exist
+			if( !$result || !isset( $result['count'] ) )
+			{
+				Log::warning( "Could not fetch row count for table '{$table}' - table may have been dropped" );
+				return 0;
+			}
 			return (int)$result['count'];
 		}
 	}
@@ -790,7 +807,10 @@ class DataExporter
 
 		$statements = [];
 		$columns = array_keys( $data[0] );
-		$columnList = '`' . implode( '`, `', $columns ) . '`';
+
+		// Quote column identifiers
+		$quotedColumns = array_map( [$this, 'quoteIdentifier'], $columns );
+		$columnList = implode( ', ', $quotedColumns );
 
 		// Build INSERT statements in batches
 		$batchSize = 100;
@@ -814,13 +834,14 @@ class DataExporter
 					{
 						$escapedValues[] = $value ? '1' : '0';
 					}
-					elseif( is_numeric( $value ) )
+					elseif( is_numeric( $value ) && !$this->hasLeadingZeros( $value ) )
 					{
+						// Only treat as number if it doesn't have leading zeros
 						$escapedValues[] = $value;
 					}
 					else
 					{
-						// Escape and quote string values
+						// Escape and quote string values (including numeric strings with leading zeros)
 						$escapedValue = $this->escapeString( $value );
 						$escapedValues[] = "'{$escapedValue}'";
 					}
@@ -829,7 +850,8 @@ class DataExporter
 				$values[] = '(' . implode( ', ', $escapedValues ) . ')';
 			}
 
-			$statements[] = "INSERT INTO `{$table}` ({$columnList}) VALUES\n" .
+			$quotedTable = $this->quoteIdentifier( $table );
+			$statements[] = "INSERT INTO {$quotedTable} ({$columnList}) VALUES\n" .
 			                implode( ",\n", $values ) . ";";
 		}
 
@@ -841,15 +863,125 @@ class DataExporter
 	 *
 	 * @param string $value Value to escape
 	 * @return string Escaped value
+	 * @throws \RuntimeException if safe escaping is not available
 	 */
 	private function escapeString( string $value ): string
 	{
-		// Basic escaping - in production, use proper prepared statements
-		return str_replace(
-			["\\", "'", '"', "\n", "\r", "\t"],
-			["\\\\", "''", '\"', "\\n", "\\r", "\\t"],
-			$value
+		// Try to use the adapter's native quoting mechanism
+		if( method_exists( $this->_Adapter, 'getConnection' ) )
+		{
+			try
+			{
+				$connection = $this->_Adapter->getConnection();
+				if( $connection instanceof \PDO )
+				{
+					// PDO::quote adds quotes around the string, but our callers
+					// add quotes themselves, so we need to strip them
+					$quoted = $connection->quote( $value );
+					// Remove the surrounding quotes that PDO adds
+					if( strlen( $quoted ) >= 2 )
+					{
+						// Strip first and last character (the quotes)
+						return substr( $quoted, 1, -1 );
+					}
+					return $value;
+				}
+			}
+			catch( \Exception $e )
+			{
+				// Log the error but continue to check other methods
+			}
+		}
+
+		// Adapter-specific escaping for known safe implementations
+		if( method_exists( $this->_Adapter, 'escapeString' ) )
+		{
+			// Some adapters may provide their own escaping method
+			return $this->_Adapter->escapeString( $value );
+		}
+
+		// For SQLite, we can use a safer fallback since it uses standard SQL escaping
+		if( $this->_AdapterType === 'sqlite' )
+		{
+			// SQLite uses standard SQL escaping - double single quotes
+			return str_replace( "'", "''", $value );
+		}
+
+		// No safe escaping method available
+		// Manual string replacement is NOT safe for production use due to:
+		// 1. Multi-byte character encoding issues
+		// 2. Database-specific escaping requirements
+		// 3. Potential SQL injection vulnerabilities
+		throw new \RuntimeException(
+			"Cannot safely escape SQL values without PDO connection. " .
+			"This adapter does not support safe string escaping. " .
+			"Consider using prepared statements or upgrading to an adapter with PDO support."
 		);
+	}
+
+	/**
+	 * Check if a value has leading zeros that would be lost if treated as numeric
+	 *
+	 * @param mixed $value Value to check
+	 * @return bool True if the value has leading zeros that need preservation
+	 */
+	private function hasLeadingZeros( $value ): bool
+	{
+		// Only check string values
+		if( !is_string( $value ) )
+		{
+			return false;
+		}
+
+		// Check if it starts with '0' and has more characters
+		if( strlen( $value ) > 1 && $value[0] === '0' )
+		{
+			// But allow decimal numbers like "0.5"
+			if( $value[1] === '.' )
+			{
+				return false;
+			}
+			// Has leading zero(s) that would be lost
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
+	 * Quote a database identifier (table or column name)
+	 *
+	 * @param string $identifier The identifier to quote
+	 * @return string The properly quoted identifier for the current adapter
+	 */
+	private function quoteIdentifier( string $identifier ): string
+	{
+		// Handle different database adapters
+		switch( $this->_AdapterType )
+		{
+			case 'mysql':
+				// MySQL uses backticks
+				return '`' . str_replace( '`', '``', $identifier ) . '`';
+
+			case 'pgsql':
+			case 'postgres':
+				// PostgreSQL uses double quotes
+				return '"' . str_replace( '"', '""', $identifier ) . '"';
+
+			case 'sqlite':
+				// SQLite can use double quotes, square brackets, or backticks
+				// We'll use double quotes for consistency with standard SQL
+				return '"' . str_replace( '"', '""', $identifier ) . '"';
+
+			case 'sqlsrv':
+			case 'mssql':
+				// SQL Server uses square brackets
+				return '[' . str_replace( ']', ']]', $identifier ) . ']';
+
+			default:
+				// Default to ANSI SQL double quotes
+				return '"' . str_replace( '"', '""', $identifier ) . '"';
+		}
 	}
 
 	/**
@@ -863,23 +995,57 @@ class DataExporter
 		switch( $this->_AdapterType )
 		{
 			case 'mysql':
-				$result = $this->_Adapter->fetchRow( "SHOW CREATE TABLE `{$table}`" );
+				$quoted = $this->quoteIdentifier( $table );
+				$result = $this->_Adapter->fetchRow( "SHOW CREATE TABLE {$quoted}" );
 				// Check if query failed or table doesn't exist
 				if( !$result || !isset( $result['Create Table'] ) )
 				{
-					error_log( "Warning: Could not fetch CREATE TABLE statement for table '{$table}' - table may have been dropped" );
+					Log::warning( "Could not fetch CREATE TABLE statement for table '{$table}' - table may have been dropped" );
 					return "-- CREATE TABLE statement not available for table '{$table}' (table not found or query failed)";
 				}
 				return $result['Create Table'] . ";";
 
 			case 'sqlite':
-				$result = $this->_Adapter->fetchRow(
-					"SELECT sql FROM sqlite_master WHERE type='table' AND name=?"
-				, [$table] );
+				// Try to use PDO for parameter binding - Phinx adapters don't support it
+				if( method_exists( $this->_Adapter, 'getConnection' ) )
+				{
+					try
+					{
+						$connection = $this->_Adapter->getConnection();
+						if( $connection instanceof \PDO )
+						{
+							$sql = "SELECT sql FROM sqlite_master WHERE type='table' AND name=?";
+							$stmt = $connection->prepare( $sql );
+							if( $stmt !== false )
+							{
+								$stmt->execute( [$table] );
+								$result = $stmt->fetch( \PDO::FETCH_ASSOC );
+								if( $result && isset( $result['sql'] ) )
+								{
+									return $result['sql'] . ";";
+								}
+								else
+								{
+									Log::warning( "Could not fetch CREATE TABLE statement for table '{$table}' - table may have been dropped" );
+									return "-- CREATE TABLE statement not available for table '{$table}' (table not found or query failed)";
+								}
+							}
+						}
+					}
+					catch( \Exception $e )
+					{
+						// Fall through to fallback
+					}
+				}
+
+				// Fallback: Use escaped string
+				$escapedTable = str_replace( "'", "''", $table );
+				$sql = "SELECT sql FROM sqlite_master WHERE type='table' AND name='{$escapedTable}'";
+				$result = $this->_Adapter->fetchRow( $sql );
 				// Check if query failed or table doesn't exist
 				if( !$result || !isset( $result['sql'] ) )
 				{
-					error_log( "Warning: Could not fetch CREATE TABLE statement for table '{$table}' - table may have been dropped" );
+					Log::warning( "Could not fetch CREATE TABLE statement for table '{$table}' - table may have been dropped" );
 					return "-- CREATE TABLE statement not available for table '{$table}' (table not found or query failed)";
 				}
 				return $result['sql'] . ";";
@@ -955,9 +1121,11 @@ class DataExporter
 	{
 		$this->writeToHandle( $handle, "-- Table: {$table}\n" );
 
+		$quoted = $this->quoteIdentifier( $table );
+
 		if( $this->_Options['drop_tables'] )
 		{
-			$this->writeToHandle( $handle, "DROP TABLE IF EXISTS `{$table}`;\n" );
+			$this->writeToHandle( $handle, "DROP TABLE IF EXISTS {$quoted};\n" );
 		}
 
 		if( $this->_Options['include_schema'] )
@@ -965,14 +1133,32 @@ class DataExporter
 			$this->writeToHandle( $handle, $this->getTableCreateStatement( $table ) . "\n" );
 		}
 
-		$this->writeToHandle( $handle, "DELETE FROM `{$table}`;\n" );
+		$this->writeToHandle( $handle, "DELETE FROM {$quoted};\n" );
 
 		// Stream data in chunks
 		$offset = 0;
-		$limit = 1000;
+		$batchSize = 1000;
+		$userLimit = $this->_Options['limit'];
+		$rowsProcessed = 0;
 
 		while( true )
 		{
+			// Calculate the actual limit for this batch
+			// If user specified a limit, respect it
+			if( $userLimit !== null )
+			{
+				$remainingRows = $userLimit - $rowsProcessed;
+				if( $remainingRows <= 0 )
+				{
+					break;
+				}
+				$limit = min( $batchSize, $remainingRows );
+			}
+			else
+			{
+				$limit = $batchSize;
+			}
+
 			// Use prepared statements if PDO is available and WHERE clause exists
 			if( isset( $this->_Options['where'][$table] ) )
 			{
@@ -993,7 +1179,8 @@ class DataExporter
 					$pdo = $this->_Adapter->getConnection();
 					$parsed = $this->parseSimpleWhereClause( $whereClause );
 
-					$sql = "SELECT * FROM `{$table}` WHERE " . $parsed['sql'] . " LIMIT {$limit} OFFSET {$offset}";
+					$quoted = $this->quoteIdentifier( $table );
+					$sql = "SELECT * FROM {$quoted} WHERE " . $parsed['sql'] . " LIMIT {$limit} OFFSET {$offset}";
 					$stmt = $pdo->prepare( $sql );
 					$stmt->execute( $parsed['bindings'] );
 					$rows = $stmt->fetchAll( \PDO::FETCH_ASSOC );
@@ -1001,16 +1188,18 @@ class DataExporter
 				else
 				{
 					// Fallback: Use validation + direct SQL (less secure)
-					error_log( "WARNING: PDO not available for prepared statements in DataExporter::streamSqlTable" );
+					Log::warning( "PDO not available for prepared statements in DataExporter::streamSqlTable" );
 
-					$sql = "SELECT * FROM `{$table}` WHERE " . $whereClause . " LIMIT {$limit} OFFSET {$offset}";
+					$quoted = $this->quoteIdentifier( $table );
+					$sql = "SELECT * FROM {$quoted} WHERE " . $whereClause . " LIMIT {$limit} OFFSET {$offset}";
 					$rows = $this->_Adapter->fetchAll( $sql );
 				}
 			}
 			else
 			{
 				// No WHERE clause - safe to use direct SQL
-				$sql = "SELECT * FROM `{$table}` LIMIT {$limit} OFFSET {$offset}";
+				$quoted = $this->quoteIdentifier( $table );
+				$sql = "SELECT * FROM {$quoted} LIMIT {$limit} OFFSET {$offset}";
 				$rows = $this->_Adapter->fetchAll( $sql );
 			}
 
@@ -1019,13 +1208,28 @@ class DataExporter
 				break;
 			}
 
+			// Process only the rows we fetched (might be less than batch size)
+			$actualRowCount = count( $rows );
+
+			// If user limit would be exceeded, truncate the rows
+			if( $userLimit !== null )
+			{
+				$remainingRows = $userLimit - $rowsProcessed;
+				if( $actualRowCount > $remainingRows )
+				{
+					$rows = array_slice( $rows, 0, $remainingRows );
+					$actualRowCount = $remainingRows;
+				}
+			}
+
 			$insertSql = $this->buildInsertStatements( $table, $rows );
 			$this->writeToHandle( $handle, $insertSql . "\n" );
 
-			$offset += $limit;
+			$offset += $actualRowCount;
+			$rowsProcessed += $actualRowCount;
 
-			// Apply overall limit if set
-			if( $this->_Options['limit'] !== null && $offset >= $this->_Options['limit'] )
+			// Check if we've reached the user's limit
+			if( $userLimit !== null && $rowsProcessed >= $userLimit )
 			{
 				break;
 			}
@@ -1042,26 +1246,121 @@ class DataExporter
 	 */
 	private function streamCsvTable( $handle, string $table ): void
 	{
-		// For CSV streaming, this would write to separate files
-		// This is a simplified implementation
-		$data = $this->getTableData( $table );
+		// Write table name as comment
+		$this->writeToHandle( $handle, "# Table: {$table}\n" );
 
-		if( !empty( $data ) )
+		// Stream data in chunks, similar to streamSqlTable
+		$offset = 0;
+		$batchSize = 1000;
+		$userLimit = $this->_Options['limit'];
+		$rowsProcessed = 0;
+		$headerWritten = false;
+
+		while( true )
 		{
-			// Write table name as comment
-			$this->writeToHandle( $handle, "# Table: {$table}\n" );
+			// Calculate the actual limit for this batch
+			// If user specified a limit, respect it
+			if( $userLimit !== null )
+			{
+				$remainingRows = $userLimit - $rowsProcessed;
+				if( $remainingRows <= 0 )
+				{
+					break;
+				}
+				$limit = min( $batchSize, $remainingRows );
+			}
+			else
+			{
+				$limit = $batchSize;
+			}
 
-			// Write header
-			$this->writeCsvToHandle( $handle, array_keys( $data[0] ) );
+			// Use prepared statements if PDO is available and WHERE clause exists
+			if( isset( $this->_Options['where'][$table] ) )
+			{
+				$whereClause = $this->_Options['where'][$table];
 
-			// Write data
-			foreach( $data as $row )
+				// Validate WHERE clause for SQL injection attempts
+				if( !SqlWhereValidator::isValid( $whereClause ) )
+				{
+					throw new \InvalidArgumentException(
+						"Potentially dangerous WHERE clause detected for table '{$table}'. " .
+						"WHERE clauses must not contain SQL commands, comments, or subqueries."
+					);
+				}
+
+				// Try to use PDO for prepared statements if available
+				if( method_exists( $this->_Adapter, 'getConnection' ) )
+				{
+					$pdo = $this->_Adapter->getConnection();
+					$parsed = $this->parseSimpleWhereClause( $whereClause );
+
+					$quoted = $this->quoteIdentifier( $table );
+					$sql = "SELECT * FROM {$quoted} WHERE " . $parsed['sql'] . " LIMIT {$limit} OFFSET {$offset}";
+					$stmt = $pdo->prepare( $sql );
+					$stmt->execute( $parsed['bindings'] );
+					$rows = $stmt->fetchAll( \PDO::FETCH_ASSOC );
+				}
+				else
+				{
+					// Fallback: Use validation + direct SQL (less secure)
+					Log::warning( "PDO not available for prepared statements in DataExporter::streamCsvTable" );
+
+					$quoted = $this->quoteIdentifier( $table );
+					$sql = "SELECT * FROM {$quoted} WHERE " . $whereClause . " LIMIT {$limit} OFFSET {$offset}";
+					$rows = $this->_Adapter->fetchAll( $sql );
+				}
+			}
+			else
+			{
+				// No WHERE clause - safe to use direct SQL
+				$quoted = $this->quoteIdentifier( $table );
+				$sql = "SELECT * FROM {$quoted} LIMIT {$limit} OFFSET {$offset}";
+				$rows = $this->_Adapter->fetchAll( $sql );
+			}
+
+			if( empty( $rows ) )
+			{
+				break;
+			}
+
+			// Process only the rows we fetched (might be less than batch size)
+			$actualRowCount = count( $rows );
+
+			// If user limit would be exceeded, truncate the rows
+			if( $userLimit !== null )
+			{
+				$remainingRows = $userLimit - $rowsProcessed;
+				if( $actualRowCount > $remainingRows )
+				{
+					$rows = array_slice( $rows, 0, $remainingRows );
+					$actualRowCount = $remainingRows;
+				}
+			}
+
+			// Write header on first chunk
+			if( !$headerWritten && !empty( $rows ) )
+			{
+				$this->writeCsvToHandle( $handle, array_keys( $rows[0] ) );
+				$headerWritten = true;
+			}
+
+			// Write data rows
+			foreach( $rows as $row )
 			{
 				$this->writeCsvToHandle( $handle, $row );
 			}
 
-			$this->writeToHandle( $handle, "\n" );
+			$offset += $actualRowCount;
+			$rowsProcessed += $actualRowCount;
+
+			// Check if we've reached the user's limit
+			if( $userLimit !== null && $rowsProcessed >= $userLimit )
+			{
+				break;
+			}
 		}
+
+		$this->writeToHandle( $handle, "\n" );
 	}
 
 	/**
@@ -1153,10 +1452,41 @@ class DataExporter
 		switch( $this->_AdapterType )
 		{
 			case 'mysql':
+				// Use PDO for parameter binding - Phinx adapters don't support it
+				if( method_exists( $this->_Adapter, 'getConnection' ) )
+				{
+					try
+					{
+						$connection = $this->_Adapter->getConnection();
+						if( $connection instanceof \PDO )
+						{
+							$sql = "SELECT TABLE_NAME FROM information_schema.TABLES
+									WHERE TABLE_SCHEMA = ? AND TABLE_TYPE = 'BASE TABLE'
+									ORDER BY TABLE_NAME";
+							$stmt = $connection->prepare( $sql );
+							if( $stmt !== false )
+							{
+								$stmt->execute( [$this->_Adapter->getOption( 'name' )] );
+								$rows = $stmt->fetchAll( \PDO::FETCH_ASSOC );
+								return array_column( $rows, 'TABLE_NAME' );
+							}
+						}
+					}
+					catch( \Exception $e )
+					{
+						// Fall through to fallback
+					}
+				}
+
+				// Fallback: Use basic escaping for database name
+				// Database names are typically controlled by configuration, not user input,
+				// so basic escaping is acceptable here
+				$dbName = $this->_Adapter->getOption( 'name' ) ?? '';
+				$dbName = str_replace( ["'", "\\"], ["''", "\\\\"], $dbName );
 				$sql = "SELECT TABLE_NAME FROM information_schema.TABLES
-						WHERE TABLE_SCHEMA = ? AND TABLE_TYPE = 'BASE TABLE'
+						WHERE TABLE_SCHEMA = '{$dbName}' AND TABLE_TYPE = 'BASE TABLE'
 						ORDER BY TABLE_NAME";
-				$rows = $this->_Adapter->fetchAll( $sql, [$this->_Adapter->getOption( 'name' )] );
+				$rows = $this->_Adapter->fetchAll( $sql );
 				return array_column( $rows, 'TABLE_NAME' );
 
 			case 'pgsql':

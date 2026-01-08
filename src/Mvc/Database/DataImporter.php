@@ -405,24 +405,58 @@ class DataImporter
 
 		// Read metadata if available
 		$metadataFile = $DirectoryPath . '/export_metadata.json';
-		$metadata = [];
+		$metadata = null;
+		$tableOrder = null;
 
 		if( $this->fs->fileExists( $metadataFile ) )
 		{
 			$metadata = json_decode( $this->fs->readFile( $metadataFile ), true );
+
+			// Extract table order from metadata if available
+			if( isset( $metadata['tables'] ) && is_array( $metadata['tables'] ) )
+			{
+				// Create a map of filename to import order
+				$tableOrder = array_flip( $metadata['tables'] );
+			}
 		}
 
-		// Find all CSV files
-		$files = glob( $DirectoryPath . '/*.csv' );
+		// Find all CSV files using filesystem abstraction
+		$files = $this->fs->glob( $DirectoryPath . '/*.csv' );
 
-		if( empty( $files ) )
+		if( $files === false || empty( $files ) )
 		{
 			throw new \InvalidArgumentException( "No CSV files found in directory: {$DirectoryPath}" );
 		}
 
+		// Initialize tracking variables
 		$this->_Errors = [];
 		$this->_RowsImported = 0;
 		$this->_TablesImported = 0;
+
+		// Sort files according to metadata order if available
+		if( $tableOrder !== null )
+		{
+			usort( $files, function( $a, $b ) use ( $tableOrder ) {
+				$aName = basename( $a );
+				$bName = basename( $b );
+				$aOrder = $tableOrder[$aName] ?? PHP_INT_MAX;
+				$bOrder = $tableOrder[$bName] ?? PHP_INT_MAX;
+				return $aOrder <=> $bOrder;
+			} );
+
+			// Validate: Check if all files mentioned in metadata are present
+			$foundFiles = array_map( 'basename', $files );
+			$missingFiles = array_diff( $metadata['tables'], $foundFiles );
+
+			if( !empty( $missingFiles ) )
+			{
+				// Log warning about missing files (but don't fail the import)
+				foreach( $missingFiles as $missingFile )
+				{
+					$this->_Errors[] = "Warning: Expected file '{$missingFile}' from metadata not found";
+				}
+			}
+		}
 
 		try
 		{
@@ -518,66 +552,103 @@ class DataImporter
 	 */
 	private function importCsvFile( string $filePath, string $tableName ): void
 	{
-		$handle = fopen( $filePath, 'r' );
-		if( !$handle )
+		// Check if file exists using filesystem abstraction
+		if( !$this->fs->fileExists( $filePath ) )
 		{
-			throw new \RuntimeException( "Cannot open CSV file: {$filePath}" );
+			throw new \RuntimeException( "CSV file does not exist: {$filePath}" );
 		}
 
-		try
+		// Read file content using filesystem abstraction
+		$content = $this->fs->readFile( $filePath );
+		if( $content === false )
 		{
-			// Read header row
-			$headers = fgetcsv( $handle, 0, ',', '"', '' );
-			if( !$headers )
+			throw new \RuntimeException( "Cannot read CSV file: {$filePath}" );
+		}
+
+		// Parse CSV content
+		$lines = explode( "\n", $content );
+		if( empty( $lines ) )
+		{
+			throw new \RuntimeException( "CSV file is empty: {$filePath}" );
+		}
+
+		// Parse header row
+		$headers = $this->parseCsvLine( array_shift( $lines ) );
+		if( !$headers )
+		{
+			throw new \RuntimeException( "CSV file has no valid header: {$filePath}" );
+		}
+
+		// Prepare table
+		if( !$this->prepareTableForImport( $tableName ) )
+		{
+			return;
+		}
+
+		// Process data in batches
+		$batch = [];
+		$batchSize = $this->_Options['batch_size'];
+
+		foreach( $lines as $line )
+		{
+			// Skip empty lines
+			if( trim( $line ) === '' )
 			{
-				throw new \RuntimeException( "CSV file is empty or invalid: {$filePath}" );
+				continue;
 			}
 
-			// Prepare table
-			if( !$this->prepareTableForImport( $tableName ) )
+			// Skip comment lines
+			if( str_starts_with( $line, '#' ) )
 			{
-				return;
+				continue;
 			}
 
-			// Read and import data in batches
-			$batch = [];
-			$batchSize = $this->_Options['batch_size'];
-
-			while( ($row = fgetcsv( $handle, 0, ',', '"', '' )) !== false )
+			// Parse CSV line
+			$row = $this->parseCsvLine( $line );
+			if( !$row || count( $row ) !== count( $headers ) )
 			{
-				// Skip comment lines
-				if( isset( $row[0] ) && str_starts_with( $row[0], '#' ) )
-				{
-					continue;
-				}
-
-				// Create associative array
-				$data = array_combine( $headers, $row );
-
-				if( $data === false )
-				{
-					continue; // Skip malformed rows
-				}
-
-				$batch[] = $data;
-
-				if( count( $batch ) >= $batchSize )
-				{
-					$this->insertBatch( $tableName, $batch );
-					$batch = [];
-				}
+				continue; // Skip malformed rows
 			}
 
-			// Insert remaining batch
-			if( !empty( $batch ) )
+			// Create associative array
+			$data = array_combine( $headers, $row );
+			if( $data === false )
+			{
+				continue;
+			}
+
+			$batch[] = $data;
+
+			if( count( $batch ) >= $batchSize )
 			{
 				$this->insertBatch( $tableName, $batch );
+				$batch = [];
 			}
 		}
-		finally
+
+		// Insert remaining batch
+		if( !empty( $batch ) )
 		{
-			fclose( $handle );
+			$this->insertBatch( $tableName, $batch );
 		}
+	}
+
+	/**
+	 * Parse a CSV line into an array
+	 *
+	 * Note: For very large CSV files (>100MB), consider using direct file handle
+	 * access with fopen/fgetcsv for streaming to avoid memory issues. This
+	 * implementation loads the entire file into memory which works well for
+	 * typical data exports but may not scale to extremely large datasets.
+	 *
+	 * @param string $line CSV line to parse
+	 * @return array|false Parsed values or false on failure
+	 */
+	private function parseCsvLine( string $line ): array|false
+	{
+		// Use str_getcsv for parsing which handles quotes and escapes properly
+		// PHP 8.4 requires the escape parameter
+		return str_getcsv( $line, ',', '"', '' );
 	}
 
 	/**
@@ -612,7 +683,9 @@ class DataImporter
 
 		// Get column names from first row
 		$columns = array_keys( $rows[0] );
-		$columnList = '`' . implode( '`, `', $columns ) . '`';
+		// Quote column identifiers
+		$quotedColumns = array_map( [$this, 'quoteIdentifier'], $columns );
+		$columnList = implode( ', ', $quotedColumns );
 
 		// Build values
 		$values = [];
@@ -632,13 +705,14 @@ class DataImporter
 				{
 					$escapedValues[] = $value ? '1' : '0';
 				}
-				elseif( is_numeric( $value ) )
+				elseif( is_numeric( $value ) && !$this->hasLeadingZeros( $value ) )
 				{
+					// Only treat as number if it doesn't have leading zeros
 					$escapedValues[] = $value;
 				}
 				else
 				{
-					// Use proper escaping
+					// Use proper escaping for strings (including numeric strings with leading zeros)
 					$escaped = $this->escapeString( $value );
 					$escapedValues[] = "'{$escaped}'";
 				}
@@ -648,7 +722,8 @@ class DataImporter
 		}
 
 		// Build and execute INSERT statement
-		$sql = "INSERT INTO `{$table}` ({$columnList}) VALUES\n" . implode( ",\n", $values );
+		$quotedTable = $this->quoteIdentifier( $table );
+		$sql = "INSERT INTO {$quotedTable} ({$columnList}) VALUES\n" . implode( ",\n", $values );
 
 		$this->_Adapter->execute( $sql );
 		$this->_RowsImported += count( $rows );
@@ -674,7 +749,8 @@ class DataImporter
 		{
 			case self::CONFLICT_REPLACE:
 				// Clear existing data
-				$this->_Adapter->execute( "DELETE FROM `{$table}`" );
+				$quotedTable = $this->quoteIdentifier( $table );
+				$this->_Adapter->execute( "DELETE FROM {$quotedTable}" );
 				return true;
 
 			case self::CONFLICT_APPEND:
@@ -683,7 +759,18 @@ class DataImporter
 
 			case self::CONFLICT_SKIP:
 				// Check if table has data
-				$result = $this->_Adapter->fetchRow( "SELECT COUNT(*) as count FROM `{$table}`" );
+				$quotedTable = $this->quoteIdentifier( $table );
+				$result = $this->_Adapter->fetchRow( "SELECT COUNT(*) as count FROM {$quotedTable}" );
+
+				// Check if query succeeded
+				if( !$result || !isset( $result['count'] ) )
+				{
+					// Query failed - treat as error and skip to be safe
+					// In CONFLICT_SKIP mode, we should err on the side of caution
+					$this->_Errors[] = "Could not check row count for table {$table} - skipping import to protect existing data";
+					return false;
+				}
+
 				if( $result['count'] > 0 )
 				{
 					// Table has data, skip it
@@ -719,10 +806,14 @@ class DataImporter
 		{
 			$trimmed = trim( $line );
 
-			// Skip comments
-			if( empty( $trimmed ) || str_starts_with( $trimmed, '--' ) || str_starts_with( $trimmed, '#' ) )
+			// Skip comments only if we're NOT inside a string literal
+			// Empty lines are also skipped unless we're in a string
+			if( !$inString )
 			{
-				continue;
+				if( empty( $trimmed ) || str_starts_with( $trimmed, '--' ) || str_starts_with( $trimmed, '#' ) )
+				{
+					continue;
+				}
 			}
 
 			// Process character by character for proper string handling
@@ -741,8 +832,23 @@ class DataImporter
 				}
 				elseif( $inString && $char === $stringChar )
 				{
+					// Count consecutive backslashes before this quote
+					$backslashCount = 0;
+					$j = $i - 1;
+					while( $j >= 0 && $line[$j] === '\\' )
+					{
+						$backslashCount++;
+						$j--;
+					}
+
+					// If odd number of backslashes, the quote is escaped by the last backslash
+					if( $backslashCount % 2 === 1 )
+					{
+						// Backslash-escaped quote - continue string
+						$current .= $char;
+					}
 					// Check for escaped quotes (two consecutive quotes)
-					if( $nextChar === $stringChar )
+					elseif( $nextChar === $stringChar )
 					{
 						// It's an escaped quote - add both quotes and skip next one
 						$current .= $char . $nextChar;
@@ -770,7 +876,12 @@ class DataImporter
 				}
 			}
 
-			$current .= "\n";
+			// Add newline to preserve multi-line statements and strings
+			// Don't add newline if we just ended a statement with semicolon
+			if( !empty($current) )
+			{
+				$current .= "\n";
+			}
 		}
 
 		// Add any remaining statement
@@ -962,6 +1073,7 @@ class DataImporter
 	 *
 	 * @param string $value Value to escape
 	 * @return string Escaped value (without surrounding quotes)
+	 * @throws \RuntimeException if safe escaping is not available
 	 */
 	private function escapeString( string $value ): string
 	{
@@ -987,17 +1099,99 @@ class DataImporter
 			}
 			catch( \Exception $e )
 			{
-				// Fall through to manual escaping if adapter method fails
+				// Log the error but continue to throw exception below
 			}
 		}
 
-		// Fallback to manual escaping for adapters without PDO access
-		// or if the PDO method fails
-		return str_replace(
-			["\\", "'", '"', "\n", "\r", "\t", "\x00", "\x1a"],
-			["\\\\", "''", '\"', "\\n", "\\r", "\\t", "\\0", "\\Z"],
-			$value
+		// Adapter-specific escaping for known safe implementations
+		if( method_exists( $this->_Adapter, 'escapeString' ) )
+		{
+			// Some adapters may provide their own escaping method
+			return $this->_Adapter->escapeString( $value );
+		}
+
+		// For SQLite, we can use a safer fallback since it uses standard SQL escaping
+		if( $this->_AdapterType === 'sqlite' )
+		{
+			// SQLite uses standard SQL escaping - double single quotes
+			return str_replace( "'", "''", $value );
+		}
+
+		// No safe escaping method available
+		// Manual string replacement is NOT safe for production use due to:
+		// 1. Multi-byte character encoding issues
+		// 2. Database-specific escaping requirements
+		// 3. Potential SQL injection vulnerabilities
+		throw new \RuntimeException(
+			"Cannot safely escape SQL values without PDO connection. " .
+			"This adapter does not support safe string escaping. " .
+			"Consider using prepared statements or upgrading to an adapter with PDO support."
 		);
+	}
+
+	/**
+	 * Check if a value has leading zeros that would be lost if treated as numeric
+	 *
+	 * @param mixed $value Value to check
+	 * @return bool True if the value has leading zeros that need preservation
+	 */
+	private function hasLeadingZeros( $value ): bool
+	{
+		// Only check string values
+		if( !is_string( $value ) )
+		{
+			return false;
+		}
+
+		// Check if it starts with '0' and has more characters
+		if( strlen( $value ) > 1 && $value[0] === '0' )
+		{
+			// But allow decimal numbers like "0.5"
+			if( $value[1] === '.' )
+			{
+				return false;
+			}
+			// Has leading zero(s) that would be lost
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
+	 * Quote a database identifier (table or column name)
+	 *
+	 * @param string $identifier The identifier to quote
+	 * @return string The properly quoted identifier for the current adapter
+	 */
+	private function quoteIdentifier( string $identifier ): string
+	{
+		// Handle different database adapters
+		switch( $this->_AdapterType )
+		{
+			case 'mysql':
+				// MySQL uses backticks
+				return '`' . str_replace( '`', '``', $identifier ) . '`';
+
+			case 'pgsql':
+			case 'postgres':
+				// PostgreSQL uses double quotes
+				return '"' . str_replace( '"', '""', $identifier ) . '"';
+
+			case 'sqlite':
+				// SQLite can use double quotes, square brackets, or backticks
+				// We'll use double quotes for consistency with standard SQL
+				return '"' . str_replace( '"', '""', $identifier ) . '"';
+
+			case 'sqlsrv':
+			case 'mssql':
+				// SQL Server uses square brackets
+				return '[' . str_replace( ']', ']]', $identifier ) . ']';
+
+			default:
+				// Default to ANSI SQL double quotes
+				return '"' . str_replace( '"', '""', $identifier ) . '"';
+		}
 	}
 
 	/**
@@ -1095,7 +1289,8 @@ class DataImporter
 					continue;
 				}
 
-				$this->_Adapter->execute( "DELETE FROM `{$table}`" );
+				$quotedTable = $this->quoteIdentifier( $table );
+				$this->_Adapter->execute( "DELETE FROM {$quotedTable}" );
 			}
 
 			// Re-enable foreign key checks
@@ -1135,7 +1330,8 @@ class DataImporter
 		{
 			try
 			{
-				$row = $this->_Adapter->fetchRow( "SELECT COUNT(*) as count FROM `{$table}`" );
+				$quotedTable = $this->quoteIdentifier( $table );
+				$row = $this->_Adapter->fetchRow( "SELECT COUNT(*) as count FROM {$quotedTable}" );
 				$result[$table] = (int)$row['count'];
 			}
 			catch( \Exception $e )
@@ -1200,7 +1396,8 @@ class DataImporter
 			{
 				if( $this->_Adapter->hasTable( $table ) )
 				{
-					$result = $this->_Adapter->fetchRow( "SELECT COUNT(*) as count FROM `{$table}`" );
+					$quotedTable = $this->quoteIdentifier( $table );
+				$result = $this->_Adapter->fetchRow( "SELECT COUNT(*) as count FROM {$quotedTable}" );
 					$actualCount = (int)$result['count'];
 				}
 

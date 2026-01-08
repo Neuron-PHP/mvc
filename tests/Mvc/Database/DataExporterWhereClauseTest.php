@@ -13,26 +13,26 @@ use Phinx\Db\Adapter\AdapterFactory;
  */
 class DataExporterWhereClauseTest extends TestCase
 {
-	private static $originalFactory;
+	private $originalFactory;
 
 	protected function setUp(): void
 	{
 		parent::setUp();
 
-		// Capture original AdapterFactory
+		// Ensure clean state by resetting AdapterFactory at start of each test
 		$factoryClass = new \ReflectionClass( AdapterFactory::class );
 		$instanceProperty = $factoryClass->getProperty( 'instance' );
 		$instanceProperty->setAccessible( true );
-		self::$originalFactory = $instanceProperty->getValue();
+		$instanceProperty->setValue( null, null );
 	}
 
 	protected function tearDown(): void
 	{
-		// Restore original AdapterFactory
+		// Reset AdapterFactory to null to ensure clean state
 		$factoryClass = new \ReflectionClass( AdapterFactory::class );
 		$instanceProperty = $factoryClass->getProperty( 'instance' );
 		$instanceProperty->setAccessible( true );
-		$instanceProperty->setValue( null, self::$originalFactory );
+		$instanceProperty->setValue( null, null );
 
 		parent::tearDown();
 	}

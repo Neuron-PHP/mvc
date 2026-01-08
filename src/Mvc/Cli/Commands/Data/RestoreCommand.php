@@ -101,17 +101,39 @@ class RestoreCommand extends Command
 			return 1;
 		}
 
-		// Resolve relative paths
-		if( $inputPath && !str_starts_with( $inputPath, '/' ) )
+		// Resolve and validate input path to prevent path traversal
+		if( $inputPath )
 		{
-			$inputPath = $basePath . '/' . $inputPath;
-		}
+			// Resolve relative paths
+			if( !str_starts_with( $inputPath, '/' ) )
+			{
+				$inputPath = $basePath . '/' . $inputPath;
+			}
 
-		// Check if input file exists
-		if( $inputPath && !file_exists( $inputPath ) )
-		{
-			$this->output->error( "Input file not found: {$inputPath}" );
-			return 1;
+			// Get canonical paths to prevent path traversal attacks
+			$resolvedBasePath = realpath( $basePath );
+			$resolvedInputPath = realpath( $inputPath );
+
+			// Check if realpath failed (file doesn't exist yet)
+			// For input files, we need the file to exist
+			if( $resolvedInputPath === false )
+			{
+				$this->output->error( "Input file not found: {$inputPath}" );
+				return 1;
+			}
+
+			// Verify the resolved path is within the allowed base path
+			// This prevents path traversal attacks using "../" sequences
+			if( !str_starts_with( $resolvedInputPath, $resolvedBasePath . '/' ) &&
+			    $resolvedInputPath !== $resolvedBasePath )
+			{
+				$this->output->error( "Security error: Input path is outside the allowed directory" );
+				$this->output->error( "Attempted path: {$inputPath}" );
+				return 1;
+			}
+
+			// Use the validated canonical path
+			$inputPath = $resolvedInputPath;
 		}
 
 		// Show dry run info if requested
@@ -501,11 +523,37 @@ class RestoreCommand extends Command
 				['format' => 'sql', 'use_transaction' => true]
 			);
 
-			// Resolve relative path
+			// Resolve and validate backup path to prevent path traversal
 			if( !str_starts_with( $backupPath, '/' ) )
 			{
 				$backupPath = $basePath . '/' . $backupPath;
 			}
+
+			// Get canonical paths to prevent path traversal attacks
+			$resolvedBasePath = realpath( $basePath );
+
+			// For backup files, the file may not exist yet, so we check the parent directory
+			$backupDir = dirname( $backupPath );
+			$resolvedBackupDir = realpath( $backupDir );
+
+			if( $resolvedBackupDir === false )
+			{
+				$this->output->error( "Backup directory does not exist: {$backupDir}" );
+				return false;
+			}
+
+			// Verify the backup directory is within the allowed base path
+			if( !str_starts_with( $resolvedBackupDir, $resolvedBasePath . '/' ) &&
+			    $resolvedBackupDir !== $resolvedBasePath )
+			{
+				$this->output->error( "Security error: Backup path is outside the allowed directory" );
+				$this->output->error( "Attempted path: {$backupPath}" );
+				return false;
+			}
+
+			// Reconstruct the validated backup path
+			$backupFilename = basename( $backupPath );
+			$backupPath = $resolvedBackupDir . '/' . $backupFilename;
 
 			if( $exporter->exportToFile( $backupPath ) )
 			{

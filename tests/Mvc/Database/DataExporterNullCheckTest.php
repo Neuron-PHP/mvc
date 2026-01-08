@@ -15,7 +15,7 @@ use Phinx\Db\Adapter\AdapterFactory;
 class DataExporterNullCheckTest extends TestCase
 {
 	private $tempDir;
-	private static $originalFactory;
+	private $originalFactory;
 
 	protected function setUp(): void
 	{
@@ -25,26 +25,20 @@ class DataExporterNullCheckTest extends TestCase
 		$this->tempDir = sys_get_temp_dir() . '/null_check_test_' . uniqid();
 		mkdir( $this->tempDir, 0777, true );
 
-		// Capture original AdapterFactory
+		// Ensure clean state by resetting AdapterFactory at start of each test
 		$factoryClass = new \ReflectionClass( AdapterFactory::class );
 		$instanceProperty = $factoryClass->getProperty( 'instance' );
 		$instanceProperty->setAccessible( true );
-		self::$originalFactory = $instanceProperty->getValue();
+		$instanceProperty->setValue( null, null );
 	}
 
 	protected function tearDown(): void
 	{
-		// Clean up temp directory
-		if( is_dir( $this->tempDir ) )
-		{
-			$this->recursiveRemoveDir( $this->tempDir );
-		}
-
-		// Restore original AdapterFactory
+		// Reset AdapterFactory to null to ensure clean state
 		$factoryClass = new \ReflectionClass( AdapterFactory::class );
 		$instanceProperty = $factoryClass->getProperty( 'instance' );
 		$instanceProperty->setAccessible( true );
-		$instanceProperty->setValue( null, self::$originalFactory );
+		$instanceProperty->setValue( null, null );
 
 		parent::tearDown();
 	}
@@ -316,12 +310,22 @@ class DataExporterNullCheckTest extends TestCase
 	{
 		$mockAdapter = $this->getMockBuilder( AdapterInterface::class )
 			->onlyMethods( get_class_methods( AdapterInterface::class ) )
+			->addMethods( ['getConnection'] )
 			->getMock();
+
+		// Create a mock PDO object
+		$mockPdo = $this->createMock( \PDO::class );
+		$mockPdo->method( 'quote' )->willReturnCallback( function( $value ) {
+			// Simulate PDO::quote behavior
+			$escaped = str_replace( ["'", "\\"], ["''", "\\\\"], $value );
+			return "'{$escaped}'";
+		} );
 
 		$mockAdapter->method( 'connect' );
 		$mockAdapter->method( 'getAdapterType' )->willReturn( $adapterType );
 		$mockAdapter->method( 'disconnect' );
 		$mockAdapter->method( 'getOption' )->willReturn( 'test_db' );
+		$mockAdapter->method( 'getConnection' )->willReturn( $mockPdo );
 
 		return $mockAdapter;
 	}

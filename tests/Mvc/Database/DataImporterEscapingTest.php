@@ -15,7 +15,7 @@ use Phinx\Db\Adapter\MysqlAdapter;
 class DataImporterEscapingTest extends TestCase
 {
 	private $tempDir;
-	private static $originalFactory;
+	private $originalFactory;
 
 	protected function setUp(): void
 	{
@@ -25,26 +25,20 @@ class DataImporterEscapingTest extends TestCase
 		$this->tempDir = sys_get_temp_dir() . '/escaping_test_' . uniqid();
 		mkdir( $this->tempDir, 0777, true );
 
-		// Capture original AdapterFactory
+		// Ensure clean state by resetting AdapterFactory at start of each test
 		$factoryClass = new \ReflectionClass( AdapterFactory::class );
 		$instanceProperty = $factoryClass->getProperty( 'instance' );
 		$instanceProperty->setAccessible( true );
-		self::$originalFactory = $instanceProperty->getValue();
+		$instanceProperty->setValue( null, null );
 	}
 
 	protected function tearDown(): void
 	{
-		// Clean up temp directory
-		if( is_dir( $this->tempDir ) )
-		{
-			$this->recursiveRemoveDir( $this->tempDir );
-		}
-
-		// Restore original AdapterFactory
+		// Reset AdapterFactory to null to ensure clean state
 		$factoryClass = new \ReflectionClass( AdapterFactory::class );
 		$instanceProperty = $factoryClass->getProperty( 'instance' );
 		$instanceProperty->setAccessible( true );
-		$instanceProperty->setValue( null, self::$originalFactory );
+		$instanceProperty->setValue( null, null );
 
 		parent::tearDown();
 	}
@@ -105,7 +99,7 @@ class DataImporterEscapingTest extends TestCase
 	}
 
 	/**
-	 * Test fallback to manual escaping when PDO is not available
+	 * Test that manual escaping throws exception when PDO is not available
 	 */
 	public function testFallbackToManualEscaping(): void
 	{
@@ -124,11 +118,10 @@ class DataImporterEscapingTest extends TestCase
 		$method = $reflector->getMethod( 'escapeString' );
 		$method->setAccessible( true );
 
-		// Test manual escaping fallback
-		$this->assertEquals( "O''Brien", $method->invoke( $importer, "O'Brien" ) );
-		$this->assertEquals( 'Say \\"Hello\\"', $method->invoke( $importer, 'Say "Hello"' ) );
-		$this->assertEquals( "Line\\nBreak", $method->invoke( $importer, "Line\nBreak" ) );
-		$this->assertEquals( "Tab\\there", $method->invoke( $importer, "Tab\there" ) );
+		// Test that manual escaping now throws an exception for security
+		$this->expectException( \RuntimeException::class );
+		$this->expectExceptionMessage( 'Cannot safely escape SQL values without PDO connection' );
+		$method->invoke( $importer, "O'Brien" );
 	}
 
 	/**
