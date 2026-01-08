@@ -192,7 +192,7 @@ class DataImporter
 	 */
 	public function importFromFile( string $FilePath ): bool
 	{
-		if( !$this->fs->isFile( $FilePath ) )
+		if( !$this->fs->fileExists( $FilePath ) )
 		{
 			throw new \InvalidArgumentException( "File not found: {$FilePath}" );
 		}
@@ -407,7 +407,7 @@ class DataImporter
 		$metadataFile = $DirectoryPath . '/export_metadata.json';
 		$metadata = [];
 
-		if( $this->fs->isFile( $metadataFile ) )
+		if( $this->fs->fileExists( $metadataFile ) )
 		{
 			$metadata = json_decode( $this->fs->readFile( $metadataFile ), true );
 		}
@@ -527,7 +527,7 @@ class DataImporter
 		try
 		{
 			// Read header row
-			$headers = fgetcsv( $handle );
+			$headers = fgetcsv( $handle, 0, ',', '"', '' );
 			if( !$headers )
 			{
 				throw new \RuntimeException( "CSV file is empty or invalid: {$filePath}" );
@@ -543,7 +543,7 @@ class DataImporter
 			$batch = [];
 			$batchSize = $this->_Options['batch_size'];
 
-			while( ($row = fgetcsv( $handle )) !== false )
+			while( ($row = fgetcsv( $handle, 0, ',', '"', '' )) !== false )
 			{
 				// Skip comment lines
 				if( isset( $row[0] ) && str_starts_with( $row[0], '#' ) )

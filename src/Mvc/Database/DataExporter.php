@@ -210,6 +210,64 @@ class DataExporter
 	}
 
 	/**
+	 * Write data to a file handle (handles both compressed and uncompressed)
+	 *
+	 * @param resource $handle File handle (regular or gzip)
+	 * @param string $data Data to write
+	 * @return int|false Number of bytes written or false on error
+	 */
+	private function writeToHandle( $handle, string $data )
+	{
+		if( $this->_Options['compress'] )
+		{
+			return gzwrite( $handle, $data );
+		}
+		else
+		{
+			return fwrite( $handle, $data );
+		}
+	}
+
+	/**
+	 * Write CSV row to a file handle (handles both compressed and uncompressed)
+	 *
+	 * @param resource $handle File handle (regular or gzip)
+	 * @param array $row Row data to write as CSV
+	 * @return int|false Number of bytes written or false on error
+	 */
+	private function writeCsvToHandle( $handle, array $row )
+	{
+		if( $this->_Options['compress'] )
+		{
+			// For compressed files, we need to format as CSV string and use gzwrite
+			$csvLine = $this->formatCsvLine( $row );
+			return gzwrite( $handle, $csvLine );
+		}
+		else
+		{
+			// PHP 8.4 requires the escape parameter to be explicitly set
+			return fputcsv( $handle, $row, ',', '"', '' );
+		}
+	}
+
+	/**
+	 * Format array as CSV line
+	 *
+	 * @param array $row Row data
+	 * @return string CSV formatted line
+	 */
+	private function formatCsvLine( array $row ): string
+	{
+		$handle = fopen( 'php://temp', 'r+' );
+		// PHP 8.4 requires the escape parameter to be explicitly set
+		fputcsv( $handle, $row, ',', '"', '' );
+		rewind( $handle );
+		$line = stream_get_contents( $handle );
+		fclose( $handle );
+		return $line;
+	}
+
+	/**
 	 * Get list of tables to export
 	 *
 	 * @return array
@@ -473,12 +531,13 @@ class DataExporter
 			if( !empty( $data ) )
 			{
 				// Write header row
-				fputcsv( $handle, array_keys( $data[0] ) );
+				// PHP 8.4 requires the escape parameter to be explicitly set
+				fputcsv( $handle, array_keys( $data[0] ), ',', '"', '' );
 
 				// Write data rows
 				foreach( $data as $row )
 				{
-					fputcsv( $handle, $row );
+					fputcsv( $handle, $row, ',', '"', '' );
 				}
 			}
 
@@ -595,40 +654,66 @@ class DataExporter
 		$bindings = [];
 
 		// Pattern to match column operator value pairs
-		$pattern = '/(\w+)\s*(=|!=|<>|<|>|<=|>=|LIKE|NOT LIKE)\s*([\'"]?)([^\'"]*)\3/i';
+		// Note: Order matters - check multi-char operators (<=, >=, !=, <>) before single-char (<, >, =)
+		$conditionPattern = '/(\w+)\s*(<=|>=|!=|<>|=|<|>|LIKE|NOT LIKE)\s*([\'"]?)([^\'"]*)\3/i';
 
-		if( preg_match_all( $pattern, $whereClause, $matches, PREG_SET_ORDER ) )
+		// First, split by AND/OR while preserving the operators
+		// This pattern captures conditions and the operators between them
+		$parts = preg_split( '/\s+(AND|OR)\s+/i', $whereClause, -1, PREG_SPLIT_DELIM_CAPTURE );
+
+		if( empty( $parts ) )
 		{
-			$conditions = [];
-			foreach( $matches as $match )
+			throw new \InvalidArgumentException(
+				"Cannot parse WHERE clause for parameterization: {$whereClause}. " .
+				"Consider using the ORM QueryBuilder for complex queries."
+			);
+		}
+
+		$parameterizedParts = [];
+
+		for( $i = 0; $i < count( $parts ); $i++ )
+		{
+			$part = trim( $parts[$i] );
+
+			// Check if this is an operator (AND/OR)
+			if( in_array( strtoupper( $part ), ['AND', 'OR'] ) )
+			{
+				$parameterizedParts[] = strtoupper( $part );
+				continue;
+			}
+
+			// This should be a condition
+			// Check for parentheses which indicate complex expressions we don't support
+			if( strpos( $part, '(' ) !== false || strpos( $part, ')' ) !== false )
+			{
+				throw new \InvalidArgumentException(
+					"Parentheses are not supported in WHERE conditions: {$part}. " .
+					"Consider using the ORM QueryBuilder for complex queries."
+				);
+			}
+
+			if( preg_match( $conditionPattern, $part, $match ) )
 			{
 				$column = $match[1];
 				$operator = strtoupper( $match[2] );
 				$value = $match[4];
 
 				// Use placeholder for binding
-				$conditions[] = "`{$column}` {$operator} ?";
+				$parameterizedParts[] = "`{$column}` {$operator} ?";
 				$bindings[] = $value;
-			}
-
-			// Determine logical operator (AND/OR)
-			if( stripos( $whereClause, ' OR ' ) !== false )
-			{
-				$sql = implode( ' OR ', $conditions );
 			}
 			else
 			{
-				$sql = implode( ' AND ', $conditions );
+				// If we can't parse this part, it might be a complex expression
+				throw new \InvalidArgumentException(
+					"Cannot parse WHERE condition: {$part}. " .
+					"Consider using the ORM QueryBuilder for complex queries."
+				);
 			}
 		}
-		else
-		{
-			// If we can't parse it safely, throw an error
-			throw new \InvalidArgumentException(
-				"Cannot parse WHERE clause for parameterization: {$whereClause}. " .
-				"Consider using the ORM QueryBuilder for complex queries."
-			);
-		}
+
+		// Join all parts to create the final SQL
+		$sql = implode( ' ', $parameterizedParts );
 
 		return [
 			'sql' => $sql,
@@ -779,12 +864,24 @@ class DataExporter
 		{
 			case 'mysql':
 				$result = $this->_Adapter->fetchRow( "SHOW CREATE TABLE `{$table}`" );
+				// Check if query failed or table doesn't exist
+				if( !$result || !isset( $result['Create Table'] ) )
+				{
+					error_log( "Warning: Could not fetch CREATE TABLE statement for table '{$table}' - table may have been dropped" );
+					return "-- CREATE TABLE statement not available for table '{$table}' (table not found or query failed)";
+				}
 				return $result['Create Table'] . ";";
 
 			case 'sqlite':
 				$result = $this->_Adapter->fetchRow(
 					"SELECT sql FROM sqlite_master WHERE type='table' AND name=?"
 				, [$table] );
+				// Check if query failed or table doesn't exist
+				if( !$result || !isset( $result['sql'] ) )
+				{
+					error_log( "Warning: Could not fetch CREATE TABLE statement for table '{$table}' - table may have been dropped" );
+					return "-- CREATE TABLE statement not available for table '{$table}' (table not found or query failed)";
+				}
 				return $result['sql'] . ";";
 
 			case 'pgsql':
@@ -856,19 +953,19 @@ class DataExporter
 	 */
 	private function streamSqlTable( $handle, string $table ): void
 	{
-		fwrite( $handle, "-- Table: {$table}\n" );
+		$this->writeToHandle( $handle, "-- Table: {$table}\n" );
 
 		if( $this->_Options['drop_tables'] )
 		{
-			fwrite( $handle, "DROP TABLE IF EXISTS `{$table}`;\n" );
+			$this->writeToHandle( $handle, "DROP TABLE IF EXISTS `{$table}`;\n" );
 		}
 
 		if( $this->_Options['include_schema'] )
 		{
-			fwrite( $handle, $this->getTableCreateStatement( $table ) . "\n" );
+			$this->writeToHandle( $handle, $this->getTableCreateStatement( $table ) . "\n" );
 		}
 
-		fwrite( $handle, "DELETE FROM `{$table}`;\n" );
+		$this->writeToHandle( $handle, "DELETE FROM `{$table}`;\n" );
 
 		// Stream data in chunks
 		$offset = 0;
@@ -923,7 +1020,7 @@ class DataExporter
 			}
 
 			$insertSql = $this->buildInsertStatements( $table, $rows );
-			fwrite( $handle, $insertSql . "\n" );
+			$this->writeToHandle( $handle, $insertSql . "\n" );
 
 			$offset += $limit;
 
@@ -934,7 +1031,7 @@ class DataExporter
 			}
 		}
 
-		fwrite( $handle, "\n" );
+		$this->writeToHandle( $handle, "\n" );
 	}
 
 	/**
@@ -952,18 +1049,18 @@ class DataExporter
 		if( !empty( $data ) )
 		{
 			// Write table name as comment
-			fwrite( $handle, "# Table: {$table}\n" );
+			$this->writeToHandle( $handle, "# Table: {$table}\n" );
 
 			// Write header
-			fputcsv( $handle, array_keys( $data[0] ) );
+			$this->writeCsvToHandle( $handle, array_keys( $data[0] ) );
 
 			// Write data
 			foreach( $data as $row )
 			{
-				fputcsv( $handle, $row );
+				$this->writeCsvToHandle( $handle, $row );
 			}
 
-			fwrite( $handle, "\n" );
+			$this->writeToHandle( $handle, "\n" );
 		}
 	}
 
@@ -977,28 +1074,28 @@ class DataExporter
 		switch( $this->_Options['format'] )
 		{
 			case self::FORMAT_SQL:
-				fwrite( $handle, "-- Neuron PHP Database Data Dump\n" );
-				fwrite( $handle, "-- Generated: " . date( 'Y-m-d H:i:s' ) . "\n" );
-				fwrite( $handle, "-- Database Type: " . $this->_AdapterType . "\n\n" );
+				$this->writeToHandle( $handle, "-- Neuron PHP Database Data Dump\n" );
+				$this->writeToHandle( $handle, "-- Generated: " . date( 'Y-m-d H:i:s' ) . "\n" );
+				$this->writeToHandle( $handle, "-- Database Type: " . $this->_AdapterType . "\n\n" );
 
 				if( $this->_AdapterType === 'mysql' )
 				{
-					fwrite( $handle, "SET FOREIGN_KEY_CHECKS = 0;\n" );
+					$this->writeToHandle( $handle, "SET FOREIGN_KEY_CHECKS = 0;\n" );
 				}
 				elseif( $this->_AdapterType === 'sqlite' )
 				{
-					fwrite( $handle, "PRAGMA foreign_keys = OFF;\n" );
+					$this->writeToHandle( $handle, "PRAGMA foreign_keys = OFF;\n" );
 				}
 
 				if( $this->_Options['use_transaction'] )
 				{
-					fwrite( $handle, "\nBEGIN;\n\n" );
+					$this->writeToHandle( $handle, "\nBEGIN;\n\n" );
 				}
 				break;
 
 			case self::FORMAT_CSV:
-				fwrite( $handle, "# Neuron PHP Database Data Export (CSV)\n" );
-				fwrite( $handle, "# Generated: " . date( 'Y-m-d H:i:s' ) . "\n\n" );
+				$this->writeToHandle( $handle, "# Neuron PHP Database Data Export (CSV)\n" );
+				$this->writeToHandle( $handle, "# Generated: " . date( 'Y-m-d H:i:s' ) . "\n\n" );
 				break;
 		}
 	}
@@ -1014,7 +1111,7 @@ class DataExporter
 		switch( $this->_Options['format'] )
 		{
 			case self::FORMAT_CSV:
-				fwrite( $handle, "\n" );
+				$this->writeToHandle( $handle, "\n" );
 				break;
 		}
 	}
@@ -1031,16 +1128,16 @@ class DataExporter
 			case self::FORMAT_SQL:
 				if( $this->_Options['use_transaction'] )
 				{
-					fwrite( $handle, "COMMIT;\n" );
+					$this->writeToHandle( $handle, "COMMIT;\n" );
 				}
 
 				if( $this->_AdapterType === 'mysql' )
 				{
-					fwrite( $handle, "\nSET FOREIGN_KEY_CHECKS = 1;\n" );
+					$this->writeToHandle( $handle, "\nSET FOREIGN_KEY_CHECKS = 1;\n" );
 				}
 				elseif( $this->_AdapterType === 'sqlite' )
 				{
-					fwrite( $handle, "\nPRAGMA foreign_keys = ON;\n" );
+					$this->writeToHandle( $handle, "\nPRAGMA foreign_keys = ON;\n" );
 				}
 				break;
 		}
