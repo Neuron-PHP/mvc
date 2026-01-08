@@ -1042,26 +1042,47 @@ class DataExporter
 	 */
 	private function streamCsvTable( $handle, string $table ): void
 	{
-		// For CSV streaming, this would write to separate files
-		// This is a simplified implementation
-		$data = $this->getTableData( $table );
-
-		if( !empty( $data ) )
+		// Write table name as comment
+		fwrite( $handle, "# Table: {$table}\n" );
+		
+		// Stream data in chunks
+		$offset = 0;
+		$limit = 1000;
+		$headerWritten = false;
+		
+		while( true )
 		{
-			// Write table name as comment
-			$this->writeToHandle( $handle, "# Table: {$table}\n" );
-
-			// Write header
-			$this->writeCsvToHandle( $handle, array_keys( $data[0] ) );
-
-			// Write data
-			foreach( $data as $row )
+			$sql = "SELECT * FROM `{$table}` LIMIT {$limit} OFFSET {$offset}";
+			$rows = $this->_Adapter->fetchAll( $sql );
+			
+			if( empty( $rows ) )
 			{
-				$this->writeCsvToHandle( $handle, $row );
+				break;
 			}
 
-			$this->writeToHandle( $handle, "\n" );
+			// Write header on first chunk
+			if( !$headerWritten )
+			{
+				fputcsv( $handle, array_keys( $rows[0] ) );
+				$headerWritten = true;
+			}
+
+			// Write data
+			foreach( $rows as $row )
+			{
+				fputcsv( $handle, $row );
+			}
+			
+			$offset += $limit;
+			
+			// Apply overall limit if set
+			if( $this->_Options['limit'] !== null && $offset >= $this->_Options['limit'] )
+			{
+				break;
+			}
 		}
+		
+		fwrite( $handle, "\n" );
 	}
 
 	/**
