@@ -230,12 +230,19 @@ class RestoreCommandUnitTest extends TestCase
 
 		$this->assertFalse( $options['stop_on_error'] );
 
-		// Test stop on error (default)
+		// Test stop on error (default should be true)
 		$input = new Input( [] );
 		$this->command->setInput( $input );
 		$options = $method->invoke( $this->command );
 
-		$this->assertFalse( $options['stop_on_error'] ); // Note: there's a logic issue in the original code
+		$this->assertTrue( $options['stop_on_error'] ); // Fixed: default is now correctly true
+
+		// Test explicit stop-on-error flag
+		$input = new Input( ['--stop-on-error'] );
+		$this->command->setInput( $input );
+		$options = $method->invoke( $this->command );
+
+		$this->assertTrue( $options['stop_on_error'] ); // Explicitly set to stop on error
 	}
 
 	/**

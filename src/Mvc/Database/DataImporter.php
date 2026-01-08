@@ -169,7 +169,7 @@ class DataImporter
 				{
 					$this->enableForeignKeyChecks();
 				}
-				catch( \Exception $e )
+				catch( \Exception $fkException )
 				{
 					// Ignore errors when re-enabling
 				}
@@ -500,7 +500,7 @@ class DataImporter
 				{
 					$this->enableForeignKeyChecks();
 				}
-				catch( \Exception $e )
+				catch( \Exception $fkException )
 				{
 					// Ignore
 				}
@@ -741,12 +741,19 @@ class DataImporter
 				}
 				elseif( $inString && $char === $stringChar )
 				{
-					// Check for escaped quotes
-					if( $nextChar !== $stringChar )
+					// Check for escaped quotes (two consecutive quotes)
+					if( $nextChar === $stringChar )
 					{
-						$inString = false;
+						// It's an escaped quote - add both quotes and skip next one
+						$current .= $char . $nextChar;
+						$i++; // Skip the next quote
 					}
-					$current .= $char;
+					else
+					{
+						// It's the closing quote
+						$inString = false;
+						$current .= $char;
+					}
 				}
 				elseif( !$inString && $char === ';' )
 				{
@@ -1079,13 +1086,39 @@ class DataImporter
 			{
 				$this->enableForeignKeyChecks();
 			}
-			catch( \Exception $e )
+			catch( \Exception $fkException )
 			{
 				// Ignore
 			}
 
 			return false;
 		}
+	}
+
+	/**
+	 * Get table row counts for all tables in database
+	 *
+	 * @return array Table => row count mapping
+	 */
+	public function getTableRowCounts(): array
+	{
+		$tables = $this->getAllTables();
+		$result = [];
+
+		foreach( $tables as $table )
+		{
+			try
+			{
+				$row = $this->_Adapter->fetchRow( "SELECT COUNT(*) as count FROM `{$table}`" );
+				$result[$table] = (int)$row['count'];
+			}
+			catch( \Exception $e )
+			{
+				$result[$table] = 0;
+			}
+		}
+
+		return $result;
 	}
 
 	/**

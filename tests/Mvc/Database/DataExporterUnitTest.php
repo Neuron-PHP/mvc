@@ -72,7 +72,8 @@ class DataExporterUnitTest extends TestCase
 		// Test export
 		$result = $exporter->exportToFile( '/test/db/dump.sql' );
 
-		$this->assertTrue( $result );
+		$this->assertIsString( $result );
+		$this->assertEquals( '/test/db/dump.sql', $result );
 	}
 
 	/**
@@ -115,7 +116,8 @@ class DataExporterUnitTest extends TestCase
 		// Test export
 		$result = $exporter->exportToFile( '/test/dump.sql' );
 
-		$this->assertTrue( $result );
+		$this->assertIsString( $result );
+		$this->assertEquals( '/test/dump.sql.gz', $result ); // Should have .gz extension
 	}
 
 	/**
@@ -353,6 +355,44 @@ class DataExporterUnitTest extends TestCase
 		);
 
 		$this->assertInstanceOf( DataExporter::class, $exporter );
+	}
+
+	/**
+	 * Test streaming export respects compression option
+	 */
+	public function testStreamingExportWithCompression(): void
+	{
+		// Create mocks
+		$mockAdapter = $this->createMock( AdapterInterface::class );
+		$mockFs = $this->createMock( IFileSystem::class );
+		$mockConfig = $this->createMockConfig();
+
+		// Configure adapter mock
+		$mockAdapter->method( 'connect' );
+		$mockAdapter->method( 'getAdapterType' )->willReturn( 'mysql' );
+		$mockAdapter->method( 'fetchAll' )->willReturn( [] );
+
+		// Mock AdapterFactory
+		$this->mockAdapterFactory( $mockAdapter );
+
+		// Configure filesystem mock
+		$mockFs->method( 'isDir' )->willReturn( true );
+		$mockFs->expects( $this->once() )
+			->method( 'writeFile' )
+			->willReturn( 100 );
+
+		// Create test class that forces streaming
+		$exporter = new class($mockConfig, 'testing', 'phinx_log', ['compress' => true], $mockFs) extends DataExporter {
+			protected function shouldUseStreaming(): bool {
+				return true; // Force streaming
+			}
+		};
+
+		// Test export with streaming and compression
+		$result = $exporter->exportToFile( '/test/large_dump.sql' );
+
+		$this->assertIsString( $result );
+		$this->assertEquals( '/test/large_dump.sql.gz', $result );
 	}
 
 	/**

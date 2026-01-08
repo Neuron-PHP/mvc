@@ -15,6 +15,41 @@ use Phinx\Db\Adapter\AdapterFactory;
 class DataImporterUnitTest extends TestCase
 {
 	/**
+	 * Original AdapterFactory instance to restore after tests
+	 *
+	 * @var mixed
+	 */
+	private static $originalFactory;
+
+	/**
+	 * Set up test environment
+	 */
+	protected function setUp(): void
+	{
+		parent::setUp();
+
+		// Capture the original AdapterFactory instance
+		$factoryClass = new \ReflectionClass( AdapterFactory::class );
+		$instanceProperty = $factoryClass->getProperty( 'instance' );
+		$instanceProperty->setAccessible( true );
+		self::$originalFactory = $instanceProperty->getValue();
+	}
+
+	/**
+	 * Tear down test environment
+	 */
+	protected function tearDown(): void
+	{
+		// Restore the original AdapterFactory instance
+		$factoryClass = new \ReflectionClass( AdapterFactory::class );
+		$instanceProperty = $factoryClass->getProperty( 'instance' );
+		$instanceProperty->setAccessible( true );
+		$instanceProperty->setValue( null, self::$originalFactory );
+
+		parent::tearDown();
+	}
+
+	/**
 	 * Test FORMAT constants are defined
 	 */
 	public function testFormatConstantsDefined(): void
@@ -351,11 +386,9 @@ class DataImporterUnitTest extends TestCase
 	public function testInvalidJsonThrowsException(): void
 	{
 		// Create mocks - create a partial mock that adds hasTransaction method
-		$methods = get_class_methods( AdapterInterface::class );
-		$methods[] = 'hasTransaction';
-
 		$mockAdapter = $this->getMockBuilder( AdapterInterface::class )
-			->setMethods( $methods )
+			->onlyMethods( get_class_methods( AdapterInterface::class ) )
+			->addMethods( ['hasTransaction'] )
 			->getMock();
 		$mockConfig = $this->createMockConfig();
 
@@ -390,11 +423,9 @@ class DataImporterUnitTest extends TestCase
 	public function testInvalidFormatThrowsException(): void
 	{
 		// Create mocks - create a partial mock that adds hasTransaction method
-		$methods = get_class_methods( AdapterInterface::class );
-		$methods[] = 'hasTransaction';
-
 		$mockAdapter = $this->getMockBuilder( AdapterInterface::class )
-			->setMethods( $methods )
+			->onlyMethods( get_class_methods( AdapterInterface::class ) )
+			->addMethods( ['hasTransaction'] )
 			->getMock();
 		$mockConfig = $this->createMockConfig();
 
@@ -538,6 +569,41 @@ class DataImporterUnitTest extends TestCase
 		);
 
 		$this->assertInstanceOf( DataImporter::class, $importer );
+	}
+
+	/**
+	 * Test SQL statement splitting handles escaped quotes correctly
+	 */
+	public function testSqlStatementSplittingWithEscapedQuotes(): void
+	{
+		// Create mocks
+		$mockAdapter = $this->createMock( AdapterInterface::class );
+		$mockConfig = $this->createMockConfig();
+
+		// Configure adapter mock
+		$mockAdapter->method( 'connect' );
+		$mockAdapter->method( 'getAdapterType' )->willReturn( 'mysql' );
+
+		// Mock AdapterFactory
+		$this->mockAdapterFactory( $mockAdapter );
+
+		// Create test class to access protected method
+		$importer = new class($mockConfig, 'testing') extends DataImporter {
+			public function testSplitStatements( $sql ) {
+				$reflection = new \ReflectionClass( parent::class );
+				$method = $reflection->getMethod( 'splitSqlStatements' );
+				$method->setAccessible( true );
+				return $method->invoke( $this, $sql );
+			}
+		};
+
+		// Test escaped quotes don't break statement splitting
+		$sql = "INSERT INTO users (name) VALUES ('John''s data'); INSERT INTO logs (msg) VALUES ('Can''t; proceed');";
+		$statements = $importer->testSplitStatements( $sql );
+
+		$this->assertCount( 2, $statements );
+		$this->assertStringContainsString( "John''s data", $statements[0] );
+		$this->assertStringContainsString( "Can''t; proceed", $statements[1] );
 	}
 
 	/**

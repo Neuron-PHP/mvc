@@ -5,6 +5,7 @@ namespace Neuron\Mvc\Cli\Commands\Data;
 use Neuron\Cli\Commands\Command;
 use Neuron\Mvc\Database\MigrationManager;
 use Neuron\Mvc\Database\DataExporter;
+use Neuron\Mvc\Database\SqlWhereValidator;
 use Neuron\Data\Settings\Source\Yaml;
 
 /**
@@ -44,7 +45,14 @@ class DumpCommand extends Command
 
 		// Data filtering options
 		$this->addOption( 'limit', 'l', true, 'Limit number of rows per table' );
-		$this->addOption( 'where', 'w', true, 'WHERE conditions in format table:condition (can be used multiple times)' );
+		$this->addOption(
+			'where',
+			'w',
+			true,
+			'WHERE conditions in format table:condition (can be used multiple times). ' .
+			'⚠️  WARNING: WHERE clauses are validated for common SQL injection patterns but not fully sanitized. ' .
+			'Only use with trusted input.'
+		);
 
 		// SQL-specific options
 		$this->addOption( 'include-schema', null, false, 'Include CREATE TABLE statements in SQL dump' );
@@ -113,23 +121,24 @@ class DumpCommand extends Command
 			$this->output->newLine();
 
 			// Show progress for each table
-			$tables = $this->getTableList( $exporter, $exportOptions );
+			$tables = $this->getTableList( $exporter );
 			$this->showExportProgress( $tables );
 
 			// Perform export
 			$startTime = microtime( true );
+			$actualPath = $exporter->exportToFile( $outputPath );
 
-			if( $exporter->exportToFile( $outputPath ) )
+			if( $actualPath !== false )
 			{
 				$endTime = microtime( true );
 				$duration = round( $endTime - $startTime, 2 );
 
-				// Get file size
-				$fileSize = $this->formatFileSize( filesize( $outputPath ) );
+				// Get file size of the actual file written
+				$fileSize = $this->formatFileSize( filesize( $actualPath ) );
 
 				$this->output->newLine();
 				$this->output->success( "Data exported successfully!" );
-				$this->output->info( "Output file: {$outputPath}" );
+				$this->output->info( "Output file: {$actualPath}" );
 				$this->output->info( "File size: {$fileSize}" );
 				$this->output->info( "Export time: {$duration} seconds" );
 
@@ -219,7 +228,22 @@ class DumpCommand extends Command
 				if( strpos( $where, ':' ) !== false )
 				{
 					list( $table, $condition ) = explode( ':', $where, 2 );
-					$options['where'][trim( $table )] = trim( $condition );
+					$table = trim( $table );
+					$condition = trim( $condition );
+
+					// Validate WHERE clause for SQL injection attempts
+					if( !SqlWhereValidator::isValid( $condition ) )
+					{
+						$this->output->error(
+							"Potentially dangerous WHERE clause detected for table '{$table}': {$condition}"
+						);
+						$this->output->warning(
+							"WHERE clauses must not contain SQL commands, comments, subqueries, or unbalanced quotes."
+						);
+						throw new \InvalidArgumentException( "Unsafe WHERE clause" );
+					}
+
+					$options['where'][$table] = $condition;
 				}
 			}
 		}
@@ -334,7 +358,7 @@ class DumpCommand extends Command
 				$exportOptions
 			);
 
-			$tables = $this->getTableList( $exporter, $exportOptions );
+			$tables = $this->getTableList( $exporter );
 
 			$this->output->info( "Tables to export (" . count( $tables ) . "):" );
 			foreach( $tables as $table )
@@ -397,18 +421,12 @@ class DumpCommand extends Command
 	 * Get list of tables that will be exported
 	 *
 	 * @param DataExporter $exporter
-	 * @param array $exportOptions
 	 * @return array
 	 */
-	private function getTableList( DataExporter $exporter, array $exportOptions ): array
+	private function getTableList( DataExporter $exporter ): array
 	{
-		// Use reflection to call private method (for display purposes)
-		// In production, this would be a public method
-		$reflection = new \ReflectionClass( $exporter );
-		$method = $reflection->getMethod( 'getTableList' );
-		$method->setAccessible( true );
-
-		return $method->invoke( $exporter );
+		// Call the public method directly
+		return $exporter->getTableList();
 	}
 
 	/**

@@ -163,7 +163,7 @@ class DumpCommandUnitTest extends TestCase
 	/**
 	 * Test SQL-specific options parsing
 	 */
-	public function testSqlOptionsP(): void
+	public function testSqlOptionsParsing(): void
 	{
 		// Create reflection to test protected method
 		$reflection = new \ReflectionClass( $this->command );

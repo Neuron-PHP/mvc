@@ -320,7 +320,7 @@ class RestoreCommand extends Command
 		}
 		else
 		{
-			$options['stop_on_error'] = !$this->input->getOption( 'stop-on-error', true );
+			$options['stop_on_error'] = $this->input->getOption( 'stop-on-error', true );
 		}
 
 		return $options;
@@ -560,33 +560,8 @@ class RestoreCommand extends Command
 	 */
 	private function getDatabaseTables( DataImporter $importer ): array
 	{
-		// Use reflection to access private method (for display purposes)
-		$reflection = new \ReflectionClass( $importer );
-		$method = $reflection->getMethod( 'getAllTables' );
-		$method->setAccessible( true );
-
-		$tables = $method->invoke( $importer );
-		$result = [];
-
-		// Get adapter via reflection
-		$adapterProperty = $reflection->getProperty( '_Adapter' );
-		$adapterProperty->setAccessible( true );
-		$adapter = $adapterProperty->getValue( $importer );
-
-		foreach( $tables as $table )
-		{
-			try
-			{
-				$row = $adapter->fetchRow( "SELECT COUNT(*) as count FROM `{$table}`" );
-				$result[$table] = (int)$row['count'];
-			}
-			catch( \Exception $e )
-			{
-				$result[$table] = 0;
-			}
-		}
-
-		return $result;
+		// Call the public method directly
+		return $importer->getTableRowCounts();
 	}
 
 	/**

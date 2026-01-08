@@ -99,20 +99,24 @@ class DataExporter
 	 * Export data to file
 	 *
 	 * @param string $FilePath Path to output file
-	 * @return bool Success status
+	 * @return string|false Actual file path written or false on failure
 	 */
-	public function exportToFile( string $FilePath ): bool
+	public function exportToFile( string $FilePath ): string|false
 	{
+		// Apply .gz extension if compression is enabled
+		$actualPath = $this->_Options['compress'] ? $FilePath . '.gz' : $FilePath;
+
 		// For large datasets, use streaming export
 		if( $this->shouldUseStreaming() )
 		{
-			return $this->streamExportToFile( $FilePath );
+			$result = $this->streamExportToFile( $actualPath );
+			return $result ? $actualPath : false;
 		}
 
 		$data = $this->export();
 
 		// Create directory if needed
-		$directory = dirname( $FilePath );
+		$directory = dirname( $actualPath );
 		if( !$this->fs->isDir( $directory ) )
 		{
 			$this->fs->mkdir( $directory, 0755, true );
@@ -122,18 +126,17 @@ class DataExporter
 		if( $this->_Options['compress'] )
 		{
 			$data = gzencode( $data );
-			$FilePath .= '.gz';
 		}
 
-		$result = $this->fs->writeFile( $FilePath, $data );
+		$result = $this->fs->writeFile( $actualPath, $data );
 
-		return $result !== false;
+		return $result !== false ? $actualPath : false;
 	}
 
 	/**
 	 * Stream export to file for large datasets
 	 *
-	 * @param string $FilePath Path to output file
+	 * @param string $FilePath Path to output file (may have .gz extension if compressed)
 	 * @return bool Success status
 	 */
 	private function streamExportToFile( string $FilePath ): bool
@@ -144,8 +147,16 @@ class DataExporter
 			$this->fs->mkdir( $directory, 0755, true );
 		}
 
-		// Open file handle
-		$handle = fopen( $FilePath, 'w' );
+		// Open file handle - use gzopen for compression
+		if( $this->_Options['compress'] )
+		{
+			$handle = gzopen( $FilePath, 'w9' ); // w9 = write with maximum compression
+		}
+		else
+		{
+			$handle = fopen( $FilePath, 'w' );
+		}
+
 		if( !$handle )
 		{
 			return false;
@@ -172,12 +183,28 @@ class DataExporter
 			// Write footer
 			$this->writeStreamFooter( $handle );
 
-			fclose( $handle );
+			// Close handle - use gzclose for compressed files
+			if( $this->_Options['compress'] )
+			{
+				gzclose( $handle );
+			}
+			else
+			{
+				fclose( $handle );
+			}
 			return true;
 		}
 		catch( \Exception $e )
 		{
-			fclose( $handle );
+			// Close handle based on compression
+			if( $this->_Options['compress'] )
+			{
+				gzclose( $handle );
+			}
+			else
+			{
+				fclose( $handle );
+			}
 			throw $e;
 		}
 	}
@@ -187,7 +214,7 @@ class DataExporter
 	 *
 	 * @return array
 	 */
-	private function getTableList(): array
+	public function getTableList(): array
 	{
 		// Get all tables
 		$allTables = $this->getTables();
@@ -473,21 +500,140 @@ class DataExporter
 	 */
 	private function getTableData( string $table ): array
 	{
-		$sql = "SELECT * FROM `{$table}`";
+		// For proper SQL injection prevention, we need to use prepared statements
+		// Since Phinx adapters don't support parameterized queries natively,
+		// we access the underlying PDO connection when available
 
-		// Add WHERE condition if specified
 		if( isset( $this->_Options['where'][$table] ) )
 		{
-			$sql .= " WHERE " . $this->_Options['where'][$table];
-		}
+			$whereClause = $this->_Options['where'][$table];
 
-		// Add LIMIT if specified
+			// First validate the WHERE clause structure
+			if( !SqlWhereValidator::isValid( $whereClause ) )
+			{
+				throw new \InvalidArgumentException(
+					"Potentially dangerous WHERE clause detected for table '{$table}'. " .
+					"WHERE clauses must not contain SQL commands, comments, or subqueries."
+				);
+			}
+
+			// Try to use PDO for prepared statements if available
+			if( method_exists( $this->_Adapter, 'getConnection' ) )
+			{
+				$pdo = $this->_Adapter->getConnection();
+				return $this->getTableDataWithPDO( $pdo, $table, $whereClause );
+			}
+			else
+			{
+				// Fallback: Use validation + direct SQL (less secure)
+				// Log a warning that prepared statements aren't available
+				error_log( "WARNING: PDO not available for prepared statements in DataExporter" );
+
+				$sql = "SELECT * FROM `{$table}` WHERE " . $whereClause;
+
+				if( $this->_Options['limit'] !== null )
+				{
+					$sql .= " LIMIT " . (int)$this->_Options['limit'];
+				}
+
+				return $this->_Adapter->fetchAll( $sql );
+			}
+		}
+		else
+		{
+			// No WHERE clause - safe to use direct SQL
+			$sql = "SELECT * FROM `{$table}`";
+
+			if( $this->_Options['limit'] !== null )
+			{
+				$sql .= " LIMIT " . (int)$this->_Options['limit'];
+			}
+
+			return $this->_Adapter->fetchAll( $sql );
+		}
+	}
+
+	/**
+	 * Get table data using PDO prepared statements
+	 *
+	 * @param \PDO $pdo PDO connection
+	 * @param string $table Table name
+	 * @param string $whereClause WHERE clause
+	 * @return array Table data
+	 */
+	private function getTableDataWithPDO( \PDO $pdo, string $table, string $whereClause ): array
+	{
+		// Parse the WHERE clause to extract column-value pairs
+		// This is a simplified parser - production code should use a proper SQL parser
+		$parsed = $this->parseSimpleWhereClause( $whereClause );
+
+		$sql = "SELECT * FROM `{$table}` WHERE " . $parsed['sql'];
+
 		if( $this->_Options['limit'] !== null )
 		{
 			$sql .= " LIMIT " . (int)$this->_Options['limit'];
 		}
 
-		return $this->_Adapter->fetchAll( $sql );
+		$stmt = $pdo->prepare( $sql );
+		$stmt->execute( $parsed['bindings'] );
+
+		return $stmt->fetchAll( \PDO::FETCH_ASSOC );
+	}
+
+	/**
+	 * Parse a simple WHERE clause for parameterization
+	 *
+	 * Converts "status = 'active' AND type = 'user'" to parameterized SQL
+	 * Note: This is a basic implementation - production should use full SQL parser
+	 *
+	 * @param string $whereClause WHERE clause to parse
+	 * @return array Array with 'sql' and 'bindings' keys
+	 */
+	private function parseSimpleWhereClause( string $whereClause ): array
+	{
+		$sql = '';
+		$bindings = [];
+
+		// Pattern to match column operator value pairs
+		$pattern = '/(\w+)\s*(=|!=|<>|<|>|<=|>=|LIKE|NOT LIKE)\s*([\'"]?)([^\'"]*)\3/i';
+
+		if( preg_match_all( $pattern, $whereClause, $matches, PREG_SET_ORDER ) )
+		{
+			$conditions = [];
+			foreach( $matches as $match )
+			{
+				$column = $match[1];
+				$operator = strtoupper( $match[2] );
+				$value = $match[4];
+
+				// Use placeholder for binding
+				$conditions[] = "`{$column}` {$operator} ?";
+				$bindings[] = $value;
+			}
+
+			// Determine logical operator (AND/OR)
+			if( stripos( $whereClause, ' OR ' ) !== false )
+			{
+				$sql = implode( ' OR ', $conditions );
+			}
+			else
+			{
+				$sql = implode( ' AND ', $conditions );
+			}
+		}
+		else
+		{
+			// If we can't parse it safely, throw an error
+			throw new \InvalidArgumentException(
+				"Cannot parse WHERE clause for parameterization: {$whereClause}. " .
+				"Consider using the ORM QueryBuilder for complex queries."
+			);
+		}
+
+		return [
+			'sql' => $sql,
+			'bindings' => $bindings
+		];
 	}
 
 	/**
@@ -498,16 +644,49 @@ class DataExporter
 	 */
 	private function getTableRowCount( string $table ): int
 	{
-		$sql = "SELECT COUNT(*) as count FROM `{$table}`";
-
-		// Add WHERE condition if specified
 		if( isset( $this->_Options['where'][$table] ) )
 		{
-			$sql .= " WHERE " . $this->_Options['where'][$table];
-		}
+			$whereClause = $this->_Options['where'][$table];
 
-		$result = $this->_Adapter->fetchRow( $sql );
-		return (int)$result['count'];
+			// Validate WHERE clause for SQL injection attempts
+			if( !SqlWhereValidator::isValid( $whereClause ) )
+			{
+				throw new \InvalidArgumentException(
+					"Potentially dangerous WHERE clause detected for table '{$table}'. " .
+					"WHERE clauses must not contain SQL commands, comments, or subqueries."
+				);
+			}
+
+			// Try to use PDO for prepared statements if available
+			if( method_exists( $this->_Adapter, 'getConnection' ) )
+			{
+				$pdo = $this->_Adapter->getConnection();
+				$parsed = $this->parseSimpleWhereClause( $whereClause );
+
+				$sql = "SELECT COUNT(*) as count FROM `{$table}` WHERE " . $parsed['sql'];
+				$stmt = $pdo->prepare( $sql );
+				$stmt->execute( $parsed['bindings'] );
+
+				$result = $stmt->fetch( \PDO::FETCH_ASSOC );
+				return (int)$result['count'];
+			}
+			else
+			{
+				// Fallback: Use validation + direct SQL (less secure)
+				error_log( "WARNING: PDO not available for prepared statements in DataExporter::getTableRowCount" );
+
+				$sql = "SELECT COUNT(*) as count FROM `{$table}` WHERE " . $whereClause;
+				$result = $this->_Adapter->fetchRow( $sql );
+				return (int)$result['count'];
+			}
+		}
+		else
+		{
+			// No WHERE clause - safe to use direct SQL
+			$sql = "SELECT COUNT(*) as count FROM `{$table}`";
+			$result = $this->_Adapter->fetchRow( $sql );
+			return (int)$result['count'];
+		}
 	}
 
 	/**
@@ -697,23 +876,53 @@ class DataExporter
 
 		while( true )
 		{
-			$sql = "SELECT * FROM `{$table}`";
-
+			// Use prepared statements if PDO is available and WHERE clause exists
 			if( isset( $this->_Options['where'][$table] ) )
 			{
-				$sql .= " WHERE " . $this->_Options['where'][$table];
+				$whereClause = $this->_Options['where'][$table];
+
+				// Validate WHERE clause for SQL injection attempts
+				if( !SqlWhereValidator::isValid( $whereClause ) )
+				{
+					throw new \InvalidArgumentException(
+						"Potentially dangerous WHERE clause detected for table '{$table}'. " .
+						"WHERE clauses must not contain SQL commands, comments, or subqueries."
+					);
+				}
+
+				// Try to use PDO for prepared statements if available
+				if( method_exists( $this->_Adapter, 'getConnection' ) )
+				{
+					$pdo = $this->_Adapter->getConnection();
+					$parsed = $this->parseSimpleWhereClause( $whereClause );
+
+					$sql = "SELECT * FROM `{$table}` WHERE " . $parsed['sql'] . " LIMIT {$limit} OFFSET {$offset}";
+					$stmt = $pdo->prepare( $sql );
+					$stmt->execute( $parsed['bindings'] );
+					$rows = $stmt->fetchAll( \PDO::FETCH_ASSOC );
+				}
+				else
+				{
+					// Fallback: Use validation + direct SQL (less secure)
+					error_log( "WARNING: PDO not available for prepared statements in DataExporter::streamSqlTable" );
+
+					$sql = "SELECT * FROM `{$table}` WHERE " . $whereClause . " LIMIT {$limit} OFFSET {$offset}";
+					$rows = $this->_Adapter->fetchAll( $sql );
+				}
+			}
+			else
+			{
+				// No WHERE clause - safe to use direct SQL
+				$sql = "SELECT * FROM `{$table}` LIMIT {$limit} OFFSET {$offset}";
+				$rows = $this->_Adapter->fetchAll( $sql );
 			}
 
-			$sql .= " LIMIT {$limit} OFFSET {$offset}";
-
-			$data = $this->_Adapter->fetchAll( $sql );
-
-			if( empty( $data ) )
+			if( empty( $rows ) )
 			{
 				break;
 			}
 
-			$insertSql = $this->buildInsertStatements( $table, $data );
+			$insertSql = $this->buildInsertStatements( $table, $rows );
 			fwrite( $handle, $insertSql . "\n" );
 
 			$offset += $limit;
