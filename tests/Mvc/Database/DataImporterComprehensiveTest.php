@@ -14,7 +14,6 @@ use Phinx\Db\Adapter\AdapterFactory;
 class DataImporterComprehensiveTest extends TestCase
 {
 	private $tempDir;
-	private $originalFactory;
 
 	protected function setUp(): void
 	{
@@ -33,6 +32,12 @@ class DataImporterComprehensiveTest extends TestCase
 
 	protected function tearDown(): void
 	{
+		// Clean up temporary directory
+		if( isset( $this->tempDir ) && is_dir( $this->tempDir ) )
+		{
+			$this->recursiveRemoveDir( $this->tempDir );
+		}
+
 		// Reset AdapterFactory to null to ensure clean state
 		$factoryClass = new \ReflectionClass( AdapterFactory::class );
 		$instanceProperty = $factoryClass->getProperty( 'instance' );

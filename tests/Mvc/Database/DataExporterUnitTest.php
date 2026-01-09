@@ -1,6 +1,6 @@
 <?php
 
-namespace Mvc\Database;
+namespace Tests\Mvc\Database;
 
 use Neuron\Core\System\IFileSystem;
 use Neuron\Mvc\Database\DataExporter;

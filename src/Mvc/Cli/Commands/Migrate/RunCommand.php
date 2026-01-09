@@ -37,6 +37,7 @@ class RunCommand extends Command
 		$this->addOption( 'dry-run', null, false, 'Preview migrations without executing' );
 		$this->addOption( 'fake', null, false, 'Mark migrations as run without executing' );
 		$this->addOption( 'config', null, true, 'Path to configuration directory' );
+		$this->addOption( 'verbose', 'v', false, 'Show detailed output including stack traces on error' );
 	}
 
 	/**

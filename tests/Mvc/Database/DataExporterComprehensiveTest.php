@@ -34,6 +34,9 @@ class DataExporterComprehensiveTest extends TestCase
 
 	protected function tearDown(): void
 	{
+		// Clean up temporary directory
+		$this->recursiveRemoveDir( $this->tempDir );
+
 		// Reset AdapterFactory to null to ensure clean state
 		$factoryClass = new \ReflectionClass( AdapterFactory::class );
 		$instanceProperty = $factoryClass->getProperty( 'instance' );

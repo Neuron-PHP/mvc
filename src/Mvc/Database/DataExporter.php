@@ -687,7 +687,19 @@ class DataExporter
 				);
 			}
 
-			if( preg_match( $conditionPattern, $part, $match ) )
+			// Check for IS NULL / IS NOT NULL patterns first (these don't take a value)
+			$nullPattern = '/(\w+)\s+(IS\s+NOT\s+NULL|IS\s+NULL)/i';
+			if( preg_match( $nullPattern, $part, $match ) )
+			{
+				$column = $match[1];
+				$operator = strtoupper( $match[2] );
+
+				// Use quoted column but no placeholder (no value to bind)
+				$quotedColumn = $this->quoteIdentifier( $column );
+				$parameterizedParts[] = "{$quotedColumn} {$operator}";
+				// No binding needed for NULL checks
+			}
+			elseif( preg_match( $conditionPattern, $part, $match ) )
 			{
 				$column = $match[1];
 				$operator = strtoupper( $match[2] );

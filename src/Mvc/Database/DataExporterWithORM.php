@@ -8,6 +8,7 @@ use PDO;
 use Phinx\Config\Config;
 use Phinx\Db\Adapter\AdapterInterface;
 use Phinx\Db\Adapter\AdapterFactory;
+use Symfony\Component\Yaml\Yaml;
 
 /**
  * Database data exporter using ORM QueryBuilder for SQL injection protection
@@ -83,6 +84,15 @@ class DataExporterWithORM
 		if( isset( $this->_options['where'][$table] ) )
 		{
 			$whereClause = $this->_options['where'][$table];
+
+			// Validate WHERE clause for SQL injection attempts
+			if( !SqlWhereValidator::isValid( $whereClause ) )
+			{
+				throw new \InvalidArgumentException(
+					"Potentially dangerous WHERE clause detected for table '{$table}'. " .
+					"WHERE clauses must not contain SQL commands, comments, or subqueries."
+				);
+			}
 
 			// Parse WHERE clause into conditions
 			// This is a simplified parser - a full implementation would need more robust parsing
@@ -161,7 +171,19 @@ class DataExporterWithORM
 				);
 			}
 
-			if( preg_match( $conditionPattern, $part, $match ) )
+			// Check for IS NULL / IS NOT NULL patterns first (these don't take a value)
+			$nullPattern = '/(\w+)\s+(IS\s+NOT\s+NULL|IS\s+NULL)/i';
+			if( preg_match( $nullPattern, $part, $match ) )
+			{
+				$column = $match[1];
+				$operator = strtoupper( $match[2] );
+
+				// Use quoted column but no placeholder (no value to bind)
+				$quotedColumn = $this->quoteIdentifier( $column );
+				$parameterizedParts[] = "{$quotedColumn} {$operator}";
+				// No binding needed for NULL checks
+			}
+			elseif( preg_match( $conditionPattern, $part, $match ) )
 			{
 				$column = $match[1];
 				$operator = strtoupper( $match[2] );
@@ -207,6 +229,16 @@ class DataExporterWithORM
 		if( isset( $this->_options['where'][$table] ) )
 		{
 			$whereClause = $this->_options['where'][$table];
+
+			// Validate WHERE clause for SQL injection attempts
+			if( !SqlWhereValidator::isValid( $whereClause ) )
+			{
+				throw new \InvalidArgumentException(
+					"Potentially dangerous WHERE clause detected for table '{$table}'. " .
+					"WHERE clauses must not contain SQL commands, comments, or subqueries."
+				);
+			}
+
 			$conditions = $this->parseWhereClause( $whereClause );
 
 			if( !empty( $conditions['sql'] ) )
@@ -221,6 +253,14 @@ class DataExporterWithORM
 		$stmt->execute( $bindings );
 
 		$result = $stmt->fetch( PDO::FETCH_ASSOC );
+
+		// Check if query failed or table doesn't exist
+		if( $result === false || !isset( $result['count'] ) )
+		{
+			Log::warning( "Could not fetch row count for table '{$table}' - table may have been dropped" );
+			return 0;
+		}
+
 		return (int)$result['count'];
 	}
 
@@ -432,11 +472,6 @@ class DataExporterWithORM
 	 */
 	private function exportToYaml( array $tables ): string
 	{
-		if( !function_exists( 'yaml_emit' ) )
-		{
-			throw new \RuntimeException( 'YAML extension is not installed' );
-		}
-
 		$data = [];
 
 		foreach( $tables as $table )
@@ -448,7 +483,7 @@ class DataExporterWithORM
 			}
 		}
 
-		return yaml_emit( $data );
+		return Yaml::dump( $data, 4, 2 );
 	}
 
 	/**

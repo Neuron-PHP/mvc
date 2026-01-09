@@ -40,8 +40,8 @@
     },
     "autoload-dev": {
       "psr-4": {
+        "Tests\\": "tests/",
         "Mvc\\": "tests/Mvc",
-        "Tests\\": "tests/Tests",
         "Neuron\\Core\\": "../core/src/Core/"
       }
     },

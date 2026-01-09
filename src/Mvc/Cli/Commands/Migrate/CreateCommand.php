@@ -36,6 +36,7 @@ class CreateCommand extends Command
 		$this->addOption( 'class', 'c', true, 'Class name for the migration' );
 		$this->addOption( 'template', 't', true, 'Path to custom migration template' );
 		$this->addOption( 'config', null, true, 'Path to configuration directory' );
+		$this->addOption( 'verbose', 'v', false, 'Show detailed output including stack traces on error' );
 	}
 
 	/**

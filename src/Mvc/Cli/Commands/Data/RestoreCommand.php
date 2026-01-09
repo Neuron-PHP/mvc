@@ -69,6 +69,7 @@ class RestoreCommand extends Command
 		// General options
 		$this->addOption( 'config', null, true, 'Path to configuration directory' );
 		$this->addOption( 'verify', null, false, 'Verify import after completion' );
+		$this->addOption( 'verbose', 'v', false, 'Show detailed output including stack traces on error' );
 	}
 
 	/**

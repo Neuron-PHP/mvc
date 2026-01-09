@@ -1,6 +1,6 @@
 <?php
 
-namespace Mvc\Database;
+namespace Tests\Mvc\Database;
 
 use Neuron\Core\System\IFileSystem;
 use Neuron\Mvc\Database\DataImporter;
@@ -441,13 +441,22 @@ class DataImporterUnitTest extends TestCase
 	 */
 	public function testClearAllDataMethodExists(): void
 	{
-		// Create mocks
-		$mockAdapter = $this->createMock( AdapterInterface::class );
+		// Create mocks with getConnection method
+		$mockAdapter = $this->getMockBuilder( AdapterInterface::class )
+			->onlyMethods( get_class_methods( AdapterInterface::class ) )
+			->addMethods( ['getConnection'] )
+			->getMock();
 		$mockConfig = $this->createMockConfig();
+
+		// Create mock PDO
+		$mockPdo = $this->createMock( \PDO::class );
+		$mockPdo->method( 'prepare' )->willReturn( false ); // Force fallback to escaping
 
 		// Configure adapter mock
 		$mockAdapter->method( 'connect' );
 		$mockAdapter->method( 'getAdapterType' )->willReturn( 'mysql' );
+		$mockAdapter->method( 'getConnection' )->willReturn( $mockPdo );
+		$mockAdapter->method( 'getOption' )->willReturn( 'test_db' );
 		$mockAdapter->method( 'execute' );
 		$mockAdapter->method( 'fetchAll' )->willReturn( [] );
 
@@ -526,13 +535,20 @@ class DataImporterUnitTest extends TestCase
 	 */
 	public function testProgressCallbackOption(): void
 	{
-		// Create mocks
-		$mockAdapter = $this->createMock( AdapterInterface::class );
+		// Create mocks - add hasTransaction method
+		$mockAdapter = $this->getMockBuilder( AdapterInterface::class )
+			->onlyMethods( get_class_methods( AdapterInterface::class ) )
+			->addMethods( ['hasTransaction'] )
+			->getMock();
 		$mockConfig = $this->createMockConfig();
 
-		// Configure adapter mock
+		// Configure adapter mock to support import
 		$mockAdapter->method( 'connect' );
 		$mockAdapter->method( 'getAdapterType' )->willReturn( 'mysql' );
+		$mockAdapter->method( 'execute' )->willReturn( 1 );
+		$mockAdapter->method( 'beginTransaction' );
+		$mockAdapter->method( 'commitTransaction' );
+		$mockAdapter->method( 'hasTransaction' )->willReturn( false );
 
 		// Mock AdapterFactory
 		$this->mockAdapterFactory( $mockAdapter );
@@ -547,10 +563,16 @@ class DataImporterUnitTest extends TestCase
 			$mockConfig,
 			'testing',
 			'phinx_log',
-			['progress_callback' => $callback]
+			['format' => 'sql', 'progress_callback' => $callback]
 		);
 
-		$this->assertInstanceOf( DataImporter::class, $importer );
+		// Perform an import operation to trigger the callback
+		$sql = "INSERT INTO test (id) VALUES (1);";
+		$result = $importer->import( $sql );
+
+		// Verify callback was called
+		$this->assertTrue( $called, 'Progress callback should have been invoked during import' );
+		$this->assertTrue( $result );
 	}
 
 	/**

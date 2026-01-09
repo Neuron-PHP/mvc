@@ -21,6 +21,7 @@ class DataImporter
 	private IFileSystem $fs;
 	private array $_Options;
 	private array $_Errors = [];
+	private array $_Warnings = [];
 	private int $_RowsImported = 0;
 	private int $_TablesImported = 0;
 
@@ -157,7 +158,7 @@ class DataImporter
 			$this->_Errors[] = $e->getMessage();
 
 			// Rollback on error
-			if( $this->_Options['use_transaction'] && $this->_Adapter->hasTransaction() )
+			if( $this->_Options['use_transaction'] && $this->_Adapter->hasTransactions() )
 			{
 				$this->_Adapter->rollbackTransaction();
 			}
@@ -453,7 +454,7 @@ class DataImporter
 				// Log warning about missing files (but don't fail the import)
 				foreach( $missingFiles as $missingFile )
 				{
-					$this->_Errors[] = "Warning: Expected file '{$missingFile}' from metadata not found";
+					$this->_Warnings[] = "Expected file '{$missingFile}' from metadata not found";
 				}
 			}
 		}
@@ -522,7 +523,7 @@ class DataImporter
 		catch( \Exception $e )
 		{
 			// Rollback on error
-			if( $this->_Options['use_transaction'] && $this->_Adapter->hasTransaction() )
+			if( $this->_Options['use_transaction'] && $this->_Adapter->hasTransactions() )
 			{
 				$this->_Adapter->rollbackTransaction();
 			}
@@ -1246,6 +1247,16 @@ class DataImporter
 	}
 
 	/**
+	 * Get import warnings
+	 *
+	 * @return array
+	 */
+	public function getWarnings(): array
+	{
+		return $this->_Warnings;
+	}
+
+	/**
 	 * Get import statistics
 	 *
 	 * @return array
@@ -1353,10 +1364,38 @@ class DataImporter
 		switch( $this->_AdapterType )
 		{
 			case 'mysql':
+				// Phinx adapters don't support parameterized queries natively
+				// Try to use PDO prepared statements directly, fallback to escaping
+				try
+				{
+					$connection = $this->_Adapter->getConnection();
+					if( $connection instanceof \PDO )
+					{
+						$sql = "SELECT TABLE_NAME FROM information_schema.TABLES
+								WHERE TABLE_SCHEMA = ? AND TABLE_TYPE = 'BASE TABLE'
+								ORDER BY TABLE_NAME";
+						$stmt = $connection->prepare( $sql );
+						if( $stmt !== false )
+						{
+							$stmt->execute( [$this->_Adapter->getOption( 'name' )] );
+							$rows = $stmt->fetchAll( \PDO::FETCH_ASSOC );
+							return array_column( $rows, 'TABLE_NAME' );
+						}
+					}
+				}
+				catch( \Exception $e )
+				{
+					Log::warning( "Could not use PDO prepared statement for table listing, falling back to escaping" );
+				}
+
+				// Fallback: Use basic escaping for database name
+				// Database names are typically controlled by configuration, not user input
+				$dbName = $this->_Adapter->getOption( 'name' ) ?? '';
+				$dbName = str_replace( ["'", "\\"], ["''", "\\\\"], $dbName );
 				$sql = "SELECT TABLE_NAME FROM information_schema.TABLES
-						WHERE TABLE_SCHEMA = ? AND TABLE_TYPE = 'BASE TABLE'
+						WHERE TABLE_SCHEMA = '{$dbName}' AND TABLE_TYPE = 'BASE TABLE'
 						ORDER BY TABLE_NAME";
-				$rows = $this->_Adapter->fetchAll( $sql, [$this->_Adapter->getOption( 'name' )] );
+				$rows = $this->_Adapter->fetchAll( $sql );
 				return array_column( $rows, 'TABLE_NAME' );
 
 			case 'pgsql':

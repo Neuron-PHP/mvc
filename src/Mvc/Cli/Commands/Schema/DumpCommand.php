@@ -36,6 +36,7 @@ class DumpCommand extends Command
 	{
 		$this->addOption( 'output', 'o', true, 'Output file path (default: db/schema.yaml)' );
 		$this->addOption( 'config', null, true, 'Path to configuration directory' );
+		$this->addOption( 'verbose', 'v', false, 'Show detailed output including stack traces on error' );
 	}
 
 	/**

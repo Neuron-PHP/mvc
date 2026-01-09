@@ -63,6 +63,7 @@ class DumpCommand extends Command
 		$this->addOption( 'compress', 'c', false, 'Compress output with gzip' );
 		$this->addOption( 'config', null, true, 'Path to configuration directory' );
 		$this->addOption( 'dry-run', null, false, 'Show what would be exported without actually exporting' );
+		$this->addOption( 'verbose', 'v', false, 'Show detailed output including stack traces on error' );
 	}
 
 	/**

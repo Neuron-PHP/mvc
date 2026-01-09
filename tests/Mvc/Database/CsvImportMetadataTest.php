@@ -231,14 +231,17 @@ class CsvImportMetadataTest extends TestCase
 
 		$result = $importer->importFromCsvDirectory( '/test/dir' );
 
-		// Get errors/warnings
-		$errors = $importer->getErrors();
+		// Get warnings about missing files (not errors - they shouldn't fail the import)
+		$warnings = $importer->getWarnings();
 
 		// Should have warnings about missing files
-		$this->assertCount( 2, $errors );
-		$this->assertStringContainsString( "products.csv", $errors[0] );
-		$this->assertStringContainsString( "orders.csv", $errors[1] );
-		$this->assertStringContainsString( "Warning:", $errors[0] );
+		$this->assertCount( 2, $warnings );
+		$this->assertStringContainsString( "products.csv", $warnings[0] );
+		$this->assertStringContainsString( "orders.csv", $warnings[1] );
+
+		// But import should still succeed (no errors)
+		$errors = $importer->getErrors();
+		$this->assertCount( 0, $errors, "Warnings should not cause errors" );
 	}
 
 	/**

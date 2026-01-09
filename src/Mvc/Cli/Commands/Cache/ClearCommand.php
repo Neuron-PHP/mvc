@@ -38,6 +38,7 @@ class ClearCommand extends Command
 		$this->addOption( 'expired', 'e', false, 'Only clear expired entries' );
 		$this->addOption( 'force', 'f', false, 'Clear without confirmation' );
 		$this->addOption( 'config', 'c', true, 'Path to configuration directory' );
+		$this->addOption( 'verbose', 'v', false, 'Show detailed output including stack traces on error' );
 	}
 	
 	/**

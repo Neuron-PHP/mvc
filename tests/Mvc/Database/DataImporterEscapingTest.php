@@ -15,7 +15,6 @@ use Phinx\Db\Adapter\MysqlAdapter;
 class DataImporterEscapingTest extends TestCase
 {
 	private $tempDir;
-	private $originalFactory;
 
 	protected function setUp(): void
 	{
@@ -34,6 +33,12 @@ class DataImporterEscapingTest extends TestCase
 
 	protected function tearDown(): void
 	{
+		// Clean up temporary directory
+		if( isset( $this->tempDir ) && is_dir( $this->tempDir ) )
+		{
+			$this->recursiveRemoveDir( $this->tempDir );
+		}
+
 		// Reset AdapterFactory to null to ensure clean state
 		$factoryClass = new \ReflectionClass( AdapterFactory::class );
 		$instanceProperty = $factoryClass->getProperty( 'instance' );
@@ -48,9 +53,6 @@ class DataImporterEscapingTest extends TestCase
 	 */
 	public function testEscapeStringUsesPdoQuote(): void
 	{
-		// Create a mock PDO that we can verify quote() is called
-		$mockPdo = $this->createMock( \PDO::class );
-
 		// Test various strings that need escaping
 		$testCases = [
 			"O'Brien" => "'O''Brien'",  // PDO typically doubles quotes
@@ -61,6 +63,8 @@ class DataImporterEscapingTest extends TestCase
 
 		foreach( $testCases as $input => $pdoQuoted )
 		{
+			// Create a fresh mock PDO for this iteration
+			$mockPdo = $this->createMock( \PDO::class );
 			$mockPdo->expects( $this->once() )
 				->method( 'quote' )
 				->with( $input )
@@ -92,9 +96,6 @@ class DataImporterEscapingTest extends TestCase
 			// Result should be the quoted value with surrounding quotes stripped
 			$expected = substr( $pdoQuoted, 1, -1 );
 			$this->assertEquals( $expected, $result, "Failed for input: {$input}" );
-
-			// Reset mock for next iteration
-			$mockPdo = $this->createMock( \PDO::class );
 		}
 	}
 

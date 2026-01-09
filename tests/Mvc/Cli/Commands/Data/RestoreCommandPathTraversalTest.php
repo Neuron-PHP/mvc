@@ -97,14 +97,19 @@ class RestoreCommandPathTraversalTest extends TestCase
 
 		$this->assertFalse( $result['valid'], 'Path traversal to system files should be blocked' );
 
-		// Test encoded traversal
+		// Test URL-decoded traversal attack
+		// Simulate what happens if user input is URL-decoded before validation
+		$encodedPath = '..%2Foutside%2Fmalicious.sql';
+		$decodedPath = urldecode( $encodedPath );  // Results in: '../outside/malicious.sql'
+
 		$result = $this->simulatePathValidation(
 			$command,
 			$this->baseDir,
-			'..%2Foutside%2Fmalicious.sql'
+			$decodedPath
 		);
 
-		$this->assertFalse( $result['valid'], 'URL-encoded path traversal should be blocked' );
+		$this->assertFalse( $result['valid'], 'URL-decoded path traversal should be blocked' );
+		$this->assertStringContainsString( 'outside the allowed directory', $result['error'] );
 	}
 
 	/**

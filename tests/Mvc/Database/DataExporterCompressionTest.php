@@ -40,6 +40,12 @@ class DataExporterCompressionTest extends TestCase
 		$instanceProperty->setAccessible( true );
 		$instanceProperty->setValue( null, null );
 
+		// Clean up temporary directory
+		if( isset( $this->tempDir ) && is_dir( $this->tempDir ) )
+		{
+			$this->recursiveRemoveDir( $this->tempDir );
+		}
+
 		parent::tearDown();
 	}
 
