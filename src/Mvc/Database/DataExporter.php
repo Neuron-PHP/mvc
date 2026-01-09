@@ -134,6 +134,10 @@ class DataExporter
 		if( $this->_Options['compress'] )
 		{
 			$data = gzencode( $data );
+			if( $data === false )
+			{
+				throw new \RuntimeException( "Failed to compress data for file: {$actualPath}" );
+			}
 		}
 
 		$result = $this->fs->writeFile( $actualPath, $data );

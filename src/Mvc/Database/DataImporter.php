@@ -4,6 +4,7 @@ namespace Neuron\Mvc\Database;
 
 use Neuron\Core\System\IFileSystem;
 use Neuron\Core\System\RealFileSystem;
+use Neuron\Log\Log;
 use Phinx\Config\Config;
 use Phinx\Db\Adapter\AdapterInterface;
 use Phinx\Db\Adapter\AdapterFactory;
@@ -708,7 +709,7 @@ class DataImporter
 			{
 				$value = $row[$column] ?? null;
 
-				if( $value === null || $value === 'NULL' )
+				if( $value === null )
 				{
 					$escapedValues[] = 'NULL';
 				}
