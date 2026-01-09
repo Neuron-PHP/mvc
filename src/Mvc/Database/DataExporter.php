@@ -104,8 +104,15 @@ class DataExporter
 	 */
 	public function exportToFile( string $FilePath ): string|false
 	{
-		// Apply .gz extension if compression is enabled
-		$actualPath = $this->_Options['compress'] ? $FilePath . '.gz' : $FilePath;
+		// Apply .gz extension if compression is enabled and path doesn't already end with .gz
+		if( $this->_Options['compress'] && !str_ends_with( strtolower( $FilePath ), '.gz' ) )
+		{
+			$actualPath = $FilePath . '.gz';
+		}
+		else
+		{
+			$actualPath = $FilePath;
+		}
 
 		// For large datasets, use streaming export
 		if( $this->shouldUseStreaming() )

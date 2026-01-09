@@ -74,7 +74,7 @@ class ListCommand extends Command
 		}
 		
 		// Output routes
-		if( $this->input->hasOption( 'json' ) )
+		if( $this->input->getOption( 'json' ) )
 		{
 			$this->outputJson( $routes );
 		}

@@ -120,7 +120,7 @@ class CreateCommand extends Command
 		{
 			$this->output->error( 'Error creating migration: ' . $e->getMessage() );
 
-			if( $this->input->hasOption( 'verbose' ) || $this->input->hasOption( 'v' ) )
+			if( $this->input->getOption( 'verbose' ) || $this->input->getOption( 'v' ) )
 			{
 				$this->output->write( $e->getTraceAsString() );
 			}

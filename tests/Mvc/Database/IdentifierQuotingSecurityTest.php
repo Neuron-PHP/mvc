@@ -26,6 +26,10 @@ class IdentifierQuotingSecurityTest extends TestCase
 
 		// Ensure clean state by resetting AdapterFactory at start of each test
 		$factoryClass = new \ReflectionClass( AdapterFactory::class );
+		if( !$factoryClass->hasProperty( 'instance' ) )
+		{
+			throw new \RuntimeException( "AdapterFactory::instance property not found - Phinx internals may have changed" );
+		}
 		$instanceProperty = $factoryClass->getProperty( 'instance' );
 		$instanceProperty->setAccessible( true );
 		$instanceProperty->setValue( null, null );
@@ -41,6 +45,10 @@ class IdentifierQuotingSecurityTest extends TestCase
 
 		// Reset AdapterFactory to null to ensure clean state
 		$factoryClass = new \ReflectionClass( AdapterFactory::class );
+		if( !$factoryClass->hasProperty( 'instance' ) )
+		{
+			throw new \RuntimeException( "AdapterFactory::instance property not found - Phinx internals may have changed" );
+		}
 		$instanceProperty = $factoryClass->getProperty( 'instance' );
 		$instanceProperty->setAccessible( true );
 		$instanceProperty->setValue( null, null );
@@ -145,16 +153,17 @@ class IdentifierQuotingSecurityTest extends TestCase
 			}
 		}
 
-		// Debug: If no INSERT found, show what was captured
+		// If no INSERT found, provide detailed context in failure message
 		if( empty( $sql ) )
 		{
-			echo "\nDebug: JSON data: " . json_encode( $maliciousData ) . "\n";
-			echo "Debug: Number of SQL statements: " . count( $executedSql ) . "\n";
+			$debugInfo = "No INSERT statement found.\n";
+			$debugInfo .= "JSON data: " . json_encode( $maliciousData ) . "\n";
+			$debugInfo .= "Number of SQL statements: " . count( $executedSql ) . "\n";
 			foreach( $executedSql as $i => $stmt )
 			{
-				echo "Debug: SQL[$i]: " . $stmt . "\n";
+				$debugInfo .= "SQL[$i]: " . $stmt . "\n";
 			}
-			$this->fail( 'No INSERT statement found. Captured SQL: ' . implode( "\n", $executedSql ) );
+			$this->fail( $debugInfo );
 		}
 
 		// For MySQL, backticks should be doubled for escaping
@@ -353,6 +362,10 @@ class IdentifierQuotingSecurityTest extends TestCase
 	private function mockAdapterFactory( $mockAdapter ): void
 	{
 		$factoryClass = new \ReflectionClass( AdapterFactory::class );
+		if( !$factoryClass->hasProperty( 'instance' ) )
+		{
+			throw new \RuntimeException( "AdapterFactory::instance property not found - Phinx internals may have changed" );
+		}
 		$instanceProperty = $factoryClass->getProperty( 'instance' );
 		$instanceProperty->setAccessible( true );
 

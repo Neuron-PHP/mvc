@@ -113,7 +113,7 @@ class DumpCommand extends Command
 		{
 			$this->output->error( 'Error exporting schema: ' . $e->getMessage() );
 
-			if( $this->input->hasOption( 'verbose' ) || $this->input->hasOption( 'v' ) )
+			if( $this->input->getOption( 'verbose' ) || $this->input->getOption( 'v' ) )
 			{
 				$this->output->write( $e->getTraceAsString() );
 			}

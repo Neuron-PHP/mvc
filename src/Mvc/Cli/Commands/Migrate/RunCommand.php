@@ -129,7 +129,7 @@ class RunCommand extends Command
 		{
 			$this->output->error( 'Error running migrations: ' . $e->getMessage() );
 
-			if( $this->input->hasOption( 'verbose' ) || $this->input->hasOption( 'v' ) )
+			if( $this->input->getOption( 'verbose' ) || $this->input->getOption( 'v' ) )
 			{
 				$this->output->write( $e->getTraceAsString() );
 			}

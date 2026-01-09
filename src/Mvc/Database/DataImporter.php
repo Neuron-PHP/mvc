@@ -201,18 +201,28 @@ class DataImporter
 		// Handle compressed files
 		$isCompressed = str_ends_with( $FilePath, '.gz' );
 
-		if( $isCompressed )
+	if( $isCompressed )
+	{
+		$rawData = $this->fs->readFile( $FilePath );
+		if( $rawData === false )
 		{
-			$data = gzdecode( $this->fs->readFile( $FilePath ) );
-			if( $data === false )
-			{
-				throw new \RuntimeException( "Failed to decompress file: {$FilePath}" );
-			}
+			throw new \RuntimeException( "Cannot read file: {$FilePath}" );
 		}
-		else
+
+		$data = gzdecode( $rawData );
+		if( $data === false )
 		{
-			$data = $this->fs->readFile( $FilePath );
+			throw new \RuntimeException( "Failed to decompress file: {$FilePath}" );
 		}
+	}
+	else
+	{
+		$data = $this->fs->readFile( $FilePath );
+		if( $data === false )
+		{
+			throw new \RuntimeException( "Cannot read file: {$FilePath}" );
+		}
+	}
 
 		// Auto-detect format if not specified
 		if( $this->_Options['format'] === null )
@@ -1343,9 +1353,19 @@ class DataImporter
 			{
 				$quotedTable = $this->quoteIdentifier( $table );
 				$row = $this->_Adapter->fetchRow( "SELECT COUNT(*) as count FROM {$quotedTable}" );
-				$result[$table] = (int)$row['count'];
+
+				// Check if query failed or table doesn't exist
+				if( !$row || !isset( $row['count'] ) )
+				{
+					Log::warning( "Could not fetch row count for table '{$table}' - table may have been dropped" );
+					$result[$table] = 0;
+				}
+				else
+				{
+					$result[$table] = (int)$row['count'];
+				}
 			}
-			catch( \Exception $e )
+			catch( \Throwable $e )
 			{
 				$result[$table] = 0;
 			}
@@ -1436,8 +1456,18 @@ class DataImporter
 				if( $this->_Adapter->hasTable( $table ) )
 				{
 					$quotedTable = $this->quoteIdentifier( $table );
-				$result = $this->_Adapter->fetchRow( "SELECT COUNT(*) as count FROM {$quotedTable}" );
-					$actualCount = (int)$result['count'];
+					$result = $this->_Adapter->fetchRow( "SELECT COUNT(*) as count FROM {$quotedTable}" );
+
+					// Check if query failed or table doesn't exist
+					if( !$result || !isset( $result['count'] ) )
+					{
+						Log::warning( "Could not fetch row count for table '{$table}' during verification - table may have been dropped" );
+						$actualCount = 0;
+					}
+					else
+					{
+						$actualCount = (int)$result['count'];
+					}
 				}
 
 				$results[$table] = [
@@ -1446,7 +1476,7 @@ class DataImporter
 					'match' => $actualCount === $expectedCount
 				];
 			}
-			catch( \Exception $e )
+			catch( \Throwable $e )
 			{
 				$results[$table] = [
 					'expected' => $expectedCount,

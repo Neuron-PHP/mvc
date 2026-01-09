@@ -70,11 +70,11 @@ class ClearCommand extends Command
 		$storage = CacheStorageFactory::createFromConfig( $cacheConfig, $basePath );
 		
 		// Check what type of clear operation
-		$onlyExpired = $this->input->hasOption( 'expired' );
+		$onlyExpired = $this->input->getOption( 'expired' );
 		$type = $this->input->getOption( 'type' );
-		
+
 		// Get confirmation unless forced
-		if( !$this->input->hasOption( 'force' ) )
+		if( !$this->input->getOption( 'force' ) )
 		{
 			$message = $onlyExpired 
 				? 'Clear expired cache entries?' 
@@ -119,12 +119,12 @@ class ClearCommand extends Command
 		catch( \Exception $e )
 		{
 			$this->output->error( 'Error clearing cache: ' . $e->getMessage() );
-			
-			if( $this->input->hasOption( 'verbose' ) || $this->input->hasOption( 'v' ) )
+
+			if( $this->input->getOption( 'verbose' ) || $this->input->getOption( 'v' ) )
 			{
 				$this->output->write( $e->getTraceAsString() );
 			}
-			
+
 			return 1;
 		}
 	}

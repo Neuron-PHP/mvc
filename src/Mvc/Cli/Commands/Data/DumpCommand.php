@@ -161,7 +161,7 @@ class DumpCommand extends Command
 		{
 			$this->output->error( 'Error exporting data: ' . $e->getMessage() );
 
-			if( $this->input->hasOption( 'verbose' ) || $this->input->hasOption( 'v' ) )
+			if( $this->input->getOption( 'verbose' ) || $this->input->getOption( 'v' ) )
 			{
 				$this->output->write( $e->getTraceAsString() );
 			}
@@ -214,10 +214,9 @@ class DumpCommand extends Command
 
 		// WHERE conditions
 		$options['where'] = [];
-		if( $this->input->hasOption( 'where' ) )
+		$whereOptions = $this->input->getOption( 'where' );
+		if( $whereOptions )
 		{
-			$whereOptions = $this->input->getOption( 'where' );
-
 			// Handle multiple where options
 			if( !is_array( $whereOptions ) )
 			{
