@@ -312,7 +312,7 @@ class DataExporterUnitTest extends TestCase
 		$mockAdapter->method( 'getAdapterType' )->willReturn( 'mysql' );
 
 		// Expect disconnect to be called during destruction
-		$mockAdapter->expects( $this->atLeastOnce() )
+		$mockAdapter->expects( $this->once() )
 			->method( 'disconnect' );
 
 		// Mock AdapterFactory
@@ -321,8 +321,9 @@ class DataExporterUnitTest extends TestCase
 		// Create exporter
 		$exporter = new DataExporter( $mockConfig, 'testing' );
 
-		// Explicitly call destructor
-		$exporter->__destruct();
+		// Let destructor run naturally
+		unset( $exporter );
+		gc_collect_cycles();
 	}
 
 	/**

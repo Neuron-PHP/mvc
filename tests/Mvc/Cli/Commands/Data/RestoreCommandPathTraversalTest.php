@@ -24,9 +24,9 @@ class RestoreCommandPathTraversalTest extends TestCase
 		$this->baseDir = $this->tempDir . '/allowed';
 		$this->outsideDir = $this->tempDir . '/outside';
 
-		mkdir( $this->tempDir, 0777, true );
-		mkdir( $this->baseDir, 0777, true );
-		mkdir( $this->outsideDir, 0777, true );
+		mkdir( $this->tempDir, 0755, true );
+		mkdir( $this->baseDir, 0755, true );
+		mkdir( $this->outsideDir, 0755, true );
 
 		// Create test files
 		file_put_contents( $this->baseDir . '/valid.sql', '-- Valid SQL file' );
@@ -34,7 +34,7 @@ class RestoreCommandPathTraversalTest extends TestCase
 
 		// Create a test config file
 		$configDir = $this->baseDir . '/config';
-		mkdir( $configDir, 0777, true );
+		mkdir( $configDir, 0755, true );
 		file_put_contents( $configDir . '/neuron.yaml', "database:\n  host: localhost\n" );
 	}
 
@@ -206,6 +206,38 @@ class RestoreCommandPathTraversalTest extends TestCase
 		$this->assertTrue( $result['valid'], 'Special characters in filename should be allowed if within base' );
 	}
 
+	/**
+	 * Test that realpath failure on base path is detected (CVE-style security fix)
+	 *
+	 * This tests the fix for a medium-severity path traversal vulnerability where
+	 * if realpath($basePath) returns false (due to race condition, unmounted filesystem,
+	 * or permissions change), the security check would be bypassed.
+	 */
+	public function testBasePathRealpathFailureDetected(): void
+	{
+		$command = $this->createRestoreCommand();
+
+		// Test with non-existent base path (realpath returns false)
+		$nonExistentBase = '/nonexistent/base/path/that/does/not/exist';
+		$result = $this->simulatePathValidation(
+			$command,
+			$nonExistentBase,
+			'/tmp/some_file.sql'
+		);
+
+		$this->assertFalse( $result['valid'], 'Non-existent base path should be rejected' );
+		$this->assertStringContainsString( 'not found or inaccessible', $result['error'] );
+
+		// Test backup path validation with non-existent base
+		$result = $this->simulateBackupPathValidation(
+			$nonExistentBase,
+			'backup.sql'
+		);
+
+		$this->assertFalse( $result['valid'], 'Backup with non-existent base path should be rejected' );
+		$this->assertStringContainsString( 'not found or inaccessible', $result['error'] );
+	}
+
 	// Helper methods
 
 	private function createRestoreCommand(): RestoreCommand
@@ -225,6 +257,11 @@ class RestoreCommandPathTraversalTest extends TestCase
 
 			$resolvedBasePath = realpath( $basePath );
 			$resolvedInputPath = realpath( $inputPath );
+
+			if( $resolvedBasePath === false )
+			{
+				return ['valid' => false, 'error' => 'Base directory not found or inaccessible'];
+			}
 
 			if( $resolvedInputPath === false )
 			{
@@ -256,6 +293,12 @@ class RestoreCommandPathTraversalTest extends TestCase
 			}
 
 			$resolvedBasePath = realpath( $basePath );
+
+			if( $resolvedBasePath === false )
+			{
+				return ['valid' => false, 'error' => 'Base directory not found or inaccessible'];
+			}
+
 			$backupDir = dirname( $backupPath );
 			$resolvedBackupDir = realpath( $backupDir );
 

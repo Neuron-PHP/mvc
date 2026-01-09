@@ -115,6 +115,13 @@ class RestoreCommand extends Command
 			$resolvedBasePath = realpath( $basePath );
 			$resolvedInputPath = realpath( $inputPath );
 
+			// Check if realpath failed for base path (directory doesn't exist, unmounted, etc.)
+			if( $resolvedBasePath === false )
+			{
+				$this->output->error( "Base directory not found or inaccessible: {$basePath}" );
+				return 1;
+			}
+
 			// Check if realpath failed (file doesn't exist yet)
 			// For input files, we need the file to exist
 			if( $resolvedInputPath === false )
@@ -532,6 +539,13 @@ class RestoreCommand extends Command
 
 			// Get canonical paths to prevent path traversal attacks
 			$resolvedBasePath = realpath( $basePath );
+
+			// Check if realpath failed for base path (directory doesn't exist, unmounted, etc.)
+			if( $resolvedBasePath === false )
+			{
+				$this->output->error( "Base directory not found or inaccessible: {$basePath}" );
+				return false;
+			}
 
 			// For backup files, the file may not exist yet, so we check the parent directory
 			$backupDir = dirname( $backupPath );

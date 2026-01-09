@@ -15,13 +15,6 @@ use Phinx\Db\Adapter\AdapterFactory;
 class DataImporterUnitTest extends TestCase
 {
 	/**
-	 * Original AdapterFactory instance to restore after tests
-	 *
-	 * @var mixed
-	 */
-	private $originalFactory;
-
-	/**
 	 * Set up test environment
 	 */
 	protected function setUp(): void

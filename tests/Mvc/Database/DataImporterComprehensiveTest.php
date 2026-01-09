@@ -411,15 +411,14 @@ data:
 		$sqlFile = $this->tempDir . '/foreign_keys.sql';
 		file_put_contents( $sqlFile, "INSERT INTO child (parent_id) VALUES (1);" );
 
-		// Expect foreign key checks to be disabled, INSERT, then re-enabled (3 calls)
+		// Capture SQL statements to verify foreign key checks
+		$executedSql = [];
 		$mockAdapter->expects( $this->exactly( 3 ) )
 			->method( 'execute' )
-			->withConsecutive(
-				[$this->stringContains( 'FOREIGN_KEY_CHECKS = 0' )], // Disable FK
-				[$this->stringContains( 'INSERT' )],                  // Insert data
-				[$this->stringContains( 'FOREIGN_KEY_CHECKS = 1' )]   // Re-enable FK
-			)
-			->willReturn( 1 );
+			->willReturnCallback( function( $sql ) use ( &$executedSql ) {
+				$executedSql[] = $sql;
+				return 1;
+			} );
 
 		$mockAdapter->method( 'getAdapterType' )->willReturn( 'mysql' );
 		$mockAdapter->method( 'beginTransaction' );
@@ -437,6 +436,12 @@ data:
 
 		$result = $importer->importFromFile( $sqlFile );
 		$this->assertTrue( $result );
+
+		// Verify SQL execution order: disable FK, INSERT, re-enable FK
+		$this->assertCount( 3, $executedSql );
+		$this->assertStringContainsString( 'FOREIGN_KEY_CHECKS = 0', $executedSql[0] ); // Disable FK
+		$this->assertStringContainsString( 'INSERT', $executedSql[1] );                  // Insert data
+		$this->assertStringContainsString( 'FOREIGN_KEY_CHECKS = 1', $executedSql[2] ); // Re-enable FK
 	}
 
 	/**
@@ -542,17 +547,14 @@ data:
 			return [];
 		} );
 
-		// Expect DELETE for each table (except migration table) and foreign key statements
-		// The order will be: disable FK, DELETE users, DELETE posts, enable FK
+		// Capture SQL statements to verify DELETE order and foreign key handling
+		$executedSql = [];
 		$mockAdapter->expects( $this->exactly( 4 ) )
 			->method( 'execute' )
-			->withConsecutive(
-				[$this->stringContains( 'SET FOREIGN_KEY_CHECKS = 0' )],
-				[$this->stringContains( 'DELETE FROM `users`' )],
-				[$this->stringContains( 'DELETE FROM `posts`' )],
-				[$this->stringContains( 'SET FOREIGN_KEY_CHECKS = 1' )]
-			)
-			->willReturn( 1 );
+			->willReturnCallback( function( $sql ) use ( &$executedSql ) {
+				$executedSql[] = $sql;
+				return 1;
+			} );
 
 		$this->mockAdapterFactory( $mockAdapter );
 
@@ -560,6 +562,13 @@ data:
 		$result = $importer->clearAllData( false );
 
 		$this->assertTrue( $result );
+
+		// Verify SQL execution order: disable FK, DELETE users, DELETE posts, enable FK
+		$this->assertCount( 4, $executedSql );
+		$this->assertStringContainsString( 'SET FOREIGN_KEY_CHECKS = 0', $executedSql[0] );
+		$this->assertStringContainsString( 'DELETE FROM `users`', $executedSql[1] );
+		$this->assertStringContainsString( 'DELETE FROM `posts`', $executedSql[2] );
+		$this->assertStringContainsString( 'SET FOREIGN_KEY_CHECKS = 1', $executedSql[3] );
 	}
 
 	/**

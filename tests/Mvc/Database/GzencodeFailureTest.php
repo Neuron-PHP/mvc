@@ -22,7 +22,7 @@ class GzencodeFailureTest extends TestCase
 		parent::setUp();
 
 		$this->tempDir = sys_get_temp_dir() . '/gzencode_test_' . uniqid();
-		mkdir( $this->tempDir, 0777, true );
+		mkdir( $this->tempDir, 0755, true );
 
 		// Reset AdapterFactory
 		$this->resetAdapterFactory();
