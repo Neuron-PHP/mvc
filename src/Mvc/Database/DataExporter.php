@@ -661,7 +661,13 @@ class DataExporter
 
 		// Pattern to match column operator value pairs
 		// Note: Order matters - check multi-char operators (<=, >=, !=, <>) before single-char (<, >, =)
-		$conditionPattern = '/(\w+)\s*(<=|>=|!=|<>|=|<|>|LIKE|NOT LIKE)\s*([\'"]?)([^\'"]*)\3/i';
+		// This pattern properly handles SQL-escaped quotes (e.g., 'O''Brien' or "He said ""hi""")
+		// Group 1: column name
+		// Group 2: operator
+		// Group 3: quoted value with single quotes (including escaped '')
+		// Group 4: quoted value with double quotes (including escaped "")
+		// Group 5: unquoted value
+		$conditionPattern = '/(\w+)\s*(<=|>=|!=|<>|=|<|>|LIKE|NOT LIKE)\s*(?:\'((?:\'\'|[^\'])*)\'|"((?:""|[^"])*)"|(\S+))/i';
 
 		// First, split by AND/OR while preserving the operators
 		// This pattern captures conditions and the operators between them
@@ -714,7 +720,26 @@ class DataExporter
 			{
 				$column = $match[1];
 				$operator = strtoupper( $match[2] );
-				$value = $match[4];
+
+				// Extract value from the appropriate capture group
+				// Group 3: single-quoted value (may contain escaped '')
+				// Group 4: double-quoted value (may contain escaped "")
+				// Group 5: unquoted value
+				if( !empty( $match[3] ) )
+				{
+					// Single-quoted - unescape doubled single quotes
+					$value = str_replace( "''", "'", $match[3] );
+				}
+				elseif( !empty( $match[4] ) )
+				{
+					// Double-quoted - unescape doubled double quotes
+					$value = str_replace( '""', '"', $match[4] );
+				}
+				else
+				{
+					// Unquoted value
+					$value = $match[5];
+				}
 
 				// Use placeholder for binding
 				$quotedColumn = $this->quoteIdentifier( $column );

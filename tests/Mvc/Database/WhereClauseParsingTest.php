@@ -277,6 +277,89 @@ class WhereClauseParsingTest extends TestCase
 	}
 
 	/**
+	 * Test parsing WHERE clause with SQL-escaped single quotes (CVE-style fix)
+	 *
+	 * This tests the fix for a high-severity bug where the regex pattern
+	 * ([^\'"]*)\3 would silently truncate values containing SQL-escaped quotes.
+	 * For example, name = 'O''Brien' would only capture 'O' instead of 'O'Brien'.
+	 */
+	public function testSqlEscapedSingleQuotes(): void
+	{
+		$mockPdo = $this->createMock( \PDO::class );
+		$mockAdapter = $this->getMockBuilder( AdapterInterface::class )
+			->onlyMethods( get_class_methods( AdapterInterface::class ) )
+			->addMethods( ['getConnection'] )
+			->getMock();
+
+		$mockAdapter->method( 'getConnection' )->willReturn( $mockPdo );
+		$mockAdapter->method( 'connect' );
+		$mockAdapter->method( 'getAdapterType' )->willReturn( 'mysql' );
+
+		$this->mockAdapterFactory( $mockAdapter );
+
+		$config = $this->createMockConfig();
+		$exporter = new DataExporter( $config, 'testing', 'phinx_log' );
+
+		$reflector = new \ReflectionClass( $exporter );
+		$method = $reflector->getMethod( 'parseSimpleWhereClause' );
+		$method->setAccessible( true );
+
+		// Test SQL-escaped single quote ('' represents a literal single quote)
+		$whereClause = "name = 'O''Brien'";
+		$result = $method->invoke( $exporter, $whereClause );
+
+		// The value should be unescaped: O'Brien (not just O)
+		$this->assertEquals( ["O'Brien"], $result['bindings'] );
+		$this->assertStringContainsString( '`name` = ?', $result['sql'] );
+
+		// Test multiple escaped quotes in one value
+		$whereClause = "message = 'It''s John''s'";
+		$result = $method->invoke( $exporter, $whereClause );
+
+		$this->assertEquals( ["It's John's"], $result['bindings'] );
+
+		// Test escaped quotes in a complex WHERE clause
+		$whereClause = "name = 'O''Brien' AND status = 'active'";
+		$result = $method->invoke( $exporter, $whereClause );
+
+		$this->assertEquals( ["O'Brien", 'active'], $result['bindings'] );
+		$this->assertStringContainsString( 'AND', $result['sql'] );
+	}
+
+	/**
+	 * Test parsing WHERE clause with SQL-escaped double quotes
+	 */
+	public function testSqlEscapedDoubleQuotes(): void
+	{
+		$mockPdo = $this->createMock( \PDO::class );
+		$mockAdapter = $this->getMockBuilder( AdapterInterface::class )
+			->onlyMethods( get_class_methods( AdapterInterface::class ) )
+			->addMethods( ['getConnection'] )
+			->getMock();
+
+		$mockAdapter->method( 'getConnection' )->willReturn( $mockPdo );
+		$mockAdapter->method( 'connect' );
+		$mockAdapter->method( 'getAdapterType' )->willReturn( 'mysql' );
+
+		$this->mockAdapterFactory( $mockAdapter );
+
+		$config = $this->createMockConfig();
+		$exporter = new DataExporter( $config, 'testing', 'phinx_log' );
+
+		$reflector = new \ReflectionClass( $exporter );
+		$method = $reflector->getMethod( 'parseSimpleWhereClause' );
+		$method->setAccessible( true );
+
+		// Test SQL-escaped double quote ("" represents a literal double quote)
+		$whereClause = 'message = "He said ""Hello"""';
+		$result = $method->invoke( $exporter, $whereClause );
+
+		// The value should be unescaped: He said "Hello"
+		$this->assertEquals( ['He said "Hello"'], $result['bindings'] );
+		$this->assertStringContainsString( '`message` = ?', $result['sql'] );
+	}
+
+	/**
 	 * Test that parentheses throw an exception
 	 */
 	public function testParenthesesThrowException(): void

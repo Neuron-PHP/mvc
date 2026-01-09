@@ -164,58 +164,6 @@ class SqlWhereValidatorTest extends TestCase
 	}
 
 	/**
-	 * Test sanitize method removes dangerous elements
-	 */
-	public function testSanitizeMethod(): void
-	{
-		// Test comment removal
-		$input = "status = 'active' -- AND admin = 1";
-		$sanitized = SqlWhereValidator::sanitize( $input );
-		$this->assertStringNotContainsString( '--', $sanitized );
-		$this->assertStringNotContainsString( 'AND admin = 1', $sanitized ); // Comment and everything after should be removed
-
-		// Test semicolon removal - semicolon is removed but SQL commands remain
-		$input = "status = 'active'; DROP TABLE users";
-		$sanitized = SqlWhereValidator::sanitize( $input );
-		$this->assertStringNotContainsString( ';', $sanitized );
-		// Note: DROP remains - sanitize only removes comments and semicolons
-		$this->assertStringContainsString( 'DROP', $sanitized ); // This is expected behavior
-
-		// Test block comment removal
-		$input = "status = /* evil */ 'active'";
-		$sanitized = SqlWhereValidator::sanitize( $input );
-		$this->assertStringNotContainsString( '/*', $sanitized );
-		$this->assertStringNotContainsString( '*/', $sanitized );
-		$this->assertStringNotContainsString( 'evil', $sanitized );
-
-		// Test hash comment removal
-		$input = "status = 'active' # AND admin = 1";
-		$sanitized = SqlWhereValidator::sanitize( $input );
-		$this->assertStringNotContainsString( '#', $sanitized );
-		$this->assertStringNotContainsString( 'AND admin = 1', $sanitized ); // Comment and everything after should be removed
-	}
-
-	/**
-	 * Test sanitize with different database adapters
-	 */
-	public function testSanitizeWithDifferentAdapters(): void
-	{
-		$input = "name = 'O'Brien'";
-
-		// MySQL uses backslash escaping
-		$mysqlSanitized = SqlWhereValidator::sanitize( $input, 'mysql' );
-		$this->assertStringContainsString( "\\'", $mysqlSanitized );
-
-		// PostgreSQL uses single quote doubling
-		$pgsqlSanitized = SqlWhereValidator::sanitize( $input, 'pgsql' );
-		$this->assertStringContainsString( "''", $pgsqlSanitized );
-
-		// SQLite uses single quote doubling
-		$sqliteSanitized = SqlWhereValidator::sanitize( $input, 'sqlite' );
-		$this->assertStringContainsString( "''", $sqliteSanitized );
-	}
-
-	/**
 	 * Test parseSimpleWhere method
 	 */
 	public function testParseSimpleWhere(): void

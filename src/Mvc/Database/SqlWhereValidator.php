@@ -4,6 +4,19 @@ namespace Neuron\Mvc\Database;
 
 /**
  * SQL WHERE clause validator to prevent SQL injection attacks
+ *
+ * SECURITY NOTE: This class does NOT provide a sanitize() method by design.
+ * Attempting to sanitize SQL input is dangerous and error-prone. Instead:
+ *
+ * 1. Use isValid() to REJECT dangerous input (defense in depth)
+ * 2. Use PDO prepared statements with parameter binding (primary defense)
+ * 3. Never concatenate user input into SQL queries
+ *
+ * Why no sanitize() method:
+ * - addslashes() is unsafe (doesn't handle multi-byte encodings like GBK)
+ * - String escaping cannot protect against all SQL injection vectors
+ * - Future maintainers might assume sanitize() makes input safe (it doesn't)
+ * - The correct solution is parameterized queries, not string manipulation
  */
 class SqlWhereValidator
 {
@@ -82,46 +95,6 @@ class SqlWhereValidator
 		}
 
 		return true;
-	}
-
-	/**
-	 * Sanitize a WHERE clause by escaping special characters
-	 * Note: This is a basic sanitization and not a complete solution
-	 *
-	 * @param string $whereClause
-	 * @param string $adapterType Database adapter type (mysql, pgsql, sqlite)
-	 * @return string Sanitized WHERE clause
-	 */
-	public static function sanitize( string $whereClause, string $adapterType = 'mysql' ): string
-	{
-		// Remove any SQL comments
-		$whereClause = preg_replace( '/--.*$/', '', $whereClause );
-		$whereClause = preg_replace( '/\/\*.*?\*\//', '', $whereClause );
-		$whereClause = preg_replace( '/#.*$/', '', $whereClause );
-
-		// Remove semicolons (prevent stacked queries)
-		$whereClause = str_replace( ';', '', $whereClause );
-
-		// Escape quotes based on adapter type
-		switch( $adapterType )
-		{
-			case 'mysql':
-				// MySQL uses backslash for escaping
-				$whereClause = addslashes( $whereClause );
-				break;
-
-			case 'pgsql':
-				// PostgreSQL uses single quote doubling
-				$whereClause = str_replace( "'", "''", $whereClause );
-				break;
-
-			case 'sqlite':
-				// SQLite uses single quote doubling
-				$whereClause = str_replace( "'", "''", $whereClause );
-				break;
-		}
-
-		return $whereClause;
 	}
 
 	/**
