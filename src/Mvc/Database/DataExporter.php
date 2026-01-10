@@ -600,7 +600,7 @@ class DataExporter
 					$sql .= " LIMIT " . (int)$this->_Options['limit'];
 				}
 
-				return $this->_Adapter->fetchAll( $sql );
+				return $this->fetchAllAssoc( $sql );
 			}
 		}
 		else
@@ -614,8 +614,30 @@ class DataExporter
 				$sql .= " LIMIT " . (int)$this->_Options['limit'];
 			}
 
-			return $this->_Adapter->fetchAll( $sql );
+			return $this->fetchAllAssoc( $sql );
 		}
+	}
+
+	/**
+	 * Fetch all rows ensuring only associative keys (no numeric indices)
+	 *
+	 * Phinx adapters return PDO::FETCH_BOTH by default, which includes
+	 * both numeric (0,1,2...) and associative (column name) keys.
+	 * This causes issues during import where numeric keys are treated as columns.
+	 *
+	 * @param string $sql SQL query
+	 * @return array Rows with only associative keys
+	 */
+	private function fetchAllAssoc( string $sql ): array
+	{
+		$rows = $this->_Adapter->fetchAll( $sql );
+
+		// Filter out numeric keys from each row
+		return array_map( function( $row ) {
+			return array_filter( $row, function( $key ) {
+				return !is_int( $key );
+			}, ARRAY_FILTER_USE_KEY );
+		}, $rows );
 	}
 
 	/**
@@ -1281,7 +1303,7 @@ class DataExporter
 
 					$quoted = $this->quoteIdentifier( $table );
 					$sql = "SELECT * FROM {$quoted} WHERE " . $whereClause . " LIMIT {$limit} OFFSET {$offset}";
-					$rows = $this->_Adapter->fetchAll( $sql );
+					$rows = $this->fetchAllAssoc( $sql );
 				}
 			}
 			else
@@ -1289,7 +1311,7 @@ class DataExporter
 				// No WHERE clause - safe to use direct SQL
 				$quoted = $this->quoteIdentifier( $table );
 				$sql = "SELECT * FROM {$quoted} LIMIT {$limit} OFFSET {$offset}";
-				$rows = $this->_Adapter->fetchAll( $sql );
+				$rows = $this->fetchAllAssoc( $sql );
 			}
 
 			if( empty( $rows ) )
@@ -1397,7 +1419,7 @@ class DataExporter
 
 					$quoted = $this->quoteIdentifier( $table );
 					$sql = "SELECT * FROM {$quoted} WHERE " . $whereClause . " LIMIT {$limit} OFFSET {$offset}";
-					$rows = $this->_Adapter->fetchAll( $sql );
+					$rows = $this->fetchAllAssoc( $sql );
 				}
 			}
 			else
@@ -1405,7 +1427,7 @@ class DataExporter
 				// No WHERE clause - safe to use direct SQL
 				$quoted = $this->quoteIdentifier( $table );
 				$sql = "SELECT * FROM {$quoted} LIMIT {$limit} OFFSET {$offset}";
-				$rows = $this->_Adapter->fetchAll( $sql );
+				$rows = $this->fetchAllAssoc( $sql );
 			}
 
 			if( empty( $rows ) )

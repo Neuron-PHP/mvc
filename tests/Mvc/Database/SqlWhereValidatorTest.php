@@ -274,6 +274,89 @@ class SqlWhereValidatorTest extends TestCase
 	}
 
 	/**
+	 * Test that escaped backslashes before quotes are handled correctly
+	 *
+	 * This tests the fix for the bug where quote counting incorrectly counted
+	 * \' patterns without checking if the backslash was itself escaped.
+	 *
+	 * Example: path = 'C:\\' should be valid (2 unescaped quotes)
+	 * The \\ is an escaped backslash, and the final ' is the closing quote.
+	 */
+	public function testEscapedBackslashesBeforeQuotes(): void
+	{
+		// Windows paths with trailing backslashes
+		$validClauses = [
+			"path = 'C:\\\\'",              // C:\ (escaped backslash + closing quote)
+			"path = 'D:\\\\temp\\\\'",      // D:\temp\ (multiple escaped backslashes)
+			"path = 'C:\\\\' AND status = 'active'", // Mixed with other conditions
+			'file = "C:\\\\"',              // Same with double quotes
+			"path = 'C:\\\\\\\\' OR path = 'D:\\\\'", // Multiple paths
+		];
+
+		foreach( $validClauses as $clause )
+		{
+			$this->assertTrue(
+				SqlWhereValidator::isValid( $clause ),
+				"Path with escaped backslashes should be valid: {$clause}"
+			);
+		}
+
+		// Backslash-escaped quotes (less common than SQL-style, but valid)
+		$backslashEscapedQuotes = [
+			"name = 'O\\'Brien'",           // Backslash-escaped quote
+			'desc = "He said \\"hi\\""',    // Backslash-escaped double quotes
+			"val = 'test\\'test'",          // Quote in middle
+		];
+
+		foreach( $backslashEscapedQuotes as $clause )
+		{
+			$this->assertTrue(
+				SqlWhereValidator::isValid( $clause ),
+				"Backslash-escaped quotes should be valid: {$clause}"
+			);
+		}
+
+		// Edge cases with multiple consecutive backslashes
+		$multipleBackslashes = [
+			"path = '\\\\\\\\'",            // Four backslashes (two escaped + closing quote)
+			"path = 'test\\\\\\\\'",        // Text + escaped backslashes + closing quote
+			"val = '\\\\\\\\\\\\\\\\'"      // Eight backslashes (four escaped + closing quote)
+		];
+
+		foreach( $multipleBackslashes as $clause )
+		{
+			$this->assertTrue(
+				SqlWhereValidator::isValid( $clause ),
+				"Multiple escaped backslashes should be valid: {$clause}"
+			);
+		}
+
+		// Invalid cases - truly unbalanced quotes
+		$invalidClauses = [
+			"path = 'C:\\",                 // Missing closing quote (1 backslash + 1 quote)
+			"path = 'C:\\'",                // Backslash-escaped quote means quote isn't closing
+			"name = 'test\\'",              // Backslash-escaped quote at end
+		];
+
+		foreach( $invalidClauses as $clause )
+		{
+			$this->assertFalse(
+				SqlWhereValidator::isValid( $clause ),
+				"Truly unbalanced quotes should be invalid: {$clause}"
+			);
+		}
+
+		// Verify the specific bug case from the issue
+		// 'C:\\' should have 2 unescaped quotes (opening and closing)
+		// The \\ is an escaped backslash, not an escaped quote
+		$bugCase = "path = 'C:\\\\'";
+		$this->assertTrue(
+			SqlWhereValidator::isValid( $bugCase ),
+			"Bug case 'C:\\\\' should be valid (escaped backslash + closing quote)"
+		);
+	}
+
+	/**
 	 * Test that validator catches common attack vectors
 	 */
 	public function testCommonAttackVectors(): void

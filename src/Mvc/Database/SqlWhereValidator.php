@@ -55,6 +55,62 @@ class SqlWhereValidator
 	];
 
 	/**
+	 * Count unescaped quotes in a string, properly handling escaped backslashes
+	 *
+	 * Correctly handles:
+	 * - Backslash-escaped quotes: \' or \"
+	 * - Escaped backslashes before quotes: \\' or \\"
+	 * - SQL-style doubled quotes: '' or ""
+	 *
+	 * Example: 'C:\\' has 2 unescaped single quotes (the \\ is escaped backslash, not escaped quote)
+	 *
+	 * @param string $str String to check
+	 * @param string $quoteChar Quote character to count (' or ")
+	 * @return int Number of unescaped quotes
+	 */
+	private static function countUnescapedQuotes( string $str, string $quoteChar ): int
+	{
+		$count = 0;
+		$len = strlen( $str );
+
+		for( $i = 0; $i < $len; $i++ )
+		{
+			if( $str[$i] === $quoteChar )
+			{
+				// Count consecutive backslashes before this quote
+				$backslashCount = 0;
+				$j = $i - 1;
+				while( $j >= 0 && $str[$j] === '\\' )
+				{
+					$backslashCount++;
+					$j--;
+				}
+
+				// If odd number of backslashes, the quote is escaped by the last backslash
+				if( $backslashCount % 2 === 1 )
+				{
+					// Backslash-escaped quote - don't count it
+					continue;
+				}
+
+				// Even number of backslashes (including 0) - check for SQL-style doubled quotes
+				$nextChar = ( $i < $len - 1 ) ? $str[$i + 1] : '';
+				if( $nextChar === $quoteChar )
+				{
+					// It's a doubled quote (SQL-style escape) - skip both
+					$i++;
+					continue;
+				}
+
+				// It's an unescaped quote
+				$count++;
+			}
+		}
+
+		return $count;
+	}
+
+	/**
 	 * Validate a WHERE clause for SQL injection attempts
 	 *
 	 * @param string $whereClause The WHERE clause to validate
@@ -71,14 +127,9 @@ class SqlWhereValidator
 			}
 		}
 
-		// Check for balanced quotes (basic check)
-		// Account for both backslash-escaped quotes and SQL-style doubled quotes
-		$singleQuotes = substr_count( $whereClause, "'" )
-			- substr_count( $whereClause, "\\'" )
-			- (2 * substr_count( $whereClause, "''" )); // SQL-style escaped single quotes
-		$doubleQuotes = substr_count( $whereClause, '"' )
-			- substr_count( $whereClause, '\\"' )
-			- (2 * substr_count( $whereClause, '""' )); // SQL-style escaped double quotes
+		// Check for balanced quotes using proper backslash handling
+		$singleQuotes = self::countUnescapedQuotes( $whereClause, "'" );
+		$doubleQuotes = self::countUnescapedQuotes( $whereClause, '"' );
 
 		if( $singleQuotes % 2 !== 0 || $doubleQuotes % 2 !== 0 )
 		{

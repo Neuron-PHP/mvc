@@ -18,13 +18,42 @@ use PHPUnit\Framework\TestCase;
  */
 class DataExporterWithORMEscapedQuotesTest extends TestCase
 {
+	private array $tempDbPaths = [];
+
+	/**
+	 * Create a unique temporary database path without using tempnam()
+	 *
+	 * @return string Path to temporary .db file
+	 */
+	private function createTempDbPath(): string
+	{
+		$path = sys_get_temp_dir() . '/' . uniqid( 'orm_escaped_test_', true ) . '.db';
+		$this->tempDbPaths[] = $path;
+		return $path;
+	}
+
+	protected function tearDown(): void
+	{
+		// Clean up any tracked temp database files
+		foreach( $this->tempDbPaths as $path )
+		{
+			if( file_exists( $path ) )
+			{
+				unlink( $path );
+			}
+		}
+		$this->tempDbPaths = [];
+
+		parent::tearDown();
+	}
+
 	/**
 	 * Test that parseWhereClause correctly handles SQL-escaped single quotes
 	 */
 	public function testParseSqlEscapedSingleQuotes(): void
 	{
 		// Create a temporary SQLite database
-		$dbPath = tempnam( sys_get_temp_dir(), 'orm_escaped_test_' ) . '.db';
+		$dbPath = $this->createTempDbPath();
 
 		try
 		{
@@ -100,7 +129,7 @@ class DataExporterWithORMEscapedQuotesTest extends TestCase
 	public function testParseSqlEscapedDoubleQuotes(): void
 	{
 		// Create a temporary SQLite database
-		$dbPath = tempnam( sys_get_temp_dir(), 'orm_escaped_test_' ) . '.db';
+		$dbPath = $this->createTempDbPath();
 
 		try
 		{
@@ -158,7 +187,7 @@ class DataExporterWithORMEscapedQuotesTest extends TestCase
 	public function testMultipleEscapedQuotesInValue(): void
 	{
 		// Create a temporary SQLite database
-		$dbPath = tempnam( sys_get_temp_dir(), 'orm_escaped_test_' ) . '.db';
+		$dbPath = $this->createTempDbPath();
 
 		try
 		{
@@ -216,7 +245,7 @@ class DataExporterWithORMEscapedQuotesTest extends TestCase
 	public function testCompoundWhereWithEscapedQuotes(): void
 	{
 		// Create a temporary SQLite database
-		$dbPath = tempnam( sys_get_temp_dir(), 'orm_escaped_test_' ) . '.db';
+		$dbPath = $this->createTempDbPath();
 
 		try
 		{
@@ -278,7 +307,7 @@ class DataExporterWithORMEscapedQuotesTest extends TestCase
 	public function testRegularValuesStillWork(): void
 	{
 		// Create a temporary SQLite database
-		$dbPath = tempnam( sys_get_temp_dir(), 'orm_escaped_test_' ) . '.db';
+		$dbPath = $this->createTempDbPath();
 
 		try
 		{
@@ -345,7 +374,7 @@ class DataExporterWithORMEscapedQuotesTest extends TestCase
 	public function testEmptyQuotedValues(): void
 	{
 		// Create a temporary SQLite database
-		$dbPath = tempnam( sys_get_temp_dir(), 'orm_escaped_test_' ) . '.db';
+		$dbPath = $this->createTempDbPath();
 
 		try
 		{

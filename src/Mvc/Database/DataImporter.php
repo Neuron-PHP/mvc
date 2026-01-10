@@ -221,6 +221,13 @@ const CONFLICT_SKIP = 'skip';
 
 		try
 		{
+			// Disable foreign key checks BEFORE transaction starts (required for SQLite)
+			// SQLite's PRAGMA foreign_keys must be set before transaction begins
+			if( $this->_Options[ 'disable_foreign_keys' ] )
+			{
+				$this->disableForeignKeyChecks();
+			}
+
 			// Clear existing data before import if requested
 			// This must happen BEFORE transaction begins to ensure deletes are committed
 			// clearAllData() respects 'tables' and 'exclude' options via shouldProcessTable()
@@ -238,12 +245,6 @@ const CONFLICT_SKIP = 'skip';
 			if( $this->_Options[ 'use_transaction' ] )
 			{
 				$this->_Adapter->beginTransaction();
-			}
-
-			// Disable foreign key checks if requested
-			if( $this->_Options[ 'disable_foreign_keys' ] )
-			{
-				$this->disableForeignKeyChecks();
 			}
 
 			// Import based on format
@@ -1133,6 +1134,13 @@ const CONFLICT_SKIP = 'skip';
 
 		try
 		{
+			// Disable foreign key checks BEFORE transaction starts (required for SQLite)
+			// SQLite's PRAGMA foreign_keys must be set before transaction begins
+			if( $this->_Options[ 'disable_foreign_keys' ] )
+			{
+				$this->disableForeignKeyChecks();
+			}
+
 			// Clear existing data before import if requested
 			// This must happen BEFORE transaction begins to ensure deletes are committed
 			// clearAllData() respects 'tables' and 'exclude' options via shouldProcessTable()
@@ -1150,12 +1158,6 @@ const CONFLICT_SKIP = 'skip';
 			if( $this->_Options[ 'use_transaction' ] )
 			{
 				$this->_Adapter->beginTransaction();
-			}
-
-			// Disable foreign key checks if requested
-			if( $this->_Options[ 'disable_foreign_keys' ] )
-			{
-				$this->disableForeignKeyChecks();
 			}
 
 			foreach( $files as $file )
@@ -1326,24 +1328,6 @@ const CONFLICT_SKIP = 'skip';
 		{
 			$this->insertBatch( $tableName, $batch );
 		}
-	}
-
-	/**
-	 * Parse a CSV line into an array
-	 *
-	 * Note: For very large CSV files (>100MB), consider using direct file handle
-	 * access with fopen/fgetcsv for streaming to avoid memory issues. This
-	 * implementation loads the entire file into memory which works well for
-	 * typical data exports but may not scale to extremely large datasets.
-	 *
-	 * @param string $line CSV line to parse
-	 * @return array|false Parsed values or false on failure
-	 */
-	private function parseCsvLine( string $line ): array|false
-	{
-		// Use str_getcsv for parsing which handles quotes and escapes properly
-		// PHP 8.4 requires the escape parameter
-		return str_getcsv( $line, ',', '"', '' );
 	}
 
 	/**

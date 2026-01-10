@@ -33,7 +33,7 @@ class DataExporterWithORMCompressionTest extends TestCase
 	public function testCompressionIsApplied(): void
 	{
 		// Create a temporary SQLite database
-		$dbPath = tempnam( sys_get_temp_dir(), 'orm_compress_test_' ) . '.db';
+		$dbPath = sys_get_temp_dir() . '/' . uniqid( 'orm_compress_test_', true ) . '.db';
 
 		try
 		{
@@ -74,7 +74,7 @@ class DataExporterWithORMCompressionTest extends TestCase
 			);
 
 			// Export to temporary file
-			$outputPath = tempnam( sys_get_temp_dir(), 'export_' ) . '.json';
+			$outputPath = sys_get_temp_dir() . '/' . uniqid( 'export_', true ) . '.json';
 			$actualPath = $exporter->exportToFile( $outputPath );
 
 			// Should have added .gz extension
@@ -114,7 +114,7 @@ class DataExporterWithORMCompressionTest extends TestCase
 	public function testExportWithoutCompression(): void
 	{
 		// Create a temporary SQLite database
-		$dbPath = tempnam( sys_get_temp_dir(), 'orm_compress_test_' ) . '.db';
+		$dbPath = sys_get_temp_dir() . '/' . uniqid( 'orm_compress_test_', true ) . '.db';
 
 		try
 		{
@@ -155,7 +155,7 @@ class DataExporterWithORMCompressionTest extends TestCase
 			);
 
 			// Export to temporary file
-			$outputPath = tempnam( sys_get_temp_dir(), 'export_' ) . '.json';
+			$outputPath = sys_get_temp_dir() . '/' . uniqid( 'export_', true ) . '.json';
 			$actualPath = $exporter->exportToFile( $outputPath );
 
 			// Should not add .gz extension
@@ -220,7 +220,7 @@ class DataExporterWithORMCompressionTest extends TestCase
 	public function testCompressionAddsOverheadForSmallData(): void
 	{
 		// Create a temporary SQLite database
-		$dbPath = tempnam( sys_get_temp_dir(), 'orm_compress_test_' ) . '.db';
+		$dbPath = sys_get_temp_dir() . '/' . uniqid( 'orm_compress_test_', true ) . '.db';
 
 		try
 		{
@@ -253,7 +253,7 @@ class DataExporterWithORMCompressionTest extends TestCase
 				['format' => 'json', 'compress' => false]
 			);
 
-			$outputPath1 = tempnam( sys_get_temp_dir(), 'export_' ) . '.json';
+			$outputPath1 = sys_get_temp_dir() . '/' . uniqid( 'export_', true ) . '.json';
 			$actualPath1 = $exporter1->exportToFile( $outputPath1 );
 			$uncompressedSize = filesize( $actualPath1 );
 			$exporter1->disconnect();
@@ -266,7 +266,7 @@ class DataExporterWithORMCompressionTest extends TestCase
 				['format' => 'json', 'compress' => true]
 			);
 
-			$outputPath2 = tempnam( sys_get_temp_dir(), 'export_' ) . '.json';
+			$outputPath2 = sys_get_temp_dir() . '/' . uniqid( 'export_', true ) . '.json';
 			$actualPath2 = $exporter2->exportToFile( $outputPath2 );
 			$compressedSize = filesize( $actualPath2 );
 			$exporter2->disconnect();

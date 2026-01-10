@@ -189,6 +189,9 @@ data:
 
 	/**
 	 * Test import from CSV directory
+	 *
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
 	 */
 	public function testImportFromCsvDirectory(): void
 	{
