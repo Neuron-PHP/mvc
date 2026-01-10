@@ -241,6 +241,21 @@ class DataImporter
 				if( !$this->clearAllData( false ) )
 				{
 					$this->_Errors[] = 'Failed to clear existing data before import';
+
+					// Re-enable foreign key checks before returning on failure
+					if( $this->_Options[ 'disable_foreign_keys' ] )
+					{
+						try
+						{
+							$this->enableForeignKeyChecks();
+						}
+						catch( \Exception $fkException )
+						{
+							// Log but don't fail on FK re-enable errors
+							$this->_Errors[] = 'Failed to re-enable foreign keys: ' . $fkException->getMessage();
+						}
+					}
+
 					return false;
 				}
 			}
@@ -874,6 +889,11 @@ class DataImporter
 			throw new \InvalidArgumentException( 'Invalid JSON structure: missing "data" key' );
 		}
 
+		if( !is_array( $data[ 'data' ] ) )
+		{
+			throw new \InvalidArgumentException( 'Invalid JSON structure: "data" must be an array, got ' . gettype( $data[ 'data' ] ) );
+		}
+
 		return $this->importStructuredData( $data[ 'data' ] );
 	}
 
@@ -896,6 +916,19 @@ class DataImporter
 
 			$tableData = $data[ $table ];
 
+			// Validate that table data is an array
+			if( !is_array( $tableData ) )
+			{
+				$this->_Errors[] = "Invalid data for table '{$table}': expected array, got " . gettype( $tableData );
+
+				if( $this->_Options[ 'stop_on_error' ] )
+				{
+					throw new \InvalidArgumentException( "Invalid data for table '{$table}': expected array, got " . gettype( $tableData ) );
+				}
+
+				continue;
+			}
+
 			// Handle both formats: direct array of rows or object with 'rows' key
 			if( isset( $tableData[ 'rows' ] ) )
 			{
@@ -904,6 +937,19 @@ class DataImporter
 			else
 			{
 				$rows = $tableData;
+			}
+
+			// Validate that rows is an array
+			if( !is_array( $rows ) )
+			{
+				$this->_Errors[] = "Invalid rows data for table '{$table}': expected array, got " . gettype( $rows );
+
+				if( $this->_Options[ 'stop_on_error' ] )
+				{
+					throw new \InvalidArgumentException( "Invalid rows data for table '{$table}': expected array, got " . gettype( $rows ) );
+				}
+
+				continue;
 			}
 
 			if( empty( $rows ) )
@@ -1161,18 +1207,34 @@ class DataImporter
 					// PDO::quote adds quotes around the string, but our callers
 					// add quotes themselves, so we need to strip them
 					$quoted = $connection->quote( $value );
-					// Remove the surrounding quotes that PDO adds
+
+					// Check for strict failure (PDO::quote returns false when driver doesn't support quoting)
+					if( $quoted === false )
+					{
+						// Fall back to manual SQL escaping when PDO::quote() is unavailable
+						// Escape single quotes (SQL standard) and backslashes, remove null bytes
+						return str_replace(
+							["\\", "\0", "'"],
+							["\\\\", "", "''"],
+							$value
+						);
+					}
+
+					// Remove the surrounding quotes that PDO adds (if present)
 					if( strlen( $quoted ) >= 2 )
 					{
 						// Strip first and last character (the quotes)
 						return substr( $quoted, 1, -1 );
 					}
-					return $value;
+
+					// If $quoted is empty string or single character, return it as-is
+					// (quote() succeeded but returned unusually short result)
+					return $quoted;
 				}
 			}
 			catch( \Exception $e )
 			{
-				// Log the error but continue to throw exception below
+				// Log the error but continue to check other methods
 			}
 		}
 
@@ -1211,6 +1273,11 @@ class DataImporter
 		if( !isset( $data[ 'data' ] ) )
 		{
 			throw new \InvalidArgumentException( 'Invalid YAML structure: missing "data" key' );
+		}
+
+		if( !is_array( $data[ 'data' ] ) )
+		{
+			throw new \InvalidArgumentException( 'Invalid YAML structure: "data" must be an array, got ' . gettype( $data[ 'data' ] ) );
 		}
 
 		return $this->importStructuredData( $data[ 'data' ] );

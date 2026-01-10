@@ -685,7 +685,18 @@ class DataExporterWithORM
 		}
 
 		// Use PDO quote for string values (including numeric strings with leading zeros)
-		return $this->_pdo->quote( (string)$value );
+		$quoted = $this->_pdo->quote( (string)$value );
+
+		// Check for failure - PDO::quote returns false if driver doesn't support quoting
+		if( $quoted === false )
+		{
+			throw new \RuntimeException(
+				'PDO::quote() failed. The PDO driver may not support quoting. ' .
+				'Cannot safely escape value for SQL export.'
+			);
+		}
+
+		return $quoted;
 	}
 
 	/**

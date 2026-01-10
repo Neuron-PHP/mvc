@@ -1095,11 +1095,16 @@ class DataExporter
 					// add quotes themselves, so we need to strip them
 					$quoted = $connection->quote( $value );
 
-					// Check for strict failure (PDO::quote returns false on error)
+					// Check for strict failure (PDO::quote returns false when driver doesn't support quoting)
 					if( $quoted === false )
 					{
-						// Fall back to original value only if quote() failed
-						return $value;
+						// Fall back to manual SQL escaping when PDO::quote() is unavailable
+						// Escape single quotes (SQL standard) and backslashes, remove null bytes
+						return str_replace(
+							["\\", "\0", "'"],
+							["\\\\", "", "''"],
+							$value
+						);
 					}
 
 					// Remove the surrounding quotes that PDO adds (if present)
@@ -1110,7 +1115,7 @@ class DataExporter
 					}
 
 					// If $quoted is empty string or single character, return it as-is
-					// (don't return unescaped $value when quote succeeded)
+					// (quote() succeeded but returned unusually short result)
 					return $quoted;
 				}
 			}

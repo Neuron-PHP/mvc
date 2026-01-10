@@ -513,7 +513,6 @@ class DataExporterWhereClauseTest extends TestCase
 	{
 		$mockAdapter = $this->getMockBuilder( AdapterInterface::class )
 			->onlyMethods( get_class_methods( AdapterInterface::class ) )
-			->addMethods( ['getTables'] )
 			->getMock();
 
 		$mockConfig = new Config( [
@@ -531,7 +530,6 @@ class DataExporterWhereClauseTest extends TestCase
 
 		$mockAdapter->method( 'connect' );
 		$mockAdapter->method( 'getAdapterType' )->willReturn( 'mysql' );
-		$mockAdapter->method( 'getTables' )->willReturn( [] );
 
 		$this->mockAdapterFactory( $mockAdapter );
 
