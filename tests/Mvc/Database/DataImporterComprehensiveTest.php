@@ -721,10 +721,78 @@ data:
 
 	// Helper methods
 
+	/**
+	 * Get explicit list of AdapterInterface method names
+	 * Replaces fragile get_class_methods() with hardcoded list for test stability
+	 *
+	 * @return array List of method names from Phinx\Db\Adapter\AdapterInterface
+	 */
+	private function listAdapterInterfaceMethods(): array
+	{
+		return [
+			'beginTransaction',
+			'bulkinsert',
+			'castToBool',
+			'commitTransaction',
+			'connect',
+			'createDatabase',
+			'createSchema',
+			'createSchemaTable',
+			'createTable',
+			'disconnect',
+			'dropDatabase',
+			'dropSchema',
+			'execute',
+			'executeActions',
+			'fetchAll',
+			'fetchRow',
+			'getAdapterType',
+			'getColumnForType',
+			'getColumnTypes',
+			'getColumns',
+			'getDeleteBuilder',
+			'getInput',
+			'getInsertBuilder',
+			'getOption',
+			'getOptions',
+			'getOutput',
+			'getQueryBuilder',
+			'getSelectBuilder',
+			'getSqlType',
+			'getUpdateBuilder',
+			'getVersionLog',
+			'getVersions',
+			'hasColumn',
+			'hasDatabase',
+			'hasForeignKey',
+			'hasIndex',
+			'hasIndexByName',
+			'hasOption',
+			'hasPrimaryKey',
+			'hasTable',
+			'hasTransactions',
+			'insert',
+			'isValidColumnType',
+			'migrated',
+			'query',
+			'quoteColumnName',
+			'quoteTableName',
+			'resetAllBreakpoints',
+			'rollbackTransaction',
+			'setBreakpoint',
+			'setInput',
+			'setOptions',
+			'setOutput',
+			'toggleBreakpoint',
+			'truncateTable',
+			'unsetBreakpoint',
+		];
+	}
+
 	private function createMockAdapter()
 	{
 		$mockAdapter = $this->getMockBuilder( AdapterInterface::class )
-			->onlyMethods( get_class_methods( AdapterInterface::class ) )
+			->onlyMethods( $this->listAdapterInterfaceMethods() )
 			->addMethods( ['hasTransaction', 'getConnection'] )
 			->getMock();
 
@@ -747,7 +815,7 @@ data:
 	private function createPartialMockAdapter()
 	{
 		$mockAdapter = $this->getMockBuilder( AdapterInterface::class )
-			->onlyMethods( get_class_methods( AdapterInterface::class ) )
+			->onlyMethods( $this->listAdapterInterfaceMethods() )
 			->addMethods( ['hasTransaction'] )
 			->getMock();
 
@@ -790,22 +858,53 @@ data:
 		$instanceProperty->setValue( null, $mockFactory );
 	}
 
+	/**
+	 * Recursively remove a directory and its contents
+	 * Security: Skips symlinks and validates all paths are within the root directory
+	 *
+	 * @param string $dir Directory to remove
+	 * @return void
+	 */
 	private function recursiveRemoveDir( $dir ): void
 	{
 		if( !is_dir( $dir ) ) return;
+
+		// Get the canonical root path to validate all operations stay within bounds
+		$root = realpath( $dir );
+		if( $root === false )
+		{
+			return; // Invalid directory, skip
+		}
 
 		$objects = scandir( $dir );
 		foreach( $objects as $object )
 		{
 			if( $object != "." && $object != ".." )
 			{
-				if( is_dir( $dir . "/" . $object ) )
+				$path = $dir . "/" . $object;
+
+				// SECURITY: Detect symlinks and remove them without following
+				// unlink() on a symlink removes the link itself, not the target
+				if( is_link( $path ) )
 				{
-					$this->recursiveRemoveDir( $dir . "/" . $object );
+					unlink( $path ); // Safe: removes only the symlink, not its target
+					continue;
+				}
+
+				// SECURITY: Validate path is within the intended directory tree
+				$realPath = realpath( $path );
+				if( $realPath === false || strpos( $realPath, $root ) !== 0 )
+				{
+					continue; // Path is outside root or doesn't exist, skip
+				}
+
+				if( is_dir( $path ) )
+				{
+					$this->recursiveRemoveDir( $path );
 				}
 				else
 				{
-					unlink( $dir . "/" . $object );
+					unlink( $path );
 				}
 			}
 		}

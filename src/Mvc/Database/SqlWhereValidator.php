@@ -113,9 +113,9 @@ class SqlWhereValidator
 	/**
 	 * Strip string literals from a WHERE clause, preserving structure
 	 *
-	 * Removes all content inside single and double quoted strings,
-	 * properly handling escaped quotes and backslashes, so that
-	 * parentheses and other characters inside literals are ignored.
+	 * Removes all content inside single-quoted, double-quoted, and backtick-quoted strings,
+	 * properly handling escaped quotes and backslashes. This prevents false positives when
+	 * checking for SQL injection patterns (e.g., "John -- Smith" won't trigger comment detection).
 	 *
 	 * @param string $str String to process
 	 * @return string String with all literal contents removed
@@ -130,8 +130,8 @@ class SqlWhereValidator
 		{
 			$char = $str[$i];
 
-			// Check if this is the start of a string literal
-			if( $char === "'" || $char === '"' )
+			// Check if this is the start of a string literal (single quote, double quote, or backtick)
+			if( $char === "'" || $char === '"' || $char === '`' )
 			{
 				$quoteChar = $char;
 				$i++; // Skip opening quote
@@ -192,16 +192,8 @@ class SqlWhereValidator
 	 */
 	public static function isValid( string $whereClause ): bool
 	{
-		// Check for dangerous patterns
-		foreach( self::DANGEROUS_PATTERNS as $pattern )
-		{
-			if( preg_match( $pattern, $whereClause ) )
-			{
-				return false;
-			}
-		}
-
 		// Check for balanced quotes using proper backslash handling
+		// Must be done BEFORE stripping literals
 		$singleQuotes = self::countUnescapedQuotes( $whereClause, "'" );
 		$doubleQuotes = self::countUnescapedQuotes( $whereClause, '"' );
 
@@ -210,8 +202,20 @@ class SqlWhereValidator
 			return false;
 		}
 
-		// Check for balanced parentheses (ignoring those inside string literals)
+		// Strip string literals to prevent false positives in pattern matching
+		// Example: "John -- Smith" should not trigger SQL comment detection
 		$strippedWhere = self::stripStringLiterals( $whereClause );
+
+		// Check for dangerous patterns on the stripped version (structural SQL only)
+		foreach( self::DANGEROUS_PATTERNS as $pattern )
+		{
+			if( preg_match( $pattern, $strippedWhere ) )
+			{
+				return false;
+			}
+		}
+
+		// Check for balanced parentheses (ignoring those inside string literals)
 		$openParens = substr_count( $strippedWhere, '(' );
 		$closeParens = substr_count( $strippedWhere, ')' );
 

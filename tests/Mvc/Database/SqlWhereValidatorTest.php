@@ -405,4 +405,77 @@ class SqlWhereValidatorTest extends TestCase
 		// This demonstrates a limitation - real protection requires parameterized queries
 		$this->assertTrue( $isValid, "Has balanced quotes, passes basic validation (shows limitation)" );
 	}
+
+	/**
+	 * Test that SQL-like patterns inside string literals don't trigger false positives
+	 * Regression test for issue where "John -- Smith" was incorrectly flagged as SQL injection
+	 */
+	public function testNoFalsePositivesForLiterals(): void
+	{
+		// These are harmless WHERE clauses with SQL-like patterns inside string literals
+		$validClauses = [
+			// SQL comments inside strings
+			"name = 'John -- Smith'",
+			"description = 'Use -- for comments'",
+			"title = 'SQL /* comment */ syntax'",
+			"note = 'This is a # hashtag'",
+
+			// SQL keywords inside strings
+			"name = 'DROP the ball'",
+			"action = 'DELETE old files'",
+			"status = 'UNION dues'",
+			"type = 'SELECT option'",
+			"description = 'INSERT coin here'",
+			"note = 'CREATE art'",
+
+			// System functions inside strings
+			"info = 'SLEEP well tonight'",
+			"desc = 'BENCHMARK results'",
+			"text = 'LOAD_FILE instructions'",
+
+			// Information schema references inside strings
+			"table_desc = 'See INFORMATION_SCHEMA for details'",
+			"note = 'MYSQL version 8.0'",
+
+			// Hexadecimal-like patterns inside strings
+			"code = '0x1234ABCD'",
+			"hex = 'Value is 0xFFFF'",
+
+			// Backtick-quoted identifiers with dangerous content
+			"`column_name` = 'DROP TABLE'",
+			"`table`.`field` = 'DELETE FROM'",
+
+			// Mixed quote types
+			"name = 'O''Brien -- famous'",
+			'description = "SQL /* test */ code"',
+
+			// Complex cases
+			"(name = 'John -- Smith' OR title = 'SQL /* guide */')  AND status = 'active'",
+			"id IN (1, 2, 3) AND desc = 'Use -- for dashes'",
+		];
+
+		foreach( $validClauses as $clause )
+		{
+			$this->assertTrue(
+				SqlWhereValidator::isValid( $clause ),
+				"Valid clause with SQL patterns in literals should pass: {$clause}"
+			);
+		}
+
+		// These SHOULD still be blocked because the dangerous patterns are OUTSIDE quotes
+		$actualDangerousClauses = [
+			"name = 'John' -- comment outside",
+			"status = 'active' /* real comment */ AND 1=1",
+			"name = 'test' UNION SELECT password FROM users",
+			"id = 5 OR 1=1 -- bypass",
+		];
+
+		foreach( $actualDangerousClauses as $clause )
+		{
+			$this->assertFalse(
+				SqlWhereValidator::isValid( $clause ),
+				"Clause with actual dangerous patterns should fail: {$clause}"
+			);
+		}
+	}
 }
