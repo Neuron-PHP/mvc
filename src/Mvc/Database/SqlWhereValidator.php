@@ -106,6 +106,12 @@ class SqlWhereValidator
 	 */
 	public static function parseSimpleWhere( string $whereClause ): array|false
 	{
+		// Validate input before parsing - reject any potentially unsafe clauses
+		if( !self::isValid( $whereClause ) )
+		{
+			return false;
+		}
+
 		// Pattern for simple conditions: column operator value
 		// Allows: =, !=, <>, <, >, <=, >=, LIKE, NOT LIKE, IN, NOT IN, IS NULL, IS NOT NULL
 		$pattern = '/^(\w+)\s*(=|!=|<>|<|>|<=|>=|LIKE|NOT\s+LIKE|IN|NOT\s+IN|IS\s+NULL|IS\s+NOT\s+NULL)\s*(.*)$/i';

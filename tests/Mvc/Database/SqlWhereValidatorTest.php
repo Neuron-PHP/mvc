@@ -209,16 +209,15 @@ class SqlWhereValidatorTest extends TestCase
 		$this->assertEquals( 'IS NULL', $result[0]['operator'] );
 		$this->assertEquals( '', $result[0]['value'] );
 
-		// Test complex patterns with subquery - parseSimpleWhere extracts what it can
+		// Test complex patterns with subquery - parseSimpleWhere now validates first
 		$result = SqlWhereValidator::parseSimpleWhere( "id = (SELECT MAX(id) FROM users)" );
-		// The simple parser doesn't detect subqueries, it just sees "column = value"
-		// This is why isValid() is also needed for full validation
-		$this->assertIsArray( $result ); // It will parse it (incorrectly)
+		// parseSimpleWhere now calls isValid() first, which rejects subqueries
+		$this->assertFalse( $result, 'Subqueries should be rejected by validation' );
 
-		// Test SQL injection - semicolon breaks parsing
+		// Test SQL injection - semicolon rejected by validation
 		$result = SqlWhereValidator::parseSimpleWhere( "1=1; DROP TABLE users" );
-		// The parser will extract the first part before semicolon
-		$this->assertIsArray( $result );
+		// parseSimpleWhere now calls isValid() first, which rejects SQL injection
+		$this->assertFalse( $result, 'SQL injection attempts should be rejected by validation' );
 	}
 
 	/**

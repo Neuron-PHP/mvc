@@ -135,7 +135,8 @@ class DumpCommand extends Command
 				$duration = round( $endTime - $startTime, 2 );
 
 				// Get file size of the actual file written
-				$fileSize = $this->formatFileSize( filesize( $actualPath ) );
+				$fileSizeBytes = filesize( $actualPath );
+				$fileSize = $fileSizeBytes !== false ? $this->formatFileSize( $fileSizeBytes ) : 'Unknown';
 
 				$this->output->newLine();
 				$this->output->success( "Data exported successfully!" );
@@ -401,7 +402,8 @@ class DumpCommand extends Command
 
 			foreach( $exportedFiles as $file )
 			{
-				$fileSize = $this->formatFileSize( filesize( $file ) );
+				$fileSizeBytes = filesize( $file );
+				$fileSize = $fileSizeBytes !== false ? $this->formatFileSize( $fileSizeBytes ) : 'Unknown';
 				$fileName = basename( $file );
 				$this->output->write( "  - {$fileName} ({$fileSize})" );
 			}

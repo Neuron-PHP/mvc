@@ -566,10 +566,11 @@ class DataExporter
 		// Since Phinx adapters don't support parameterized queries natively,
 		// we access the underlying PDO connection when available
 
-		if( isset( $this->_Options['where'][$table] ) )
-		{
-			$whereClause = $this->_Options['where'][$table];
+		// Normalize WHERE clause - treat empty/whitespace as no WHERE
+		$whereClause = trim( $this->_Options['where'][$table] ?? '' );
 
+		if( $whereClause !== '' )
+		{
 			// First validate the WHERE clause structure
 			if( !SqlWhereValidator::isValid( $whereClause ) )
 			{
@@ -725,20 +726,29 @@ class DataExporter
 				// Group 3: single-quoted value (may contain escaped '')
 				// Group 4: double-quoted value (may contain escaped "")
 				// Group 5: unquoted value
-				if( !empty( $match[3] ) )
+				// Check unquoted first since it cannot be empty (uses \S+ pattern)
+				// Use !== '' instead of !empty() to handle values like '0' correctly
+				// Use isset() to check if group participated in match (PHP may not set non-participating groups)
+				if( isset( $match[5] ) && $match[5] !== '' )
 				{
-					// Single-quoted - unescape doubled single quotes
+					// Unquoted value (cannot be empty due to \S+ pattern)
+					$value = $match[5];
+				}
+				elseif( isset( $match[3] ) && $match[3] !== '' )
+				{
+					// Single-quoted non-empty value - unescape doubled single quotes
 					$value = str_replace( "''", "'", $match[3] );
 				}
-				elseif( !empty( $match[4] ) )
+				elseif( isset( $match[4] ) && $match[4] !== '' )
 				{
-					// Double-quoted - unescape doubled double quotes
+					// Double-quoted non-empty value - unescape doubled double quotes
 					$value = str_replace( '""', '"', $match[4] );
 				}
 				else
 				{
-					// Unquoted value
-					$value = $match[5];
+					// All groups are empty - must be an empty quoted string
+					// Could be either '' or "" - doesn't matter since result is empty
+					$value = '';
 				}
 
 				// Use placeholder for binding
@@ -773,10 +783,11 @@ class DataExporter
 	 */
 	private function getTableRowCount( string $table ): int
 	{
-		if( isset( $this->_Options['where'][$table] ) )
-		{
-			$whereClause = $this->_Options['where'][$table];
+		// Normalize WHERE clause - treat empty/whitespace as no WHERE
+		$whereClause = trim( $this->_Options['where'][$table] ?? '' );
 
+		if( $whereClause !== '' )
+		{
 			// Validate WHERE clause for SQL injection attempts
 			if( !SqlWhereValidator::isValid( $whereClause ) )
 			{
@@ -880,7 +891,7 @@ class DataExporter
 					}
 					elseif( is_bool( $value ) )
 					{
-						$escapedValues[] = $value ? '1' : '0';
+						$escapedValues[] = $this->formatBooleanLiteral( $value );
 					}
 					elseif( is_numeric( $value ) && !$this->hasLeadingZeros( $value ) )
 					{
@@ -904,6 +915,25 @@ class DataExporter
 		}
 
 		return implode( "\n", $statements );
+	}
+
+	/**
+	 * Format boolean value as adapter-appropriate SQL literal
+	 *
+	 * PostgreSQL requires TRUE/FALSE literals for boolean columns.
+	 * Other databases accept 1/0 for booleans.
+	 *
+	 * @param bool $value Boolean value to format
+	 * @return string SQL literal representation
+	 */
+	private function formatBooleanLiteral( bool $value ): string
+	{
+		// Keep INSERTs portable across adapters
+		return match( $this->_AdapterType )
+		{
+			'pgsql', 'postgres' => $value ? 'TRUE' : 'FALSE',
+			default => $value ? '1' : '0',
+		};
 	}
 
 	/**
@@ -1115,6 +1145,16 @@ class DataExporter
 	 */
 	private function shouldUseStreaming(): bool
 	{
+		// Streaming bypasses IFileSystem (uses fopen/gzopen directly)
+		// Only use streaming with RealFileSystem to prevent:
+		// 1. Testability issues (mocks/custom filesystems won't work)
+		// 2. Unexpected writes to real disk when using mock filesystem
+		// 3. Behavior divergence between streaming and non-streaming modes
+		if( !$this->fs instanceof RealFileSystem )
+		{
+			return false;
+		}
+
 		// Use streaming for SQL and CSV formats with large datasets
 		if( !in_array( $this->_Options['format'], [self::FORMAT_SQL, self::FORMAT_CSV] ) )
 		{
@@ -1207,11 +1247,12 @@ class DataExporter
 				$limit = $batchSize;
 			}
 
-			// Use prepared statements if PDO is available and WHERE clause exists
-			if( isset( $this->_Options['where'][$table] ) )
-			{
-				$whereClause = $this->_Options['where'][$table];
+			// Normalize WHERE clause - treat empty/whitespace as no WHERE
+			$whereClause = trim( $this->_Options['where'][$table] ?? '' );
 
+			// Use prepared statements if PDO is available and WHERE clause exists
+			if( $whereClause !== '' )
+			{
 				// Validate WHERE clause for SQL injection attempts
 				if( !SqlWhereValidator::isValid( $whereClause ) )
 				{
@@ -1322,11 +1363,12 @@ class DataExporter
 				$limit = $batchSize;
 			}
 
-			// Use prepared statements if PDO is available and WHERE clause exists
-			if( isset( $this->_Options['where'][$table] ) )
-			{
-				$whereClause = $this->_Options['where'][$table];
+			// Normalize WHERE clause - treat empty/whitespace as no WHERE
+			$whereClause = trim( $this->_Options['where'][$table] ?? '' );
 
+			// Use prepared statements if PDO is available and WHERE clause exists
+			if( $whereClause !== '' )
+			{
 				// Validate WHERE clause for SQL injection attempts
 				if( !SqlWhereValidator::isValid( $whereClause ) )
 				{

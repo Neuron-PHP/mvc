@@ -50,7 +50,7 @@ const CONFLICT_SKIP = 'skip';
 	{
 		$this->_MigrationTable = $MigrationTable;
 		$this->_Options        = array_merge( [
-															  'format' => self::FORMAT_SQL,
+															  'format' => null, // null = auto-detect from file extension/content
 'tables' => null,
 			// null = all tables in import file
 																																																																																																																																																																																																																																					  'exclude' => [],
@@ -66,6 +66,14 @@ const CONFLICT_SKIP = 'skip';
 'progress_callback' => null
 															  // Callback for progress updates
 														  ], $Options );
+
+		// Validate batch_size is greater than zero
+		if( $this->_Options['batch_size'] <= 0 )
+		{
+			throw new \InvalidArgumentException(
+				"batch_size must be greater than 0, got: {$this->_Options['batch_size']}"
+			);
+		}
 
 		$this->fs = $fs ?? new RealFileSystem();
 
@@ -302,8 +310,26 @@ const CONFLICT_SKIP = 'skip';
 				break;
 			case 'pgsql':
 				// PostgreSQL doesn't have a global foreign key disable
-				// Would need to defer constraints within transaction
-				$this->_Adapter->execute( 'SET CONSTRAINTS ALL DEFERRED' );
+				// SET CONSTRAINTS ALL DEFERRED requires:
+				// 1. Active transaction
+				// 2. Constraints marked as DEFERRABLE
+				// Guard against errors and warn instead of failing
+				try
+				{
+					$this->_Adapter->execute( 'SET CONSTRAINTS ALL DEFERRED' );
+				}
+				catch( \Exception $e )
+				{
+					// Common causes:
+					// - Not in a transaction
+					// - Constraints not marked DEFERRABLE
+					// - No foreign key constraints exist
+					Log::warning(
+						"Could not defer PostgreSQL constraints: {$e->getMessage()}. " .
+						"This may cause foreign key violations during import. " .
+						"Ensure constraints are DEFERRABLE or disable foreign key checks in options."
+					);
+				}
 				break;
 		}
 	}
@@ -487,14 +513,17 @@ const CONFLICT_SKIP = 'skip';
 	private function shouldProcessStatement( string $statement ): bool
 	{
 		// Extract table name from various SQL statements
+		// Pattern matches both quoted and unquoted identifiers with special chars:
+		// - Unquoted: word chars only (users, my_table)
+		// - Quoted: can contain dashes, dots, etc (`user-profiles`, "schema.table")
 		$patterns = [
-			'/^INSERT\s+INTO\s+[`"]?(\w+)[`"]?/i',
-			'/^DELETE\s+FROM\s+[`"]?(\w+)[`"]?/i',
-			'/^UPDATE\s+[`"]?(\w+)[`"]?/i',
-			'/^DROP\s+TABLE\s+(?:IF\s+EXISTS\s+)?[`"]?(\w+)[`"]?/i',
-			'/^CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?[`"]?(\w+)[`"]?/i',
-			'/^ALTER\s+TABLE\s+[`"]?(\w+)[`"]?/i',
-			'/^TRUNCATE\s+(?:TABLE\s+)?[`"]?(\w+)[`"]?/i'
+			'/^INSERT\s+INTO\s+(?:[`"]([^`"]+)[`"]|(\w+))/i',
+			'/^DELETE\s+FROM\s+(?:[`"]([^`"]+)[`"]|(\w+))/i',
+			'/^UPDATE\s+(?:[`"]([^`"]+)[`"]|(\w+))/i',
+			'/^DROP\s+TABLE\s+(?:IF\s+EXISTS\s+)?(?:[`"]([^`"]+)[`"]|(\w+))/i',
+			'/^CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?(?:[`"]([^`"]+)[`"]|(\w+))/i',
+			'/^ALTER\s+TABLE\s+(?:[`"]([^`"]+)[`"]|(\w+))/i',
+			'/^TRUNCATE\s+(?:TABLE\s+)?(?:[`"]([^`"]+)[`"]|(\w+))/i'
 		];
 
 		$tableName = null;
@@ -502,7 +531,8 @@ const CONFLICT_SKIP = 'skip';
 		{
 			if( preg_match( $pattern, $statement, $matches ) )
 			{
-				$tableName = $matches[ 1 ];
+				// Group 1 = quoted identifier, Group 2 = unquoted identifier
+				$tableName = !empty( $matches[ 1 ] ) ? $matches[ 1 ] : $matches[ 2 ];
 				break;
 			}
 		}
@@ -819,7 +849,7 @@ const CONFLICT_SKIP = 'skip';
 				}
 				elseif( is_bool( $value ) )
 				{
-					$escapedValues[] = $value ? '1' : '0';
+					$escapedValues[] = $this->formatBooleanLiteral( $value );
 				}
 				elseif( is_numeric( $value ) && !$this->hasLeadingZeros( $value ) )
 				{
@@ -872,6 +902,25 @@ const CONFLICT_SKIP = 'skip';
 		}
 
 		return false;
+	}
+
+	/**
+	 * Format boolean value as adapter-appropriate SQL literal
+	 *
+	 * PostgreSQL requires TRUE/FALSE literals for boolean columns.
+	 * Other databases accept 1/0 for booleans.
+	 *
+	 * @param bool $value Boolean value to format
+	 * @return string SQL literal representation
+	 */
+	private function formatBooleanLiteral( bool $value ): string
+	{
+		// Keep INSERTs portable across adapters
+		return match( $this->_AdapterType )
+		{
+			'pgsql', 'postgres' => $value ? 'TRUE' : 'FALSE',
+			default => $value ? '1' : '0',
+		};
 	}
 
 	/**
@@ -964,7 +1013,25 @@ const CONFLICT_SKIP = 'skip';
 				break;
 			case 'pgsql':
 				// Constraints will be checked at transaction commit
-				$this->_Adapter->execute( 'SET CONSTRAINTS ALL IMMEDIATE' );
+				// SET CONSTRAINTS ALL IMMEDIATE requires:
+				// 1. Active transaction
+				// 2. Constraints marked as DEFERRABLE
+				// Guard against errors and warn instead of failing
+				try
+				{
+					$this->_Adapter->execute( 'SET CONSTRAINTS ALL IMMEDIATE' );
+				}
+				catch( \Exception $e )
+				{
+					// Common causes:
+					// - Not in a transaction
+					// - Constraints not marked DEFERRABLE
+					// - No foreign key constraints exist
+					Log::warning(
+						"Could not set PostgreSQL constraints to IMMEDIATE: {$e->getMessage()}. " .
+						"This is usually safe - constraints will be checked at transaction commit."
+					);
+				}
 				break;
 		}
 	}
@@ -1145,23 +1212,29 @@ const CONFLICT_SKIP = 'skip';
 			throw new \RuntimeException( "Cannot read CSV file: {$filePath}" );
 		}
 
-		// Parse CSV content
-		$lines = explode( "\n", $content );
-		if( empty( $lines ) )
+		// Use streaming CSV parsing to handle embedded newlines correctly
+		// Create in-memory stream from file content
+		$stream = fopen( 'php://temp', 'r+' );
+		if( $stream === false )
 		{
-			throw new \RuntimeException( "CSV file is empty: {$filePath}" );
+			throw new \RuntimeException( "Failed to create temporary stream for CSV parsing" );
 		}
 
-		// Parse header row
-		$headers = $this->parseCsvLine( array_shift( $lines ) );
-		if( !$headers )
+		fwrite( $stream, $content );
+		rewind( $stream );
+
+		// Parse header row using fgetcsv (handles quoted newlines)
+		$headers = fgetcsv( $stream, 0, ',', '"', '' );
+		if( $headers === false || empty( $headers ) )
 		{
+			fclose( $stream );
 			throw new \RuntimeException( "CSV file has no valid header: {$filePath}" );
 		}
 
 		// Prepare table
 		if( !$this->prepareTableForImport( $tableName ) )
 		{
+			fclose( $stream );
 			return;
 		}
 
@@ -1169,23 +1242,23 @@ const CONFLICT_SKIP = 'skip';
 		$batch     = [];
 		$batchSize = $this->_Options[ 'batch_size' ];
 
-		foreach( $lines as $line )
+		// Read rows using fgetcsv (properly handles embedded newlines in quoted fields)
+		while( ( $row = fgetcsv( $stream, 0, ',', '"', '' ) ) !== false )
 		{
-			// Skip empty lines
-			if( trim( $line ) === '' )
+			// Skip empty rows (fgetcsv returns array with single null element for blank lines)
+			if( count( $row ) === 1 && $row[ 0 ] === null )
 			{
 				continue;
 			}
 
-			// Skip comment lines
-			if( str_starts_with( $line, '#' ) )
+			// Skip comment lines (first field starts with #)
+			if( isset( $row[ 0 ] ) && is_string( $row[ 0 ] ) && str_starts_with( $row[ 0 ], '#' ) )
 			{
 				continue;
 			}
 
-			// Parse CSV line
-			$row = $this->parseCsvLine( $line );
-			if( !$row || count( $row ) !== count( $headers ) )
+			// Validate column count
+			if( count( $row ) !== count( $headers ) )
 			{
 				continue; // Skip malformed rows
 			}
@@ -1205,6 +1278,9 @@ const CONFLICT_SKIP = 'skip';
 				$batch = [];
 			}
 		}
+
+		// Close stream
+		fclose( $stream );
 
 		// Insert remaining batch
 		if( !empty( $batch ) )

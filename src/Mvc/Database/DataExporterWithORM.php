@@ -44,6 +44,9 @@ class DataExporterWithORM
 			$envOptions
 		);
 
+		// Connect to database
+		$this->_adapter->connect();
+
 		// Get PDO connection for QueryBuilder
 		if( method_exists( $this->_adapter, 'getConnection' ) )
 		{
@@ -662,6 +665,32 @@ class DataExporterWithORM
 			default:
 				// Default to ANSI SQL double quotes
 				return '"' . str_replace( '"', '""', $identifier ) . '"';
+		}
+	}
+
+	/**
+	 * Disconnect from database
+	 */
+	public function disconnect(): void
+	{
+		$this->_adapter->disconnect();
+	}
+
+	/**
+	 * Destructor - ensure adapter is disconnected
+	 */
+	public function __destruct()
+	{
+		if( isset( $this->_adapter ) )
+		{
+			try
+			{
+				$this->_adapter->disconnect();
+			}
+			catch( \Exception $e )
+			{
+				// Silently handle disconnect errors in destructor
+			}
 		}
 	}
 }

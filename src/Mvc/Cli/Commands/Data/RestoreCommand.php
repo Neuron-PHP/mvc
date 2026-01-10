@@ -341,7 +341,16 @@ class RestoreCommand extends Command
 
 		// Batch size
 		$batchSize = $this->input->getOption( 'batch-size', 1000 );
-		$options['batch_size'] = (int)$batchSize;
+		$batchSize = (int)$batchSize;
+
+		// Validate batch size is greater than zero
+		if( $batchSize <= 0 )
+		{
+			$this->output->error( "Invalid batch size: {$batchSize}. Batch size must be greater than 0." );
+			throw new \InvalidArgumentException( "Batch size must be greater than 0, got: {$batchSize}" );
+		}
+
+		$options['batch_size'] = $batchSize;
 
 		// Error handling
 		if( $this->input->getOption( 'continue-on-error' ) )
@@ -386,7 +395,8 @@ class RestoreCommand extends Command
 				}
 				else
 				{
-					$size = $this->formatFileSize( filesize( $inputPath ) );
+					$fileSizeBytes = filesize( $inputPath );
+					$size = $fileSizeBytes !== false ? $this->formatFileSize( $fileSizeBytes ) : 'Unknown';
 					$this->output->write( "  File size: " . $size );
 				}
 			}
@@ -572,7 +582,8 @@ class RestoreCommand extends Command
 
 			if( $exporter->exportToFile( $backupPath ) )
 			{
-				$size = $this->formatFileSize( filesize( $backupPath ) );
+				$fileSizeBytes = filesize( $backupPath );
+				$size = $fileSizeBytes !== false ? $this->formatFileSize( $fileSizeBytes ) : 'Unknown';
 				$this->output->success( "Backup created: {$backupPath} ({$size})" );
 				return true;
 			}
