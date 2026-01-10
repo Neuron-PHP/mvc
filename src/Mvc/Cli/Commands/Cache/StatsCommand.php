@@ -66,13 +66,13 @@ class StatsCommand extends Command
 		$stats = $this->gatherStatistics( $cacheConfig );
 		
 		// Output statistics
-		if( $this->input->hasOption( 'json' ) )
+		if( $this->input->getOption( 'json' ) )
 		{
 			$this->outputJson( $stats );
 		}
 		else
 		{
-			$this->outputFormatted( $stats, $cacheConfig, $this->input->hasOption( 'detailed' ) );
+			$this->outputFormatted( $stats, $cacheConfig, (bool)$this->input->getOption( 'detailed' ) );
 		}
 		
 		return 0;

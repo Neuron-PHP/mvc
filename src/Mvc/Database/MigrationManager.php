@@ -3,6 +3,7 @@
 namespace Neuron\Mvc\Database;
 
 use Neuron\Data\Settings\Source\ISettingSource;
+use Neuron\Log\Log;
 use Phinx\Config\Config;
 use Phinx\Migration\Manager;
 use Symfony\Component\Console\Input\StringInput;
@@ -307,7 +308,7 @@ class MigrationManager
 		catch( \Exception $e )
 		{
 			// Log error but don't fail the migration
-			error_log( "Failed to dump schema: " . $e->getMessage() );
+			Log::error( "Failed to dump schema: " . $e->getMessage() );
 			return false;
 		}
 	}

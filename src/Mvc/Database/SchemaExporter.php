@@ -135,10 +135,62 @@ class SchemaExporter
 		switch( $this->_AdapterType )
 		{
 			case 'mysql':
+				// Use PDO for parameter binding - Phinx adapters don't support it
+				if( method_exists( $this->_Adapter, 'getConnection' ) )
+				{
+					try
+					{
+						$connection = $this->_Adapter->getConnection();
+						if( $connection instanceof \PDO )
+						{
+							$sql = "SELECT TABLE_NAME FROM information_schema.TABLES
+									WHERE TABLE_SCHEMA = ? AND TABLE_TYPE = 'BASE TABLE'
+									ORDER BY TABLE_NAME";
+							$stmt = $connection->prepare( $sql );
+							if( $stmt !== false )
+							{
+								$stmt->execute( [$this->_Adapter->getOption( 'name' )] );
+								$rows = $stmt->fetchAll( \PDO::FETCH_ASSOC );
+								return array_column( $rows, 'TABLE_NAME' );
+							}
+						}
+					}
+					catch( \Exception $e )
+					{
+						// Fall through to fallback
+					}
+				}
+
+				// Fallback: Use quote method if available, or simple escaping
+				$dbName = $this->_Adapter->getOption( 'name' );
+				if( method_exists( $this->_Adapter, 'getConnection' ) )
+				{
+					try
+					{
+						$connection = $this->_Adapter->getConnection();
+						if( $connection instanceof \PDO )
+						{
+							// Use PDO quote (returns quoted string with surrounding quotes)
+							$quotedDbName = $connection->quote( $dbName );
+							$sql = "SELECT TABLE_NAME FROM information_schema.TABLES
+									WHERE TABLE_SCHEMA = {$quotedDbName} AND TABLE_TYPE = 'BASE TABLE'
+									ORDER BY TABLE_NAME";
+							$rows = $this->_Adapter->fetchAll( $sql );
+							return array_column( $rows, 'TABLE_NAME' );
+						}
+					}
+					catch( \Exception $e )
+					{
+						// Fall through to basic escaping
+					}
+				}
+
+				// Final fallback: Basic escaping (less secure)
+				$dbName = str_replace( ["'", "\\"], ["''", "\\\\"], $dbName ?? '' );
 				$sql = "SELECT TABLE_NAME FROM information_schema.TABLES
-						WHERE TABLE_SCHEMA = ? AND TABLE_TYPE = 'BASE TABLE'
+						WHERE TABLE_SCHEMA = '{$dbName}' AND TABLE_TYPE = 'BASE TABLE'
 						ORDER BY TABLE_NAME";
-				$rows = $this->_Adapter->fetchAll( $sql, [$this->_Adapter->getOption( 'name' )] );
+				$rows = $this->_Adapter->fetchAll( $sql );
 				return array_column( $rows, 'TABLE_NAME' );
 
 			case 'pgsql':
@@ -229,10 +281,58 @@ class SchemaExporter
 				WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?
 				ORDER BY ORDINAL_POSITION";
 
-		$rows = $this->_Adapter->fetchAll( $sql, [
-			$this->_Adapter->getOption( 'name' ),
-			$tableName
-		] );
+		// Phinx adapters don't support parameterized queries natively
+		// Try to use PDO prepared statements directly
+		$rows = [];
+		if( method_exists( $this->_Adapter, 'getConnection' ) )
+		{
+			try
+			{
+				$connection = $this->_Adapter->getConnection();
+				if( $connection instanceof \PDO )
+				{
+					$stmt = $connection->prepare( $sql );
+					if( $stmt !== false )
+					{
+						$stmt->execute( [
+							$this->_Adapter->getOption( 'name' ),
+							$tableName
+						] );
+						$rows = $stmt->fetchAll( \PDO::FETCH_ASSOC );
+					}
+				}
+			}
+			catch( \Exception $e )
+			{
+				// Fall through to fallback method
+			}
+		}
+
+		// Fallback: Use escaping for parameters
+		if( empty( $rows ) )
+		{
+			$dbName = $this->_Adapter->getOption( 'name' ) ?? '';
+			$dbName = str_replace( ["'", "\\"], ["''", "\\\\"], $dbName );
+			$tableName = str_replace( ["'", "\\"], ["''", "\\\\"], $tableName );
+
+			$sql = "SELECT
+						COLUMN_NAME,
+						DATA_TYPE,
+						COLUMN_TYPE,
+						IS_NULLABLE,
+						COLUMN_DEFAULT,
+						COLUMN_KEY,
+						EXTRA,
+						CHARACTER_MAXIMUM_LENGTH,
+						NUMERIC_PRECISION,
+						NUMERIC_SCALE,
+						COLUMN_COMMENT
+					FROM information_schema.COLUMNS
+					WHERE TABLE_SCHEMA = '{$dbName}' AND TABLE_NAME = '{$tableName}'
+					ORDER BY ORDINAL_POSITION";
+
+			$rows = $this->_Adapter->fetchAll( $sql );
+		}
 
 		$columns = [];
 		foreach( $rows as $row )
@@ -304,7 +404,50 @@ class SchemaExporter
 				WHERE c.table_schema = 'public' AND c.table_name = ?
 				ORDER BY c.ordinal_position";
 
-		$rows = $this->_Adapter->fetchAll( $sql, [$tableName] );
+		// Phinx adapters don't support parameterized queries natively
+		$rows = [];
+		if( method_exists( $this->_Adapter, 'getConnection' ) )
+		{
+			try
+			{
+				$connection = $this->_Adapter->getConnection();
+				if( $connection instanceof \PDO )
+				{
+					$stmt = $connection->prepare( $sql );
+					if( $stmt !== false )
+					{
+						$stmt->execute( [$tableName] );
+						$rows = $stmt->fetchAll( \PDO::FETCH_ASSOC );
+					}
+				}
+			}
+			catch( \Exception $e )
+			{
+				// Fall through to fallback
+			}
+		}
+
+		// Fallback: Use escaping
+		if( empty( $rows ) )
+		{
+			$tableName = str_replace( ["'", "\\"], ["''", "\\\\"], $tableName );
+			$sql = "SELECT
+						c.column_name,
+						c.data_type,
+						c.is_nullable,
+						c.column_default,
+						c.character_maximum_length,
+						c.numeric_precision,
+						c.numeric_scale,
+						pg_catalog.col_description(
+							(SELECT oid FROM pg_catalog.pg_class WHERE relname = c.table_name),
+							c.ordinal_position
+						) as column_comment
+					FROM information_schema.columns c
+					WHERE c.table_schema = 'public' AND c.table_name = '{$tableName}'
+					ORDER BY c.ordinal_position";
+			$rows = $this->_Adapter->fetchAll( $sql );
+		}
 
 		$columns = [];
 		foreach( $rows as $row )
@@ -412,10 +555,48 @@ class SchemaExporter
 				WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?
 				ORDER BY INDEX_NAME, SEQ_IN_INDEX";
 
-		$rows = $this->_Adapter->fetchAll( $sql, [
-			$this->_Adapter->getOption( 'name' ),
-			$tableName
-		] );
+		// Phinx adapters don't support parameterized queries natively
+		$rows = [];
+		if( method_exists( $this->_Adapter, 'getConnection' ) )
+		{
+			try
+			{
+				$connection = $this->_Adapter->getConnection();
+				if( $connection instanceof \PDO )
+				{
+					$stmt = $connection->prepare( $sql );
+					if( $stmt !== false )
+					{
+						$stmt->execute( [
+							$this->_Adapter->getOption( 'name' ),
+							$tableName
+						] );
+						$rows = $stmt->fetchAll( \PDO::FETCH_ASSOC );
+					}
+				}
+			}
+			catch( \Exception $e )
+			{
+				// Fall through to fallback
+			}
+		}
+
+		// Fallback: Use escaping
+		if( empty( $rows ) )
+		{
+			$dbName = $this->_Adapter->getOption( 'name' ) ?? '';
+			$dbName = str_replace( ["'", "\\"], ["''", "\\\\"], $dbName );
+			$tableName = str_replace( ["'", "\\"], ["''", "\\\\"], $tableName );
+
+			$sql = "SELECT
+						INDEX_NAME,
+						COLUMN_NAME,
+						NON_UNIQUE
+					FROM information_schema.STATISTICS
+					WHERE TABLE_SCHEMA = '{$dbName}' AND TABLE_NAME = '{$tableName}'
+					ORDER BY INDEX_NAME, SEQ_IN_INDEX";
+			$rows = $this->_Adapter->fetchAll( $sql );
+		}
 
 		$indexes = [];
 		$indexGroups = [];
@@ -474,7 +655,45 @@ class SchemaExporter
 				WHERE t.relname = ? AND t.relkind = 'r'
 				ORDER BY i.relname, a.attnum";
 
-		$rows = $this->_Adapter->fetchAll( $sql, [$tableName] );
+		// Phinx adapters don't support parameterized queries natively
+		$rows = [];
+		if( method_exists( $this->_Adapter, 'getConnection' ) )
+		{
+			try
+			{
+				$connection = $this->_Adapter->getConnection();
+				if( $connection instanceof \PDO )
+				{
+					$stmt = $connection->prepare( $sql );
+					if( $stmt !== false )
+					{
+						$stmt->execute( [$tableName] );
+						$rows = $stmt->fetchAll( \PDO::FETCH_ASSOC );
+					}
+				}
+			}
+			catch( \Exception $e )
+			{
+				// Fall through to fallback
+			}
+		}
+
+		// Fallback: Use escaping
+		if( empty( $rows ) )
+		{
+			$tableName = str_replace( ["'", "\\"], ["''", "\\\\"], $tableName );
+			$sql = "SELECT
+						i.relname as index_name,
+						a.attname as column_name,
+						ix.indisunique as is_unique
+					FROM pg_class t
+					JOIN pg_index ix ON t.oid = ix.indrelid
+					JOIN pg_class i ON i.oid = ix.indexrelid
+					JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = ANY(ix.indkey)
+					WHERE t.relname = '{$tableName}' AND t.relkind = 'r'
+					ORDER BY i.relname, a.attnum";
+			$rows = $this->_Adapter->fetchAll( $sql );
+		}
 
 		$indexes = [];
 		$indexGroups = [];
@@ -591,10 +810,51 @@ class SchemaExporter
 				WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND REFERENCED_TABLE_NAME IS NOT NULL
 				ORDER BY CONSTRAINT_NAME, ORDINAL_POSITION";
 
-		$rows = $this->_Adapter->fetchAll( $sql, [
-			$this->_Adapter->getOption( 'name' ),
-			$tableName
-		] );
+		// Phinx adapters don't support parameterized queries natively
+		$rows = [];
+		if( method_exists( $this->_Adapter, 'getConnection' ) )
+		{
+			try
+			{
+				$connection = $this->_Adapter->getConnection();
+				if( $connection instanceof \PDO )
+				{
+					$stmt = $connection->prepare( $sql );
+					if( $stmt !== false )
+					{
+						$stmt->execute( [
+							$this->_Adapter->getOption( 'name' ),
+							$tableName
+						] );
+						$rows = $stmt->fetchAll( \PDO::FETCH_ASSOC );
+					}
+				}
+			}
+			catch( \Exception $e )
+			{
+				// Fall through to fallback
+			}
+		}
+
+		// Fallback: Use escaping
+		if( empty( $rows ) )
+		{
+			$dbName = $this->_Adapter->getOption( 'name' ) ?? '';
+			$dbName = str_replace( ["'", "\\"], ["''", "\\\\"], $dbName );
+			$tableName = str_replace( ["'", "\\"], ["''", "\\\\"], $tableName );
+
+			$sql = "SELECT
+						CONSTRAINT_NAME,
+						COLUMN_NAME,
+						REFERENCED_TABLE_NAME,
+						REFERENCED_COLUMN_NAME,
+						DELETE_RULE,
+						UPDATE_RULE
+					FROM information_schema.KEY_COLUMN_USAGE
+					WHERE TABLE_SCHEMA = '{$dbName}' AND TABLE_NAME = '{$tableName}' AND REFERENCED_TABLE_NAME IS NOT NULL
+					ORDER BY CONSTRAINT_NAME, ORDINAL_POSITION";
+			$rows = $this->_Adapter->fetchAll( $sql );
+		}
 
 		$foreignKeys = [];
 		$fkGroups = [];
@@ -666,7 +926,53 @@ class SchemaExporter
 					AND tc.table_name = ?
 				ORDER BY tc.constraint_name, kcu.ordinal_position";
 
-		$rows = $this->_Adapter->fetchAll( $sql, [$tableName] );
+		// Phinx adapters don't support parameterized queries natively
+		$rows = [];
+		if( method_exists( $this->_Adapter, 'getConnection' ) )
+		{
+			try
+			{
+				$connection = $this->_Adapter->getConnection();
+				if( $connection instanceof \PDO )
+				{
+					$stmt = $connection->prepare( $sql );
+					if( $stmt !== false )
+					{
+						$stmt->execute( [$tableName] );
+						$rows = $stmt->fetchAll( \PDO::FETCH_ASSOC );
+					}
+				}
+			}
+			catch( \Exception $e )
+			{
+				// Fall through to fallback
+			}
+		}
+
+		// Fallback: Use escaping
+		if( empty( $rows ) )
+		{
+			$tableName = str_replace( ["'", "\\"], ["''", "\\\\"], $tableName );
+			$sql = "SELECT
+						tc.constraint_name,
+						kcu.column_name,
+						ccu.table_name AS referenced_table,
+						ccu.column_name AS referenced_column,
+						rc.delete_rule,
+						rc.update_rule
+					FROM information_schema.table_constraints tc
+					JOIN information_schema.key_column_usage kcu
+						ON tc.constraint_name = kcu.constraint_name
+					JOIN information_schema.constraint_column_usage ccu
+						ON ccu.constraint_name = tc.constraint_name
+					JOIN information_schema.referential_constraints rc
+						ON rc.constraint_name = tc.constraint_name
+					WHERE tc.constraint_type = 'FOREIGN KEY'
+						AND tc.table_schema = 'public'
+						AND tc.table_name = '{$tableName}'
+					ORDER BY tc.constraint_name, kcu.ordinal_position";
+			$rows = $this->_Adapter->fetchAll( $sql );
+		}
 
 		$foreignKeys = [];
 		$fkGroups = [];
