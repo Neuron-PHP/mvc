@@ -389,8 +389,12 @@ class DataImporter
 				$this->_Adapter->execute( "DELETE FROM {$quotedTable}" );
 			}
 
-			// Re-enable foreign key checks
-			$this->enableForeignKeyChecks();
+			// Re-enable foreign key checks ONLY if user didn't explicitly request they stay disabled
+			// If disable_foreign_keys option is enabled, FK checks should remain off for the entire import
+			if( !$this->_Options[ 'disable_foreign_keys' ] )
+			{
+				$this->enableForeignKeyChecks();
+			}
 
 			return true;
 		}
@@ -398,14 +402,17 @@ class DataImporter
 		{
 			$this->_Errors[] = "Error clearing data: " . $e->getMessage();
 
-			// Try to re-enable foreign key checks
-			try
+			// Try to re-enable foreign key checks ONLY if user didn't explicitly request they stay disabled
+			if( !$this->_Options[ 'disable_foreign_keys' ] )
 			{
-				$this->enableForeignKeyChecks();
-			}
-			catch( \Exception $fkException )
-			{
-				// Ignore
+				try
+				{
+					$this->enableForeignKeyChecks();
+				}
+				catch( \Exception $fkException )
+				{
+					// Ignore
+				}
 			}
 
 			return false;

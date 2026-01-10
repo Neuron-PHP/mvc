@@ -561,7 +561,8 @@ data:
 
 		$this->mockAdapterFactory( $mockAdapter );
 
-		$importer = new DataImporter( $mockConfig, 'testing', 'phinx_log' );
+		// Test with disable_foreign_keys=false so FK checks are restored after clearing
+		$importer = new DataImporter( $mockConfig, 'testing', 'phinx_log', ['disable_foreign_keys' => false] );
 		$result = $importer->clearAllData( false );
 
 		$this->assertTrue( $result );
@@ -572,6 +573,59 @@ data:
 		$this->assertStringContainsString( 'DELETE FROM `users`', $executedSql[1] );
 		$this->assertStringContainsString( 'DELETE FROM `posts`', $executedSql[2] );
 		$this->assertStringContainsString( 'SET FOREIGN_KEY_CHECKS = 1', $executedSql[3] );
+	}
+
+	/**
+	 * Test clearAllData with disable_foreign_keys enabled keeps FK checks disabled
+	 * Regression test for bug where FK checks were re-enabled before import
+	 */
+	public function testClearAllDataWithDisableForeignKeys(): void
+	{
+		$mockAdapter = $this->createMockAdapter();
+		$mockConfig = $this->createMockConfig();
+
+		// Mock fetchAll to return tables when querying information_schema
+		$mockAdapter->method( 'fetchAll' )->willReturnCallback( function( $sql ) {
+			// Handle getTables() query for MySQL
+			if( strpos( $sql, 'information_schema.TABLES' ) !== false )
+			{
+				return [
+					['TABLE_NAME' => 'users'],
+					['TABLE_NAME' => 'posts']
+				];
+			}
+			return [];
+		} );
+
+		// Capture SQL statements to verify DELETE order and foreign key handling
+		$executedSql = [];
+		$mockAdapter->expects( $this->exactly( 3 ) )
+			->method( 'execute' )
+			->willReturnCallback( function( $sql ) use ( &$executedSql ) {
+				$executedSql[] = $sql;
+				return 1;
+			} );
+
+		$this->mockAdapterFactory( $mockAdapter );
+
+		// Test with disable_foreign_keys=true so FK checks remain disabled
+		$importer = new DataImporter( $mockConfig, 'testing', 'phinx_log', ['disable_foreign_keys' => true] );
+		$result = $importer->clearAllData( false );
+
+		$this->assertTrue( $result );
+
+		// Verify SQL execution order: disable FK, DELETE users, DELETE posts
+		// FK checks should NOT be re-enabled when disable_foreign_keys option is true
+		$this->assertCount( 3, $executedSql );
+		$this->assertStringContainsString( 'SET FOREIGN_KEY_CHECKS = 0', $executedSql[0] );
+		$this->assertStringContainsString( 'DELETE FROM `users`', $executedSql[1] );
+		$this->assertStringContainsString( 'DELETE FROM `posts`', $executedSql[2] );
+
+		// Verify FK checks were NOT re-enabled
+		foreach( $executedSql as $sql )
+		{
+			$this->assertStringNotContainsString( 'SET FOREIGN_KEY_CHECKS = 1', $sql );
+		}
 	}
 
 	/**

@@ -111,6 +111,80 @@ class SqlWhereValidator
 	}
 
 	/**
+	 * Strip string literals from a WHERE clause, preserving structure
+	 *
+	 * Removes all content inside single and double quoted strings,
+	 * properly handling escaped quotes and backslashes, so that
+	 * parentheses and other characters inside literals are ignored.
+	 *
+	 * @param string $str String to process
+	 * @return string String with all literal contents removed
+	 */
+	private static function stripStringLiterals( string $str ): string
+	{
+		$result = '';
+		$len = strlen( $str );
+		$i = 0;
+
+		while( $i < $len )
+		{
+			$char = $str[$i];
+
+			// Check if this is the start of a string literal
+			if( $char === "'" || $char === '"' )
+			{
+				$quoteChar = $char;
+				$i++; // Skip opening quote
+
+				// Skip everything until we find the closing quote
+				while( $i < $len )
+				{
+					if( $str[$i] === $quoteChar )
+					{
+						// Count consecutive backslashes before this quote
+						$backslashCount = 0;
+						$j = $i - 1;
+						while( $j >= 0 && $str[$j] === '\\' )
+						{
+							$backslashCount++;
+							$j--;
+						}
+
+						// If odd number of backslashes, the quote is escaped
+						if( $backslashCount % 2 === 1 )
+						{
+							$i++;
+							continue;
+						}
+
+						// Check for SQL-style doubled quotes
+						$nextChar = ( $i < $len - 1 ) ? $str[$i + 1] : '';
+						if( $nextChar === $quoteChar )
+						{
+							$i += 2; // Skip both quotes
+							continue;
+						}
+
+						// Found closing quote
+						$i++; // Skip closing quote
+						break;
+					}
+
+					$i++;
+				}
+			}
+			else
+			{
+				// Not inside a string, keep the character
+				$result .= $char;
+				$i++;
+			}
+		}
+
+		return $result;
+	}
+
+	/**
 	 * Validate a WHERE clause for SQL injection attempts
 	 *
 	 * @param string $whereClause The WHERE clause to validate
@@ -136,9 +210,10 @@ class SqlWhereValidator
 			return false;
 		}
 
-		// Check for balanced parentheses
-		$openParens = substr_count( $whereClause, '(' );
-		$closeParens = substr_count( $whereClause, ')' );
+		// Check for balanced parentheses (ignoring those inside string literals)
+		$strippedWhere = self::stripStringLiterals( $whereClause );
+		$openParens = substr_count( $strippedWhere, '(' );
+		$closeParens = substr_count( $strippedWhere, ')' );
 
 		if( $openParens !== $closeParens )
 		{
