@@ -128,13 +128,24 @@ const CONFLICT_SKIP = 'skip';
 			}
 		}
 
-		// Auto-detect format if not specified
-		if( $this->_Options[ 'format' ] === null )
-		{
-			$this->_Options[ 'format' ] = $this->detectFormat( $FilePath, $data );
-		}
+		// Save original format to prevent sticky behavior across multiple calls
+		$origFormat = $this->_Options[ 'format' ];
 
-		return $this->import( $data );
+		try
+		{
+			// Auto-detect format if not specified
+			if( $this->_Options[ 'format' ] === null )
+			{
+				$this->_Options[ 'format' ] = $this->detectFormat( $FilePath, $data );
+			}
+
+			return $this->import( $data );
+		}
+		finally
+		{
+			// Restore original format to prevent sticky behavior
+			$this->_Options[ 'format' ] = $origFormat;
+		}
 	}
 
 	/**
@@ -210,6 +221,19 @@ const CONFLICT_SKIP = 'skip';
 
 		try
 		{
+			// Clear existing data before import if requested
+			// This must happen BEFORE transaction begins to ensure deletes are committed
+			// clearAllData() respects 'tables' and 'exclude' options via shouldProcessTable()
+			// and handles foreign keys internally
+			if( $this->_Options[ 'clear_tables' ] )
+			{
+				if( !$this->clearAllData( false ) )
+				{
+					$this->_Errors[] = 'Failed to clear existing data before import';
+					return false;
+				}
+			}
+
 			// Begin transaction if requested
 			if( $this->_Options[ 'use_transaction' ] )
 			{
@@ -309,6 +333,7 @@ const CONFLICT_SKIP = 'skip';
 				$this->_Adapter->execute( 'PRAGMA foreign_keys = OFF' );
 				break;
 			case 'pgsql':
+			case 'postgres':
 				// PostgreSQL doesn't have a global foreign key disable
 				// SET CONSTRAINTS ALL DEFERRED requires:
 				// 1. Active transaction
@@ -1012,6 +1037,7 @@ const CONFLICT_SKIP = 'skip';
 				$this->_Adapter->execute( 'PRAGMA foreign_keys = ON' );
 				break;
 			case 'pgsql':
+			case 'postgres':
 				// Constraints will be checked at transaction commit
 				// SET CONSTRAINTS ALL IMMEDIATE requires:
 				// 1. Active transaction
@@ -1107,6 +1133,19 @@ const CONFLICT_SKIP = 'skip';
 
 		try
 		{
+			// Clear existing data before import if requested
+			// This must happen BEFORE transaction begins to ensure deletes are committed
+			// clearAllData() respects 'tables' and 'exclude' options via shouldProcessTable()
+			// and handles foreign keys internally
+			if( $this->_Options[ 'clear_tables' ] )
+			{
+				if( !$this->clearAllData( false ) )
+				{
+					$this->_Errors[] = 'Failed to clear existing data before import';
+					return false;
+				}
+			}
+
 			// Begin transaction if requested
 			if( $this->_Options[ 'use_transaction' ] )
 			{
@@ -1410,6 +1449,8 @@ const CONFLICT_SKIP = 'skip';
 			case 'mysql':
 				// Phinx adapters don't support parameterized queries natively
 				// Try to use PDO prepared statements directly, fallback to escaping
+			if( method_exists( $this->_Adapter, 'getConnection' ) )
+			{
 				try
 				{
 					$connection = $this->_Adapter->getConnection();
@@ -1431,6 +1472,7 @@ const CONFLICT_SKIP = 'skip';
 				{
 					Log::warning( "Could not use PDO prepared statement for table listing, falling back to escaping" );
 				}
+			}
 
 				// Fallback: Use basic escaping for database name
 				// Database names are typically controlled by configuration, not user input
@@ -1449,6 +1491,7 @@ const CONFLICT_SKIP = 'skip';
 				return array_column( $rows, 'TABLE_NAME' );
 
 			case 'pgsql':
+			case 'postgres':
 				$sql  = "SELECT tablename FROM pg_catalog.pg_tables
 						WHERE schemaname = 'public'
 						ORDER BY tablename";

@@ -88,17 +88,8 @@ class DataExporterWithORM
 		{
 			$whereClause = $this->_options['where'][$table];
 
-			// Validate WHERE clause for SQL injection attempts
-			if( !SqlWhereValidator::isValid( $whereClause ) )
-			{
-				throw new \InvalidArgumentException(
-					"Potentially dangerous WHERE clause detected for table '{$table}'. " .
-					"WHERE clauses must not contain SQL commands, comments, or subqueries."
-				);
-			}
-
-			// Parse WHERE clause into conditions
-			// This is a simplified parser - a full implementation would need more robust parsing
+			// Parse WHERE clause into parameterized SQL with bindings
+			// parseWhereClause validates via SqlWhereValidator and fails closed on any issues
 			$conditions = $this->parseWhereClause( $whereClause );
 
 			if( !empty( $conditions['sql'] ) )
@@ -124,23 +115,42 @@ class DataExporterWithORM
 	/**
 	 * Parse a WHERE clause string into parameterized SQL
 	 *
-	 * This converts a WHERE clause like "status = 'active' AND age > 18"
-	 * into parameterized SQL with bindings for safety.
+	 * This is a thin wrapper that delegates to the centralized SqlWhereValidator
+	 * for validation and uses proven parsing logic from DataExporter.
+	 *
+	 * Converts "status = 'active' AND age > 18" into parameterized SQL with bindings.
+	 * Supports SQL-escaped quotes: name = 'O''Brien' is correctly parsed as O'Brien
 	 *
 	 * @param string $whereClause The WHERE clause to parse
 	 * @return array Array with 'sql' and 'bindings' keys
+	 * @throws \InvalidArgumentException if WHERE clause is invalid or unsafe
 	 */
 	private function parseWhereClause( string $whereClause ): array
 	{
+		// First, validate using centralized SqlWhereValidator - fail closed on any issues
+		if( !SqlWhereValidator::isValid( $whereClause ) )
+		{
+			throw new \InvalidArgumentException(
+				"Cannot parse WHERE clause for parameterization: {$whereClause}. " .
+				"WHERE clauses must not contain SQL commands, comments, subqueries, or unbalanced quotes. " .
+				"Consider using the ORM QueryBuilder for complex queries."
+			);
+		}
+
 		$sql = '';
 		$bindings = [];
 
 		// Pattern to match column operator value pairs
 		// Note: Order matters - check multi-char operators (<=, >=, !=, <>) before single-char (<, >, =)
-		$conditionPattern = '/(\w+)\s*(<=|>=|!=|<>|=|<|>|LIKE|NOT LIKE)\s*([\'"]?)([^\'"]*)\3/i';
+		// This pattern properly handles SQL-escaped quotes (e.g., 'O''Brien' or "He said ""hi""")
+		// Group 1: column name
+		// Group 2: operator
+		// Group 3: quoted value with single quotes (including escaped '')
+		// Group 4: quoted value with double quotes (including escaped "")
+		// Group 5: unquoted value
+		$conditionPattern = '/(\w+)\s*(<=|>=|!=|<>|=|<|>|LIKE|NOT LIKE)\s*(?:\'((?:\'\'|[^\'])*)\'|"((?:""|[^"])*)"|(\S+))/i';
 
-		// First, split by AND/OR while preserving the operators
-		// This pattern captures conditions and the operators between them
+		// Split by AND/OR while preserving the operators
 		$parts = preg_split( '/\s+(AND|OR)\s+/i', $whereClause, -1, PREG_SPLIT_DELIM_CAPTURE );
 
 		if( empty( $parts ) )
@@ -164,16 +174,6 @@ class DataExporterWithORM
 				continue;
 			}
 
-			// This should be a condition
-			// Check for parentheses which indicate complex expressions we don't support
-			if( strpos( $part, '(' ) !== false || strpos( $part, ')' ) !== false )
-			{
-				throw new \InvalidArgumentException(
-					"Parentheses are not supported in WHERE conditions: {$part}. " .
-					"Consider using the ORM QueryBuilder for complex queries."
-				);
-			}
-
 			// Check for IS NULL / IS NOT NULL patterns first (these don't take a value)
 			$nullPattern = '/(\w+)\s+(IS\s+NOT\s+NULL|IS\s+NULL)/i';
 			if( preg_match( $nullPattern, $part, $match ) )
@@ -190,7 +190,32 @@ class DataExporterWithORM
 			{
 				$column = $match[1];
 				$operator = strtoupper( $match[2] );
-				$value = $match[4];
+
+				// Extract value from the appropriate capture group
+				// Check unquoted first since it cannot be empty (uses \S+ pattern)
+				// Use !== '' instead of !empty() to handle values like '0' correctly
+				// Use isset() to check if group participated in match (PHP may not set non-participating groups)
+				if( isset( $match[5] ) && $match[5] !== '' )
+				{
+					// Unquoted value (cannot be empty due to \S+ pattern)
+					$value = $match[5];
+				}
+				elseif( isset( $match[3] ) && $match[3] !== '' )
+				{
+					// Single-quoted non-empty value - unescape doubled single quotes
+					$value = str_replace( "''", "'", $match[3] );
+				}
+				elseif( isset( $match[4] ) && $match[4] !== '' )
+				{
+					// Double-quoted non-empty value - unescape doubled double quotes
+					$value = str_replace( '""', '"', $match[4] );
+				}
+				else
+				{
+					// All groups are empty - must be an empty quoted string
+					// Could be either '' or "" - doesn't matter since result is empty
+					$value = '';
+				}
 
 				// Use placeholder for binding
 				$quotedColumn = $this->quoteIdentifier( $column );
@@ -305,6 +330,10 @@ class DataExporterWithORM
 			if( $this->_options['compress'] )
 			{
 				$content = gzencode( $content );
+				if( $content === false )
+				{
+					throw new \RuntimeException( "Failed to compress data for file: {$outputPath}" );
+				}
 				if( !str_ends_with( $outputPath, '.gz' ) )
 				{
 					$outputPath .= '.gz';
@@ -393,7 +422,14 @@ class DataExporterWithORM
 
 		if( $this->_options['use_transaction'] )
 		{
-			$sql .= "START TRANSACTION;\n\n";
+			// Use adapter-appropriate transaction syntax
+			$transactionStart = match( $this->_adapter->getAdapterType() )
+			{
+				'sqlite' => 'BEGIN TRANSACTION',
+				'pgsql', 'postgres' => 'BEGIN',
+				default => 'START TRANSACTION',  // MySQL and others
+			};
+			$sql .= "{$transactionStart};\n\n";
 		}
 
 		foreach( $tables as $table )
@@ -464,7 +500,8 @@ class DataExporterWithORM
 			}
 		}
 
-		return json_encode( $data, JSON_PRETTY_PRINT );
+		// Wrap under 'data' key to match DataImporter's expected format
+		return json_encode( ['data' => $data], JSON_PRETTY_PRINT );
 	}
 
 	/**
@@ -486,7 +523,8 @@ class DataExporterWithORM
 			}
 		}
 
-		return Yaml::dump( $data, 4, 2 );
+		// Wrap under 'data' key to match DataImporter's expected format
+		return Yaml::dump( ['data' => $data], 4, 2 );
 	}
 
 	/**
@@ -587,7 +625,7 @@ class DataExporterWithORM
 
 		if( is_bool( $value ) )
 		{
-			return $value ? '1' : '0';
+			return $this->formatBooleanLiteral( $value );
 		}
 
 		if( is_numeric( $value ) && !$this->hasLeadingZeros( $value ) )
@@ -627,6 +665,25 @@ class DataExporterWithORM
 		}
 
 		return false;
+	}
+
+	/**
+	 * Format boolean value as SQL literal
+	 *
+	 * PostgreSQL requires TRUE/FALSE literals for boolean columns.
+	 * Other databases accept 1/0 for booleans.
+	 *
+	 * @param bool $value Boolean value to format
+	 * @return string SQL literal representation
+	 */
+	private function formatBooleanLiteral( bool $value ): string
+	{
+		// Keep SQL portable across adapters
+		return match( $this->_adapter->getAdapterType() )
+		{
+			'pgsql', 'postgres' => $value ? 'TRUE' : 'FALSE',
+			default => $value ? '1' : '0',
+		};
 	}
 
 	/**

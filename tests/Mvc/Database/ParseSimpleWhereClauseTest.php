@@ -16,14 +16,15 @@ class ParseSimpleWhereClauseTest extends TestCase
 {
 	private $exporter;
 	private $method;
+	private $dbPath;
 
 	protected function setUp(): void
 	{
 		// Create a temporary SQLite database for the exporter
-		$dbPath = tempnam( sys_get_temp_dir(), 'parse_test_' ) . '.db';
+		$this->dbPath = tempnam( sys_get_temp_dir(), 'parse_test_' );
 
 		// Create minimal database with phinx_log table
-		$pdo = new \PDO( 'sqlite:' . $dbPath );
+		$pdo = new \PDO( 'sqlite:' . $this->dbPath );
 		$pdo->exec( 'CREATE TABLE phinx_log (version INTEGER PRIMARY KEY)' );
 		$pdo = null; // Close to flush
 
@@ -37,7 +38,7 @@ class ParseSimpleWhereClauseTest extends TestCase
 				'default_environment' => 'testing',
 				'testing' => [
 					'adapter' => 'sqlite',
-					'name' => $dbPath
+					'name' => $this->dbPath
 				]
 			]
 		] );
@@ -61,6 +62,12 @@ class ParseSimpleWhereClauseTest extends TestCase
 		if( isset( $this->exporter ) )
 		{
 			$this->exporter->disconnect();
+		}
+
+		// Clean up temporary database file
+		if( isset( $this->dbPath ) && file_exists( $this->dbPath ) )
+		{
+			unlink( $this->dbPath );
 		}
 	}
 

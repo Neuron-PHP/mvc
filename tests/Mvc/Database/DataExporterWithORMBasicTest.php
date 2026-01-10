@@ -23,7 +23,7 @@ class DataExporterWithORMBasicTest extends TestCase
 	public function testCanInstantiateWithoutError(): void
 	{
 		// Create a temporary SQLite database
-		$dbPath = tempnam( sys_get_temp_dir(), 'orm_test_' ) . '.db';
+		$dbPath = tempnam( sys_get_temp_dir(), 'orm_test_' );
 
 		try
 		{
@@ -83,7 +83,7 @@ class DataExporterWithORMBasicTest extends TestCase
 	public function testAdapterIsConnected(): void
 	{
 		// Create a temporary SQLite database
-		$dbPath = tempnam( sys_get_temp_dir(), 'orm_test_' ) . '.db';
+		$dbPath = tempnam( sys_get_temp_dir(), 'orm_test_' );
 
 		try
 		{
@@ -139,7 +139,7 @@ class DataExporterWithORMBasicTest extends TestCase
 	public function testGetConnectionWorksAfterConnect(): void
 	{
 		// Create a temporary SQLite database
-		$dbPath = tempnam( sys_get_temp_dir(), 'orm_test_' ) . '.db';
+		$dbPath = tempnam( sys_get_temp_dir(), 'orm_test_' );
 
 		try
 		{
