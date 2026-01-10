@@ -1,0 +1,353 @@
+<?php
+
+namespace Tests\Mvc\Database;
+
+use Neuron\Mvc\Database\DataExporterWithORM;
+use PHPUnit\Framework\TestCase;
+use Phinx\Config\Config;
+use Phinx\Db\Adapter\AdapterFactory;
+use Phinx\Db\Adapter\AdapterInterface;
+
+/**
+ * Test DataExporterWithORM exportToFile implementation
+ */
+class DataExporterWithORMTest extends TestCase
+{
+	private static $originalFactory;
+
+	protected function setUp(): void
+	{
+		parent::setUp();
+
+		// Capture original AdapterFactory
+		$factoryClass = new \ReflectionClass( AdapterFactory::class );
+		$instanceProperty = $factoryClass->getProperty( 'instance' );
+		$instanceProperty->setAccessible( true );
+		self::$originalFactory = $instanceProperty->getValue();
+	}
+
+	protected function tearDown(): void
+	{
+		// Restore original AdapterFactory
+		$factoryClass = new \ReflectionClass( AdapterFactory::class );
+		$instanceProperty = $factoryClass->getProperty( 'instance' );
+		$instanceProperty->setAccessible( true );
+		$instanceProperty->setValue( null, self::$originalFactory );
+
+		parent::tearDown();
+	}
+
+	/**
+	 * Test that exportToFile actually performs export and doesn't just return path
+	 */
+	public function testExportToFilePerformsActualExport(): void
+	{
+		// Create test data
+		$testData = [
+			['id' => 1, 'name' => 'Alice', 'email' => 'alice@example.com'],
+			['id' => 2, 'name' => 'Bob', 'email' => 'bob@example.com'],
+			['id' => 3, 'name' => 'Charlie', 'email' => 'charlie@example.com']
+		];
+
+		// Mock PDO
+		$mockPdo = $this->createMock( \PDO::class );
+		$mockStmt = $this->createMock( \PDOStatement::class );
+
+		// Track if queries were executed (proves export is working)
+		$queriesExecuted = [];
+
+		$mockPdo->expects( $this->any() )
+			->method( 'prepare' )
+			->willReturnCallback( function( $sql ) use ( &$queriesExecuted, $mockStmt ) {
+				$queriesExecuted[] = $sql;
+				return $mockStmt;
+			} );
+
+		$mockStmt->expects( $this->any() )
+			->method( 'execute' )
+			->willReturn( true );
+
+		$mockStmt->expects( $this->any() )
+			->method( 'fetchAll' )
+			->willReturn( $testData );
+
+		$mockStmt->expects( $this->any() )
+			->method( 'fetch' )
+			->willReturn( ['count' => count( $testData )] );
+
+		// Mock adapter
+		$mockAdapter = $this->getMockBuilder( AdapterInterface::class )
+			->onlyMethods( get_class_methods( AdapterInterface::class ) )
+			->addMethods( ['getConnection'] )
+			->getMock();
+
+		$mockAdapter->method( 'connect' );
+		$mockAdapter->method( 'getAdapterType' )->willReturn( 'mysql' );
+		$mockAdapter->method( 'hasTable' )->willReturn( true );
+		$mockAdapter->method( 'getConnection' )->willReturn( $mockPdo );
+
+		$this->mockAdapterFactory( $mockAdapter );
+
+		$config = $this->createMockConfig();
+		$options = [
+			'format' => 'json'
+		];
+
+		$exporter = new DataExporterWithORM( $config, 'testing', 'phinx_log', $options );
+
+		// Create temp file for export
+		$tempFile = tempnam( sys_get_temp_dir(), 'export_test' ) . '.json';
+
+		try
+		{
+			// Call exportToFile
+			$result = $exporter->exportToFile( $tempFile );
+
+			// Verify it returns the path (not false)
+			$this->assertNotFalse( $result, "exportToFile should return the file path, not false" );
+			$this->assertEquals( $tempFile, $result, "exportToFile should return the output path" );
+
+			// Verify file was actually created
+			$this->assertFileExists( $tempFile, "Export file should be created" );
+
+			// Verify file has content (not empty)
+			$content = file_get_contents( $tempFile );
+			$this->assertNotEmpty( $content, "Export file should contain data" );
+
+			// Verify it's valid JSON with expected data
+			$decoded = json_decode( $content, true );
+			$this->assertIsArray( $decoded, "Export should produce valid JSON" );
+
+			// Verify queries were executed (proves it's not just returning immediately)
+			$this->assertNotEmpty( $queriesExecuted, "Queries should be executed during export" );
+
+			// Look for table listing query
+			$hasTableQuery = false;
+			foreach( $queriesExecuted as $query )
+			{
+				if( stripos( $query, 'SHOW TABLES' ) !== false ||
+				    stripos( $query, 'information_schema' ) !== false )
+				{
+					$hasTableQuery = true;
+					break;
+				}
+			}
+			$this->assertTrue( $hasTableQuery, "Should execute query to get table list" );
+		}
+		finally
+		{
+			// Clean up temp file
+			if( file_exists( $tempFile ) )
+			{
+				unlink( $tempFile );
+			}
+		}
+	}
+
+	/**
+	 * Test that exportToFile works with SQL format
+	 */
+	public function testExportToFileSqlFormat(): void
+	{
+		// Mock PDO
+		$mockPdo = $this->createMock( \PDO::class );
+		$mockStmt = $this->createMock( \PDOStatement::class );
+
+		$mockPdo->method( 'prepare' )->willReturn( $mockStmt );
+		$mockPdo->method( 'quote' )->willReturnCallback( function( $value ) {
+			return "'" . str_replace( "'", "''", $value ) . "'";
+		} );
+
+		$mockStmt->method( 'execute' )->willReturn( true );
+		$mockStmt->method( 'fetchAll' )->willReturn( [
+			['id' => 1, 'name' => 'Test User']
+		] );
+
+		// Mock adapter
+		$mockAdapter = $this->getMockBuilder( AdapterInterface::class )
+			->onlyMethods( get_class_methods( AdapterInterface::class ) )
+			->addMethods( ['getConnection'] )
+			->getMock();
+
+		$mockAdapter->method( 'connect' );
+		$mockAdapter->method( 'getAdapterType' )->willReturn( 'mysql' );
+		$mockAdapter->method( 'getConnection' )->willReturn( $mockPdo );
+
+		$this->mockAdapterFactory( $mockAdapter );
+
+		$config = $this->createMockConfig();
+		$options = [
+			'format' => 'sql'
+		];
+
+		$exporter = new DataExporterWithORM( $config, 'testing', 'phinx_log', $options );
+
+		$tempFile = tempnam( sys_get_temp_dir(), 'export_sql' ) . '.sql';
+
+		try
+		{
+			$result = $exporter->exportToFile( $tempFile );
+
+			// Verify export succeeded
+			$this->assertNotFalse( $result );
+			$this->assertFileExists( $tempFile );
+
+			// Verify SQL content
+			$content = file_get_contents( $tempFile );
+			$this->assertStringContainsString( '-- Database export', $content );
+			$this->assertStringContainsString( 'INSERT INTO', $content );
+		}
+		finally
+		{
+			if( file_exists( $tempFile ) )
+			{
+				unlink( $tempFile );
+			}
+		}
+	}
+
+	/**
+	 * Test that exportToFile with compression works
+	 */
+	public function testExportToFileWithCompression(): void
+	{
+		// Mock PDO
+		$mockPdo = $this->createMock( \PDO::class );
+		$mockStmt = $this->createMock( \PDOStatement::class );
+
+		$mockPdo->method( 'prepare' )->willReturn( $mockStmt );
+		$mockStmt->method( 'execute' )->willReturn( true );
+		$mockStmt->method( 'fetchAll' )->willReturn( [
+			['id' => 1, 'data' => 'Test data for compression']
+		] );
+
+		// Mock adapter
+		$mockAdapter = $this->getMockBuilder( AdapterInterface::class )
+			->onlyMethods( get_class_methods( AdapterInterface::class ) )
+			->addMethods( ['getConnection'] )
+			->getMock();
+
+		$mockAdapter->method( 'connect' );
+		$mockAdapter->method( 'getAdapterType' )->willReturn( 'mysql' );
+		$mockAdapter->method( 'getConnection' )->willReturn( $mockPdo );
+
+		$this->mockAdapterFactory( $mockAdapter );
+
+		$config = $this->createMockConfig();
+		$options = [
+			'format' => 'json',
+			'compress' => true
+		];
+
+		$exporter = new DataExporterWithORM( $config, 'testing', 'phinx_log', $options );
+
+		$tempFile = tempnam( sys_get_temp_dir(), 'export_compress' ) . '.json';
+
+		try
+		{
+			$result = $exporter->exportToFile( $tempFile );
+
+			// Should add .gz extension
+			$expectedFile = $tempFile . '.gz';
+			$this->assertEquals( $expectedFile, $result );
+			$this->assertFileExists( $expectedFile );
+
+			// Verify it's actually compressed
+			$compressedContent = file_get_contents( $expectedFile );
+			$this->assertNotEmpty( $compressedContent );
+
+			// Should be gzip compressed (starts with gzip magic number)
+			$this->assertEquals( "\x1f\x8b", substr( $compressedContent, 0, 2 ),
+				"File should start with gzip magic number" );
+
+			// Decompress and verify it's valid JSON
+			$decompressed = gzdecode( $compressedContent );
+			$this->assertNotFalse( $decompressed );
+			$decoded = json_decode( $decompressed, true );
+			$this->assertIsArray( $decoded );
+
+			// Clean up the .gz file
+			unlink( $expectedFile );
+		}
+		finally
+		{
+			if( file_exists( $tempFile ) )
+			{
+				unlink( $tempFile );
+			}
+		}
+	}
+
+	/**
+	 * Test that unsupported format throws exception
+	 */
+	public function testExportToFileUnsupportedFormatThrows(): void
+	{
+		// Mock PDO
+		$mockPdo = $this->createMock( \PDO::class );
+
+		// Mock adapter
+		$mockAdapter = $this->getMockBuilder( AdapterInterface::class )
+			->onlyMethods( get_class_methods( AdapterInterface::class ) )
+			->addMethods( ['getConnection'] )
+			->getMock();
+
+		$mockAdapter->method( 'getAdapterType' )->willReturn( 'mysql' );
+		$mockAdapter->method( 'getConnection' )->willReturn( $mockPdo );
+
+		$this->mockAdapterFactory( $mockAdapter );
+
+		$config = $this->createMockConfig();
+		$options = [
+			'format' => 'invalid_format'
+		];
+
+		$exporter = new DataExporterWithORM( $config, 'testing', 'phinx_log', $options );
+
+		$tempFile = tempnam( sys_get_temp_dir(), 'export_invalid' );
+
+		$result = $exporter->exportToFile( $tempFile );
+
+		// Should return false on error
+		$this->assertFalse( $result, "Should return false for unsupported format" );
+
+		// Clean up
+		if( file_exists( $tempFile ) )
+		{
+			unlink( $tempFile );
+		}
+	}
+
+	// Helper methods
+
+	private function createMockConfig(): Config
+	{
+		return new Config( [
+			'paths' => [
+				'migrations' => '/test/migrations'
+			],
+			'environments' => [
+				'testing' => [
+					'adapter' => 'mysql',
+					'host' => 'localhost',
+					'name' => 'test_db',
+					'user' => 'root',
+					'pass' => '',
+					'port' => 3306
+				]
+			]
+		] );
+	}
+
+	private function mockAdapterFactory( $mockAdapter ): void
+	{
+		$factoryClass = new \ReflectionClass( AdapterFactory::class );
+		$instanceProperty = $factoryClass->getProperty( 'instance' );
+		$instanceProperty->setAccessible( true );
+
+		$mockFactory = $this->createMock( AdapterFactory::class );
+		$mockFactory->method( 'getAdapter' )->willReturn( $mockAdapter );
+
+		$instanceProperty->setValue( null, $mockFactory );
+	}
+}

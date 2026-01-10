@@ -67,5 +67,16 @@ class Provider
 			'db:schema:dump',
 			'Neuron\\Mvc\\Cli\\Commands\\Schema\\DumpCommand'
 		);
+
+		// Data export/import commands
+		$registry->register(
+			'db:data:dump',
+			'Neuron\\Mvc\\Cli\\Commands\\Data\\DumpCommand'
+		);
+
+		$registry->register(
+			'db:data:restore',
+			'Neuron\\Mvc\\Cli\\Commands\\Data\\RestoreCommand'
+		);
 	}
 }

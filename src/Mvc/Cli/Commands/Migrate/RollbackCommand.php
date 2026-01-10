@@ -69,7 +69,7 @@ class RollbackCommand extends Command
 		}
 
 		// Confirmation
-		if( !$this->input->hasOption( 'force' ) && !$this->input->hasOption( 'dry-run' ) )
+		if( !$this->input->getOption( 'force' ) && !$this->input->getOption( 'dry-run' ) )
 		{
 			$this->output->warning( 'This will rollback database migrations.' );
 
@@ -98,14 +98,14 @@ class RollbackCommand extends Command
 		}
 
 		// Add dry-run flag
-		if( $this->input->hasOption( 'dry-run' ) )
+		if( $this->input->getOption( 'dry-run' ) )
 		{
 			$arguments['--dry-run'] = true;
 			$this->output->info( '=== DRY RUN MODE - No changes will be made ===' );
 		}
 
 		// Add fake flag
-		if( $this->input->hasOption( 'fake' ) )
+		if( $this->input->getOption( 'fake' ) )
 		{
 			$arguments['--fake'] = true;
 		}
