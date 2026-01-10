@@ -119,7 +119,11 @@ class DataExporterWithORM
 	 * for validation and uses proven parsing logic from DataExporter.
 	 *
 	 * Converts "status = 'active' AND age > 18" into parameterized SQL with bindings.
-	 * Supports SQL-escaped quotes: name = 'O''Brien' is correctly parsed as O'Brien
+	 * Supports:
+	 * - Comparison operators: =, !=, <>, <, >, <=, >=, LIKE, NOT LIKE
+	 * - IN/NOT IN operators: status IN ('active', 'pending')
+	 * - NULL checks: deleted_at IS NULL, active IS NOT NULL
+	 * - SQL-escaped quotes: name = 'O''Brien' is correctly parsed as O'Brien
 	 *
 	 * @param string $whereClause The WHERE clause to parse
 	 * @return array Array with 'sql' and 'bindings' keys
@@ -185,6 +189,52 @@ class DataExporterWithORM
 				$quotedColumn = $this->quoteIdentifier( $column );
 				$parameterizedParts[] = "{$quotedColumn} {$operator}";
 				// No binding needed for NULL checks
+			}
+			// Check for IN / NOT IN patterns (these take a parenthesized list of values)
+			elseif( preg_match( '/(\w+)\s+(NOT\s+IN|IN)\s+\((.*)\)/i', $part, $match ) )
+			{
+				$column = $match[1];
+				$operator = strtoupper( $match[2] );
+				$valueList = $match[3];
+
+				// Parse the comma-separated values inside parentheses
+				// Each value can be: 'quoted string', "quoted string", or unquoted (number/identifier)
+				// Pattern matches: quoted strings (with escaped quotes) or unquoted values
+				$valuePattern = '/\'((?:\'\'|[^\'])*)\'|"((?:""|[^"])*)"|([^,\s]+)/';
+				preg_match_all( $valuePattern, $valueList, $valueMatches, PREG_SET_ORDER );
+
+				$placeholders = [];
+				foreach( $valueMatches as $valueMatch )
+				{
+					// Extract value from appropriate capture group
+					if( isset( $valueMatch[3] ) && $valueMatch[3] !== '' )
+					{
+						// Unquoted value
+						$value = $valueMatch[3];
+					}
+					elseif( isset( $valueMatch[1] ) && $valueMatch[1] !== '' )
+					{
+						// Single-quoted value - unescape doubled single quotes
+						$value = str_replace( "''", "'", $valueMatch[1] );
+					}
+					elseif( isset( $valueMatch[2] ) && $valueMatch[2] !== '' )
+					{
+						// Double-quoted value - unescape doubled double quotes
+						$value = str_replace( '""', '"', $valueMatch[2] );
+					}
+					else
+					{
+						// Empty quoted string
+						$value = '';
+					}
+
+					$placeholders[] = '?';
+					$bindings[] = $value;
+				}
+
+				// Build the IN clause with placeholders
+				$quotedColumn = $this->quoteIdentifier( $column );
+				$parameterizedParts[] = "{$quotedColumn} {$operator} (" . implode( ', ', $placeholders ) . ")";
 			}
 			elseif( preg_match( $conditionPattern, $part, $match ) )
 			{

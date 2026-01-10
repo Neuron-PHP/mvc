@@ -478,4 +478,77 @@ class SqlWhereValidatorTest extends TestCase
 			);
 		}
 	}
+
+	/**
+	 * Test ReDoS protection in block comment pattern
+	 * The old greedy pattern could cause catastrophic backtracking
+	 */
+	public function testReDoSProtectionBlockComments(): void
+	{
+		// This pattern would cause ReDoS with the old greedy regex: /\/\*.*\*\//
+		// The old pattern would try exponential combinations with nested asterisks
+		$potentialReDoS = '/* ' . str_repeat( 'a*', 50 ) . ' */';
+
+		// Should complete quickly and reject the block comment
+		$startTime = microtime( true );
+		$result = SqlWhereValidator::isValid( $potentialReDoS );
+		$endTime = microtime( true );
+		$duration = $endTime - $startTime;
+
+		// Should be fast (< 0.1 seconds) and reject the block comment
+		$this->assertFalse( $result, 'Block comment should be rejected' );
+		$this->assertLessThan( 0.1, $duration, 'Pattern matching should be fast with ReDoS-safe regex' );
+
+		// Valid block comment should still be rejected (dangerous)
+		$validComment = 'id = 5 /* valid comment */';
+		$this->assertFalse( SqlWhereValidator::isValid( $validComment ), 'Block comments outside strings are dangerous' );
+
+		// Block comment inside string should be safe
+		$safeComment = "description = 'text /* comment */ here'";
+		$this->assertTrue( SqlWhereValidator::isValid( $safeComment ), 'Block comment inside string is safe' );
+	}
+
+	/**
+	 * Test ReDoS protection in SELECT...FROM pattern
+	 * The old greedy pattern could cause catastrophic backtracking
+	 */
+	public function testReDoSProtectionSelectFrom(): void
+	{
+		// This pattern would cause ReDoS with greedy matching
+		// The new pattern has bounded quantifier {0,200}? to prevent catastrophic backtracking
+		$potentialReDoS = 'SELECT ' . str_repeat( 'column, ', 20 ) . 'id FROM users';
+
+		// Should complete quickly
+		$startTime = microtime( true );
+		$result = SqlWhereValidator::isValid( $potentialReDoS );
+		$endTime = microtime( true );
+		$duration = $endTime - $startTime;
+
+		// Should be fast and reject the subquery
+		$this->assertFalse( $result, 'SELECT...FROM subquery should be rejected' );
+		$this->assertLessThan( 0.1, $duration, 'Pattern matching should be fast with bounded quantifier' );
+
+		// SELECT...FROM inside string should be safe
+		$safeSelect = "description = 'SELECT data FROM table'";
+		$this->assertTrue( SqlWhereValidator::isValid( $safeSelect ), 'SELECT...FROM inside string is safe' );
+	}
+
+	/**
+	 * Test maximum length validation to prevent ReDoS
+	 */
+	public function testMaxLengthValidation(): void
+	{
+		// Create a WHERE clause that exceeds MAX_WHERE_LENGTH (10000)
+		$tooLong = 'id = ' . str_repeat( '1', 10001 );
+
+		$result = SqlWhereValidator::isValid( $tooLong );
+
+		$this->assertFalse( $result, 'WHERE clause exceeding max length should be rejected' );
+
+		// Just under the limit should be allowed (if otherwise valid)
+		$justUnderLimit = 'id = ' . str_repeat( '1', 9990 );
+		$result2 = SqlWhereValidator::isValid( $justUnderLimit );
+
+		$this->assertTrue( $result2, 'WHERE clause under max length should be allowed' );
+	}
 }

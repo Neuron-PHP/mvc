@@ -210,7 +210,16 @@ class DumpCommand extends Command
 		$limit = $this->input->getOption( 'limit' );
 		if( $limit !== null )
 		{
-			$options['limit'] = (int)$limit;
+			$limit = (int)$limit;
+
+			// Validate limit is greater than zero
+			if( $limit <= 0 )
+			{
+				$this->output->error( "Invalid limit: {$limit}. Limit must be greater than 0." );
+				throw new \InvalidArgumentException( "Limit must be greater than 0, got: {$limit}" );
+			}
+
+			$options['limit'] = $limit;
 		}
 
 		// WHERE conditions

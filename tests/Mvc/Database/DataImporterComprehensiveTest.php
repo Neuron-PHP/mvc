@@ -9,6 +9,27 @@ use Phinx\Db\Adapter\AdapterInterface;
 use Phinx\Db\Adapter\AdapterFactory;
 
 /**
+ * Test helper class that extends AdapterInterface with additional methods
+ * needed for testing (hasTransaction, getConnection).
+ *
+ * This avoids the brittle approach of using addMethods() in getMockBuilder().
+ */
+abstract class TestAdapterWithExtras implements AdapterInterface
+{
+	/**
+	 * Check if adapter is in a transaction
+	 * @return bool
+	 */
+	abstract public function hasTransaction(): bool;
+
+	/**
+	 * Get the underlying PDO connection
+	 * @return \PDO
+	 */
+	abstract public function getConnection(): \PDO;
+}
+
+/**
  * Comprehensive tests for DataImporter to improve code coverage
  */
 class DataImporterComprehensiveTest extends TestCase
@@ -24,10 +45,7 @@ class DataImporterComprehensiveTest extends TestCase
 		mkdir( $this->tempDir, 0777, true );
 
 		// Ensure clean state by resetting AdapterFactory at start of each test
-		$factoryClass = new \ReflectionClass( AdapterFactory::class );
-		$instanceProperty = $factoryClass->getProperty( 'instance' );
-		$instanceProperty->setAccessible( true );
-		$instanceProperty->setValue( null, null );
+		$this->resetAdapterFactoryInstance();
 	}
 
 	protected function tearDown(): void
@@ -39,10 +57,7 @@ class DataImporterComprehensiveTest extends TestCase
 		}
 
 		// Reset AdapterFactory to null to ensure clean state
-		$factoryClass = new \ReflectionClass( AdapterFactory::class );
-		$instanceProperty = $factoryClass->getProperty( 'instance' );
-		$instanceProperty->setAccessible( true );
-		$instanceProperty->setValue( null, null );
+		$this->resetAdapterFactoryInstance();
 
 		parent::tearDown();
 	}
@@ -132,6 +147,8 @@ class DataImporterComprehensiveTest extends TestCase
 		$this->assertTrue( $result );
 
 		$stats = $importer->getStatistics();
+		$this->assertArrayHasKey( 'rows_imported', $stats );
+		$this->assertArrayHasKey( 'tables_imported', $stats );
 		$this->assertEquals( 4, $stats['rows_imported'] ); // 2 users + 2 posts
 		$this->assertEquals( 2, $stats['tables_imported'] );
 	}
@@ -183,6 +200,8 @@ data:
 		$this->assertTrue( $result );
 
 		$stats = $importer->getStatistics();
+		$this->assertArrayHasKey( 'rows_imported', $stats );
+		$this->assertArrayHasKey( 'tables_imported', $stats );
 		$this->assertEquals( 4, $stats['rows_imported'] ); // 2 users + 2 categories
 		$this->assertEquals( 2, $stats['tables_imported'] );
 	}
@@ -232,6 +251,8 @@ data:
 		$this->assertTrue( $result );
 
 		$stats = $importer->getStatistics();
+		$this->assertArrayHasKey( 'rows_imported', $stats );
+		$this->assertArrayHasKey( 'tables_imported', $stats );
 		$this->assertEquals( 4, $stats['rows_imported'] ); // 2 products + 2 orders
 		$this->assertEquals( 2, $stats['tables_imported'] ); // products and orders tables
 	}
@@ -297,15 +318,22 @@ data:
 
 		if( $mode === DataImporter::CONFLICT_SKIP )
 		{
+			// SKIP mode with existing data (count=1) should return true (no-op success)
+			// Contract: Returns true when operation completes without errors, even if all tables skipped
+			// The skip is indicated by rows_imported=0, not by return value
+			$this->assertTrue( $result, 'CONFLICT_SKIP should return true (no-op success) when tables are skipped without errors' );
+
 			// Should skip import - check that no rows were imported
 			$stats = $importer->getStatistics();
-			$this->assertEquals( 0, $stats['rows_imported'] );
+			$this->assertArrayHasKey( 'rows_imported', $stats );
+			$this->assertEquals( 0, $stats['rows_imported'], 'CONFLICT_SKIP should import 0 rows when table has existing data' );
 		}
 		else
 		{
 			$this->assertTrue( $result );
 			// For REPLACE and APPEND modes, verify data was imported
 			$stats = $importer->getStatistics();
+			$this->assertArrayHasKey( 'rows_imported', $stats );
 			$this->assertGreaterThan( 0, $stats['rows_imported'] );
 		}
 	}
@@ -342,9 +370,10 @@ data:
 	}
 
 	/**
-	 * Test error handling with stop_on_error
+	 * Test continue-on-error behavior (stop_on_error => false)
+	 * When stop_on_error is false, import continues after errors
 	 */
-	public function testStopOnError(): void
+	public function testContinueOnError(): void
 	{
 		$mockAdapter = $this->createMockAdapter();
 		$mockConfig = $this->createMockConfig();
@@ -387,7 +416,7 @@ data:
 			$mockConfig,
 			'testing',
 			'phinx_log',
-			['format' => 'sql', 'stop_on_error' => false] // Set to false to capture errors without throwing
+			['format' => 'sql', 'stop_on_error' => false] // Continue on error
 		);
 
 		$result = $importer->importFromFile( $sqlFile );
@@ -401,6 +430,63 @@ data:
 		// So first INSERT succeeds, second fails, third may succeed too
 		$stats = $importer->getStatistics();
 		$this->assertGreaterThanOrEqual( 1, $stats['rows_imported'] );
+	}
+
+	/**
+	 * Test stop-on-error behavior (stop_on_error => true)
+	 * When stop_on_error is true, import stops immediately and throws on first error
+	 */
+	public function testStopOnErrorThrows(): void
+	{
+		$mockAdapter = $this->createMockAdapter();
+		$mockConfig = $this->createMockConfig();
+
+		// Create SQL with multiple statements
+		$sqlFile = $this->tempDir . '/errors_stop.sql';
+		file_put_contents( $sqlFile, "
+			INSERT INTO test1 (id) VALUES (1);
+			INSERT INTO test2 (id) VALUES (2);
+			INSERT INTO test3 (id) VALUES (3);
+		" );
+
+		// Mock execute to fail on certain statements
+		$callCount = 0;
+		$mockAdapter->method( 'execute' )
+			->willReturnCallback( function( $sql ) use ( &$callCount ) {
+				// Check for foreign key statements first
+				if( strpos( $sql, 'FOREIGN_KEY_CHECKS' ) !== false )
+					return 1;
+
+				// Check for INSERT statements
+				if( strpos( $sql, 'INSERT' ) !== false )
+				{
+					$callCount++;
+					if( $callCount == 1 )  // First INSERT succeeds
+						return 1;
+					if( $callCount == 2 )  // Second INSERT fails - should stop here
+						throw new \Exception( 'Stop on error test' );
+				}
+				return 1;  // Any other calls
+			} );
+
+		$mockAdapter->method( 'beginTransaction' );
+		$mockAdapter->method( 'rollbackTransaction' );
+		$mockAdapter->method( 'hasTransaction' )->willReturn( true );
+
+		$this->mockAdapterFactory( $mockAdapter );
+
+		$importer = new DataImporter(
+			$mockConfig,
+			'testing',
+			'phinx_log',
+			['format' => 'sql', 'stop_on_error' => true] // Stop on error
+		);
+
+		// With stop_on_error => true, the exception should be re-thrown
+		$this->expectException( \Exception::class );
+		$this->expectExceptionMessage( 'Stop on error test' );
+
+		$importer->importFromFile( $sqlFile );
 	}
 
 	/**
@@ -722,78 +808,49 @@ data:
 	// Helper methods
 
 	/**
-	 * Get explicit list of AdapterInterface method names
-	 * Replaces fragile get_class_methods() with hardcoded list for test stability
+	 * Reset AdapterFactory singleton instance via Reflection
 	 *
-	 * @return array List of method names from Phinx\Db\Adapter\AdapterInterface
+	 * Encapsulates reflection logic with proper guards and error handling.
+	 * This is necessary because AdapterFactory uses a singleton pattern and tests
+	 * need to ensure a clean state between test runs.
+	 *
+	 * @return void
+	 * @throws \ReflectionException If reflection fails
 	 */
-	private function listAdapterInterfaceMethods(): array
+	protected function resetAdapterFactoryInstance(): void
 	{
-		return [
-			'beginTransaction',
-			'bulkinsert',
-			'castToBool',
-			'commitTransaction',
-			'connect',
-			'createDatabase',
-			'createSchema',
-			'createSchemaTable',
-			'createTable',
-			'disconnect',
-			'dropDatabase',
-			'dropSchema',
-			'execute',
-			'executeActions',
-			'fetchAll',
-			'fetchRow',
-			'getAdapterType',
-			'getColumnForType',
-			'getColumnTypes',
-			'getColumns',
-			'getDeleteBuilder',
-			'getInput',
-			'getInsertBuilder',
-			'getOption',
-			'getOptions',
-			'getOutput',
-			'getQueryBuilder',
-			'getSelectBuilder',
-			'getSqlType',
-			'getUpdateBuilder',
-			'getVersionLog',
-			'getVersions',
-			'hasColumn',
-			'hasDatabase',
-			'hasForeignKey',
-			'hasIndex',
-			'hasIndexByName',
-			'hasOption',
-			'hasPrimaryKey',
-			'hasTable',
-			'hasTransactions',
-			'insert',
-			'isValidColumnType',
-			'migrated',
-			'query',
-			'quoteColumnName',
-			'quoteTableName',
-			'resetAllBreakpoints',
-			'rollbackTransaction',
-			'setBreakpoint',
-			'setInput',
-			'setOptions',
-			'setOutput',
-			'toggleBreakpoint',
-			'truncateTable',
-			'unsetBreakpoint',
-		];
+		try
+		{
+			$factoryClass = new \ReflectionClass( AdapterFactory::class );
+
+			// Guard: Check if the 'instance' property exists
+			if( !$factoryClass->hasProperty( 'instance' ) )
+			{
+				$this->markTestSkipped( 'AdapterFactory::$instance property does not exist - cannot reset singleton' );
+				return;
+			}
+
+			$instanceProperty = $factoryClass->getProperty( 'instance' );
+
+			// Guard: Check if property is accessible or can be made accessible
+			if( !$instanceProperty->isPublic() )
+			{
+				$instanceProperty->setAccessible( true );
+			}
+
+			// Reset the singleton instance to null
+			$instanceProperty->setValue( null, null );
+		}
+		catch( \ReflectionException $e )
+		{
+			$this->fail( 'Failed to reset AdapterFactory instance via reflection: ' . $e->getMessage() );
+		}
 	}
 
 	private function createMockAdapter()
 	{
-		$mockAdapter = $this->getMockBuilder( AdapterInterface::class )
-			->onlyMethods( $this->listAdapterInterfaceMethods() )
-			->addMethods( ['hasTransaction', 'getConnection'] )
+		// Use TestAdapterWithExtras for the extra methods (hasTransaction, getConnection)
+		$mockAdapter = $this->getMockBuilder( TestAdapterWithExtras::class )
 			->getMock();
 
 		// Create a mock PDO object
@@ -814,9 +871,8 @@ data:
 
 	private function createPartialMockAdapter()
 	{
-		$mockAdapter = $this->getMockBuilder( AdapterInterface::class )
-			->onlyMethods( $this->listAdapterInterfaceMethods() )
-			->addMethods( ['hasTransaction'] )
+		// Use TestAdapterWithExtras for the extra hasTransaction method
+		$mockAdapter = $this->getMockBuilder( TestAdapterWithExtras::class )
 			->getMock();
 
 		$mockAdapter->method( 'connect' );
@@ -876,6 +932,11 @@ data:
 			return; // Invalid directory, skip
 		}
 
+		// Normalize root with trailing separator to prevent false positives
+		// Example: /tmp/test/ will NOT match /tmp/test123/file.txt
+		// but /tmp/test would incorrectly match it with simple strpos check
+		$rootWithSeparator = rtrim( $root, DIRECTORY_SEPARATOR ) . DIRECTORY_SEPARATOR;
+
 		$objects = scandir( $dir );
 		foreach( $objects as $object )
 		{
@@ -892,10 +953,19 @@ data:
 				}
 
 				// SECURITY: Validate path is within the intended directory tree
+				// Use normalized paths with trailing separator to prevent sibling path false positives
 				$realPath = realpath( $path );
-				if( $realPath === false || strpos( $realPath, $root ) !== 0 )
+				if( $realPath === false )
 				{
-					continue; // Path is outside root or doesn't exist, skip
+					continue; // Path doesn't exist, skip
+				}
+
+				// Ensure realPath starts with rootWithSeparator OR equals root (for direct children)
+				// This prevents /tmp/test123 from matching when root is /tmp/test
+				$realPathWithSeparator = rtrim( $realPath, DIRECTORY_SEPARATOR ) . DIRECTORY_SEPARATOR;
+				if( strpos( $realPathWithSeparator, $rootWithSeparator ) !== 0 && $realPath !== $root )
+				{
+					continue; // Path is outside root, skip
 				}
 
 				if( is_dir( $path ) )

@@ -21,12 +21,18 @@ namespace Neuron\Mvc\Database;
 class SqlWhereValidator
 {
 	/**
+	 * Maximum allowed WHERE clause length to prevent ReDoS attacks
+	 * Reasonable limit: most legitimate WHERE clauses are much shorter
+	 */
+	private const MAX_WHERE_LENGTH = 10000;
+
+	/**
 	 * Dangerous SQL patterns that could indicate SQL injection
 	 */
 	private const DANGEROUS_PATTERNS = [
 		// SQL comments
 		'/--/',
-		'/\/\*.*\*\//',
+		'~\/\*[^*]*\*+(?:[^/*][^*]*\*+)*\/~', // ReDoS-safe: matches balanced block comments
 		'/#/',
 
 		// SQL commands
@@ -39,7 +45,7 @@ class SqlWhereValidator
 		'/\bUNION\b/i',
 
 		// Subqueries (can be dangerous in WHERE clauses)
-		'/\bSELECT\b.*\bFROM\b/i',
+		'/\bSELECT\b.{0,200}?\bFROM\b/i', // ReDoS-safe: non-greedy with max length
 
 		// System functions that could be exploited
 		'/\b(SLEEP|BENCHMARK|LOAD_FILE|OUTFILE|DUMPFILE)\b/i',
@@ -192,6 +198,12 @@ class SqlWhereValidator
 	 */
 	public static function isValid( string $whereClause ): bool
 	{
+		// Enforce maximum length to prevent ReDoS attacks
+		if( strlen( $whereClause ) > self::MAX_WHERE_LENGTH )
+		{
+			return false;
+		}
+
 		// Check for balanced quotes using proper backslash handling
 		// Must be done BEFORE stripping literals
 		$singleQuotes = self::countUnescapedQuotes( $whereClause, "'" );

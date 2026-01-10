@@ -206,6 +206,44 @@ class DumpCommandTest extends TestCase
 		$this->assertEquals( 0, $exitCode );
 	}
 
+	public function testExecuteWithInvalidLimitThrowsException(): void
+	{
+		// Create minimal config
+		$config = $this->createTestConfig();
+		file_put_contents( $this->tempDir . '/neuron.yaml', $config );
+
+		// Test with negative limit
+		$input = new Input( [
+			'--config=' . $this->tempDir,
+			'--limit=-5',
+			'--dry-run'
+		] );
+		$this->command->setInput( $input );
+
+		$this->expectException( \InvalidArgumentException::class );
+		$this->expectExceptionMessage( 'Limit must be greater than 0' );
+		$this->command->execute();
+	}
+
+	public function testExecuteWithZeroLimitThrowsException(): void
+	{
+		// Create minimal config
+		$config = $this->createTestConfig();
+		file_put_contents( $this->tempDir . '/neuron.yaml', $config );
+
+		// Test with zero limit
+		$input = new Input( [
+			'--config=' . $this->tempDir,
+			'--limit=0',
+			'--dry-run'
+		] );
+		$this->command->setInput( $input );
+
+		$this->expectException( \InvalidArgumentException::class );
+		$this->expectExceptionMessage( 'Limit must be greater than 0' );
+		$this->command->execute();
+	}
+
 	public function testExecuteWithWhereConditions(): void
 	{
 		// Create minimal config
