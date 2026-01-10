@@ -63,7 +63,8 @@ class DataImporterComprehensiveTest extends TestCase
 	}
 
 	/**
-	 * Test import from SQL file
+	 * Test import from SQL file with explicit FK handling configuration
+	 * Verifies that DataImporter properly disables/enables foreign keys when configured
 	 */
 	public function testImportFromSqlFile(): void
 	{
@@ -78,7 +79,8 @@ class DataImporterComprehensiveTest extends TestCase
 		" );
 
 		// Mock execute for SQL statements - returns affected rows count
-		// With foreign key disabling: FK disable + 2 INSERTs + FK enable = 4 calls
+		// With disable_foreign_keys => true (explicit): FK disable + 2 INSERTs + FK enable = 4 calls
+		// The disable/enable FK calls happen via execute() for PRAGMA or SET statements
 		$mockAdapter->expects( $this->exactly( 4 ) )
 			->method( 'execute' )
 			->willReturn( 1 );
@@ -89,11 +91,17 @@ class DataImporterComprehensiveTest extends TestCase
 
 		$this->mockAdapterFactory( $mockAdapter );
 
+		// Explicitly configure FK handling behavior to make test stable and clear
+		// disable_foreign_keys => true causes DataImporter to call disableForeignKeyChecks()
+		// before import and enableForeignKeyChecks() after import
 		$importer = new DataImporter(
 			$mockConfig,
 			'testing',
 			'phinx_log',
-			['format' => 'sql']
+			[
+				'format' => 'sql',
+				'disable_foreign_keys' => true  // Explicit: disable FK checks during import
+			]
 		);
 
 		$result = $importer->importFromFile( $sqlFile );

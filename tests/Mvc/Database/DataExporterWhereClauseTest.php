@@ -425,6 +425,45 @@ class DataExporterWhereClauseTest extends TestCase
 	}
 
 	/**
+	 * Test empty string values in IN lists
+	 * Ensures empty quoted strings ('', "") are properly handled and not silently dropped
+	 */
+	public function testInListWithEmptyStrings(): void
+	{
+		$exporter = $this->createTestExporter();
+
+		// Test single empty string
+		$result = $exporter->testParseWhereClause( "status IN ('')" );
+		$this->assertEquals( "`status` IN (?)", $result['sql'] );
+		$this->assertEquals( [''], $result['bindings'] );
+
+		// Test double-quoted empty string
+		$result = $exporter->testParseWhereClause( 'status IN ("")' );
+		$this->assertEquals( "`status` IN (?)", $result['sql'] );
+		$this->assertEquals( [''], $result['bindings'] );
+
+		// Test empty string mixed with non-empty values
+		$result = $exporter->testParseWhereClause( "status IN ('active', '', 'pending')" );
+		$this->assertEquals( "`status` IN (?, ?, ?)", $result['sql'] );
+		$this->assertEquals( ['active', '', 'pending'], $result['bindings'] );
+
+		// Test multiple empty strings
+		$result = $exporter->testParseWhereClause( "status IN ('', '', 'active')" );
+		$this->assertEquals( "`status` IN (?, ?, ?)", $result['sql'] );
+		$this->assertEquals( ['', '', 'active'], $result['bindings'] );
+
+		// Test NOT IN with empty strings
+		$result = $exporter->testParseWhereClause( "status NOT IN ('', 'deleted')" );
+		$this->assertEquals( "`status` NOT IN (?, ?)", $result['sql'] );
+		$this->assertEquals( ['', 'deleted'], $result['bindings'] );
+
+		// Test empty string with spaces (should still be empty)
+		$result = $exporter->testParseWhereClause( "status IN (  ''  ,  'active'  )" );
+		$this->assertEquals( "`status` IN (?, ?)", $result['sql'] );
+		$this->assertEquals( ['', 'active'], $result['bindings'] );
+	}
+
+	/**
 	 * Test case insensitive IN operator
 	 */
 	public function testInOperatorCaseInsensitive(): void

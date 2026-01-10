@@ -411,20 +411,27 @@ class DataExporter
 				{
 					foreach( $valueMatches as $valueMatch )
 					{
-						if( isset( $valueMatch[ 1 ] ) && $valueMatch[ 1 ] !== '' )
+						// Check unquoted first since it cannot be empty (uses pattern that excludes empty matches)
+						if( isset( $valueMatch[ 3 ] ) && $valueMatch[ 3 ] !== '' )
 						{
-							// Single-quoted value - unescape doubled single quotes
+							// Unquoted value (number or keyword)
+							$values[] = $valueMatch[ 3 ];
+						}
+						elseif( isset( $valueMatch[ 1 ] ) && $valueMatch[ 1 ] !== '' )
+						{
+							// Single-quoted non-empty value - unescape doubled single quotes
 							$values[] = str_replace( "''", "'", $valueMatch[ 1 ] );
 						}
 						elseif( isset( $valueMatch[ 2 ] ) && $valueMatch[ 2 ] !== '' )
 						{
-							// Double-quoted value - unescape doubled double quotes
+							// Double-quoted non-empty value - unescape doubled double quotes
 							$values[] = str_replace( '""', '"', $valueMatch[ 2 ] );
 						}
-						elseif( isset( $valueMatch[ 3 ] ) && $valueMatch[ 3 ] !== '' )
+						else
 						{
-							// Unquoted value (number or keyword)
-							$values[] = $valueMatch[ 3 ];
+							// All groups are empty - must be an empty quoted string
+							// Could be either '' or "" - doesn't matter since result is empty
+							$values[] = '';
 						}
 					}
 				}
