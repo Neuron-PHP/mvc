@@ -207,17 +207,22 @@ class DataImporter
 	}
 
 	/**
-	 * Import data from string
+	 * Execute import callback with transaction and foreign key management
 	 *
-	 * @param string $data Data to import
+	 * This helper centralizes the common pattern of:
+	 * 1. Disabling foreign keys (if requested)
+	 * 2. Clearing tables (if requested)
+	 * 3. Beginning transaction (if requested)
+	 * 4. Executing the import callback
+	 * 5. Re-enabling foreign keys
+	 * 6. Committing/rolling back transaction
+	 * 7. Handling errors with rollback and FK re-enable in finally block
+	 *
+	 * @param callable $importCallback The import operation to execute
 	 * @return bool Success status
 	 */
-	public function import( string $data ): bool
+	private function executeWithTransactionManagement( callable $importCallback ): bool
 	{
-		$this->_Errors         = [];
-		$this->_RowsImported   = 0;
-		$this->_TablesImported = 0;
-
 		try
 		{
 			// Disable foreign key checks BEFORE transaction starts (required for SQLite)
@@ -246,33 +251,16 @@ class DataImporter
 				$this->_Adapter->beginTransaction();
 			}
 
-			// Import based on format
-			$success = false;
-			switch( $this->_Options[ 'format' ] )
-			{
-				case self::FORMAT_SQL:
-					$success = $this->importFromSql( $data );
-					break;
-				case self::FORMAT_JSON:
-					$success = $this->importFromJson( $data );
-					break;
-				case self::FORMAT_YAML:
-					$success = $this->importFromYaml( $data );
-					break;
-				case self::FORMAT_CSV:
-					// CSV requires file/directory path, not string data
-					throw new \InvalidArgumentException( 'CSV format requires importFromCsvDirectory() method' );
-				default:
-					throw new \InvalidArgumentException( "Unsupported format: {$this->_Options['format']}" );
-			}
+			// Execute the import callback
+			$success = $importCallback();
 
-			// Re-enable foreign key checks
+			// Re-enable foreign key checks after import completes
 			if( $this->_Options[ 'disable_foreign_keys' ] )
 			{
 				$this->enableForeignKeyChecks();
 			}
 
-			// Commit or rollback transaction
+			// Commit or rollback transaction based on success
 			if( $this->_Options[ 'use_transaction' ] )
 			{
 				if( $success )
@@ -297,7 +285,7 @@ class DataImporter
 				$this->_Adapter->rollbackTransaction();
 			}
 
-			// Re-enable foreign key checks
+			// Re-enable foreign key checks in error case
 			if( $this->_Options[ 'disable_foreign_keys' ] )
 			{
 				try
@@ -306,7 +294,7 @@ class DataImporter
 				}
 				catch( \Exception $fkException )
 				{
-					// Ignore errors when re-enabling
+					// Ignore errors when re-enabling FK checks
 				}
 			}
 
@@ -317,6 +305,37 @@ class DataImporter
 
 			return false;
 		}
+	}
+
+	/**
+	 * Import data from string
+	 *
+	 * @param string $data Data to import
+	 * @return bool Success status
+	 */
+	public function import( string $data ): bool
+	{
+		$this->_Errors         = [];
+		$this->_RowsImported   = 0;
+		$this->_TablesImported = 0;
+
+		return $this->executeWithTransactionManagement( function() use ( $data ) {
+			// Import based on format
+			switch( $this->_Options[ 'format' ] )
+			{
+				case self::FORMAT_SQL:
+					return $this->importFromSql( $data );
+				case self::FORMAT_JSON:
+					return $this->importFromJson( $data );
+				case self::FORMAT_YAML:
+					return $this->importFromYaml( $data );
+				case self::FORMAT_CSV:
+					// CSV requires file/directory path, not string data
+					throw new \InvalidArgumentException( 'CSV format requires importFromCsvDirectory() method' );
+				default:
+					throw new \InvalidArgumentException( "Unsupported format: {$this->_Options['format']}" );
+			}
+		} );
 	}
 
 	/**
@@ -1266,34 +1285,9 @@ class DataImporter
 			}
 		}
 
-		try
-		{
-			// Disable foreign key checks BEFORE transaction starts (required for SQLite)
-			// SQLite's PRAGMA foreign_keys must be set before transaction begins
-			if( $this->_Options[ 'disable_foreign_keys' ] )
-			{
-				$this->disableForeignKeyChecks();
-			}
-
-			// Clear existing data before import if requested
-			// This must happen BEFORE transaction begins to ensure deletes are committed
-			// clearAllData() respects 'tables' and 'exclude' options via shouldProcessTable()
-			// and handles foreign keys internally
-			if( $this->_Options[ 'clear_tables' ] )
-			{
-				if( !$this->clearAllData( false ) )
-				{
-					$this->_Errors[] = 'Failed to clear existing data before import';
-					return false;
-				}
-			}
-
-			// Begin transaction if requested
-			if( $this->_Options[ 'use_transaction' ] )
-			{
-				$this->_Adapter->beginTransaction();
-			}
-
+		// Use transaction management helper for foreign key and transaction handling
+		return $this->executeWithTransactionManagement( function() use ( $files ) {
+			// Process each CSV file
 			foreach( $files as $file )
 			{
 				$tableName = pathinfo( $file, PATHINFO_FILENAME );
@@ -1320,50 +1314,9 @@ class DataImporter
 				}
 			}
 
-			// Re-enable foreign key checks
-			if( $this->_Options[ 'disable_foreign_keys' ] )
-			{
-				$this->enableForeignKeyChecks();
-			}
-
-			// Commit transaction
-			if( $this->_Options[ 'use_transaction' ] )
-			{
-				if( empty( $this->_Errors ) )
-				{
-					$this->_Adapter->commitTransaction();
-				}
-				else
-				{
-					$this->_Adapter->rollbackTransaction();
-				}
-			}
-
+			// Return success if no errors accumulated
 			return empty( $this->_Errors );
-		}
-		catch( \Exception $e )
-		{
-			// Rollback on error
-			if( $this->_Options[ 'use_transaction' ] && $this->_Adapter->hasTransactions() )
-			{
-				$this->_Adapter->rollbackTransaction();
-			}
-
-			// Re-enable foreign key checks
-			if( $this->_Options[ 'disable_foreign_keys' ] )
-			{
-				try
-				{
-					$this->enableForeignKeyChecks();
-				}
-				catch( \Exception $fkException )
-				{
-					// Ignore
-				}
-			}
-
-			throw $e;
-		}
+		} );
 	}
 
 	/**

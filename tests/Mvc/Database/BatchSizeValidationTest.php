@@ -17,6 +17,57 @@ use PHPUnit\Framework\TestCase;
 class BatchSizeValidationTest extends TestCase
 {
 	/**
+	 * Path to temporary SQLite database file
+	 * @var string
+	 */
+	private string $dbPath;
+
+	/**
+	 * Phinx configuration object
+	 * @var Config
+	 */
+	private Config $config;
+
+	/**
+	 * Set up test database and configuration before each test
+	 */
+	protected function setUp(): void
+	{
+		parent::setUp();
+
+		// Create a temporary SQLite database
+		$this->dbPath = tempnam( sys_get_temp_dir(), 'batch_size_test_' ) . '.db';
+
+		// Create Phinx config
+		$this->config = new Config( [
+			'paths' => [
+				'migrations' => __DIR__
+			],
+			'environments' => [
+				'default_migration_table' => 'phinx_log',
+				'default_environment' => 'testing',
+				'testing' => [
+					'adapter' => 'sqlite',
+					'name' => $this->dbPath
+				]
+			]
+		] );
+	}
+
+	/**
+	 * Clean up test database after each test
+	 */
+	protected function tearDown(): void
+	{
+		if( isset( $this->dbPath ) && file_exists( $this->dbPath ) )
+		{
+			unlink( $this->dbPath );
+		}
+
+		parent::tearDown();
+	}
+
+	/**
 	 * Test that DataImporter constructor rejects zero batch size
 	 */
 	public function testDataImporterRejectsZeroBatchSize(): void
@@ -24,41 +75,13 @@ class BatchSizeValidationTest extends TestCase
 		$this->expectException( \InvalidArgumentException::class );
 		$this->expectExceptionMessage( 'batch_size must be greater than 0' );
 
-		// Create a temporary SQLite database
-		$dbPath = tempnam( sys_get_temp_dir(), 'batch_size_test_' ) . '.db';
-
-		try
-		{
-			// Create Phinx config
-			$config = new Config( [
-				'paths' => [
-					'migrations' => __DIR__
-				],
-				'environments' => [
-					'default_migration_table' => 'phinx_log',
-					'default_environment' => 'testing',
-					'testing' => [
-						'adapter' => 'sqlite',
-						'name' => $dbPath
-					]
-				]
-			] );
-
-			// Try to create DataImporter with zero batch size
-			new DataImporter(
-				$config,
-				'testing',
-				'phinx_log',
-				['batch_size' => 0]
-			);
-		}
-		finally
-		{
-			if( file_exists( $dbPath ) )
-			{
-				unlink( $dbPath );
-			}
-		}
+		// Try to create DataImporter with zero batch size
+		new DataImporter(
+			$this->config,
+			'testing',
+			'phinx_log',
+			['batch_size' => 0]
+		);
 	}
 
 	/**
@@ -69,41 +92,13 @@ class BatchSizeValidationTest extends TestCase
 		$this->expectException( \InvalidArgumentException::class );
 		$this->expectExceptionMessage( 'batch_size must be greater than 0' );
 
-		// Create a temporary SQLite database
-		$dbPath = tempnam( sys_get_temp_dir(), 'batch_size_test_' ) . '.db';
-
-		try
-		{
-			// Create Phinx config
-			$config = new Config( [
-				'paths' => [
-					'migrations' => __DIR__
-				],
-				'environments' => [
-					'default_migration_table' => 'phinx_log',
-					'default_environment' => 'testing',
-					'testing' => [
-						'adapter' => 'sqlite',
-						'name' => $dbPath
-					]
-				]
-			] );
-
-			// Try to create DataImporter with negative batch size
-			new DataImporter(
-				$config,
-				'testing',
-				'phinx_log',
-				['batch_size' => -1]
-			);
-		}
-		finally
-		{
-			if( file_exists( $dbPath ) )
-			{
-				unlink( $dbPath );
-			}
-		}
+		// Try to create DataImporter with negative batch size
+		new DataImporter(
+			$this->config,
+			'testing',
+			'phinx_log',
+			['batch_size' => -1]
+		);
 	}
 
 	/**
@@ -111,49 +106,21 @@ class BatchSizeValidationTest extends TestCase
 	 */
 	public function testDataImporterAcceptsValidBatchSize(): void
 	{
-		// Create a temporary SQLite database
-		$dbPath = tempnam( sys_get_temp_dir(), 'batch_size_test_' ) . '.db';
+		// Test various valid batch sizes
+		$validBatchSizes = [1, 10, 100, 1000, 5000];
 
-		try
+		foreach( $validBatchSizes as $batchSize )
 		{
-			// Create Phinx config
-			$config = new Config( [
-				'paths' => [
-					'migrations' => __DIR__
-				],
-				'environments' => [
-					'default_migration_table' => 'phinx_log',
-					'default_environment' => 'testing',
-					'testing' => [
-						'adapter' => 'sqlite',
-						'name' => $dbPath
-					]
-				]
-			] );
+			$importer = new DataImporter(
+				$this->config,
+				'testing',
+				'phinx_log',
+				['batch_size' => $batchSize]
+			);
 
-			// Test various valid batch sizes
-			$validBatchSizes = [1, 10, 100, 1000, 5000];
-
-			foreach( $validBatchSizes as $batchSize )
-			{
-				$importer = new DataImporter(
-					$config,
-					'testing',
-					'phinx_log',
-					['batch_size' => $batchSize]
-				);
-
-				// Should not throw exception
-				$this->assertInstanceOf( DataImporter::class, $importer, "Should accept batch size {$batchSize}" );
-				$importer->disconnect();
-			}
-		}
-		finally
-		{
-			if( file_exists( $dbPath ) )
-			{
-				unlink( $dbPath );
-			}
+			// Should not throw exception
+			$this->assertInstanceOf( DataImporter::class, $importer, "Should accept batch size {$batchSize}" );
+			$importer->disconnect();
 		}
 	}
 
@@ -162,45 +129,17 @@ class BatchSizeValidationTest extends TestCase
 	 */
 	public function testDefaultBatchSizeIsValid(): void
 	{
-		// Create a temporary SQLite database
-		$dbPath = tempnam( sys_get_temp_dir(), 'batch_size_test_' ) . '.db';
+		// Create DataImporter without specifying batch_size (should use default)
+		$importer = new DataImporter(
+			$this->config,
+			'testing',
+			'phinx_log',
+			[]
+		);
 
-		try
-		{
-			// Create Phinx config
-			$config = new Config( [
-				'paths' => [
-					'migrations' => __DIR__
-				],
-				'environments' => [
-					'default_migration_table' => 'phinx_log',
-					'default_environment' => 'testing',
-					'testing' => [
-						'adapter' => 'sqlite',
-						'name' => $dbPath
-					]
-				]
-			] );
-
-			// Create DataImporter without specifying batch_size (should use default)
-			$importer = new DataImporter(
-				$config,
-				'testing',
-				'phinx_log',
-				[]
-			);
-
-			// Should not throw exception
-			$this->assertInstanceOf( DataImporter::class, $importer );
-			$importer->disconnect();
-		}
-		finally
-		{
-			if( file_exists( $dbPath ) )
-			{
-				unlink( $dbPath );
-			}
-		}
+		// Should not throw exception
+		$this->assertInstanceOf( DataImporter::class, $importer );
+		$importer->disconnect();
 	}
 
 	/**
@@ -208,44 +147,16 @@ class BatchSizeValidationTest extends TestCase
 	 */
 	public function testVeryLargeBatchSizesAreAccepted(): void
 	{
-		// Create a temporary SQLite database
-		$dbPath = tempnam( sys_get_temp_dir(), 'batch_size_test_' ) . '.db';
+		// Test very large batch size
+		$importer = new DataImporter(
+			$this->config,
+			'testing',
+			'phinx_log',
+			['batch_size' => 100000]
+		);
 
-		try
-		{
-			// Create Phinx config
-			$config = new Config( [
-				'paths' => [
-					'migrations' => __DIR__
-				],
-				'environments' => [
-					'default_migration_table' => 'phinx_log',
-					'default_environment' => 'testing',
-					'testing' => [
-						'adapter' => 'sqlite',
-						'name' => $dbPath
-					]
-				]
-			] );
-
-			// Test very large batch size
-			$importer = new DataImporter(
-				$config,
-				'testing',
-				'phinx_log',
-				['batch_size' => 100000]
-			);
-
-			// Should not throw exception
-			$this->assertInstanceOf( DataImporter::class, $importer );
-			$importer->disconnect();
-		}
-		finally
-		{
-			if( file_exists( $dbPath ) )
-			{
-				unlink( $dbPath );
-			}
-		}
+		// Should not throw exception
+		$this->assertInstanceOf( DataImporter::class, $importer );
+		$importer->disconnect();
 	}
 }

@@ -162,7 +162,7 @@ class DumpCommand extends Command
 		{
 			$this->output->error( 'Error exporting data: ' . $e->getMessage() );
 
-			if( $this->input->getOption( 'verbose' ) || $this->input->getOption( 'v' ) )
+			if( $this->input->getOption( 'verbose' ) )
 			{
 				$this->output->write( $e->getTraceAsString() );
 			}

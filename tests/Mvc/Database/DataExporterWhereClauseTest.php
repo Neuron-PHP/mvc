@@ -13,8 +13,6 @@ use Phinx\Db\Adapter\AdapterFactory;
  */
 class DataExporterWhereClauseTest extends TestCase
 {
-	private $originalFactory;
-
 	protected function setUp(): void
 	{
 		parent::setUp();

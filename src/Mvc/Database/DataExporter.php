@@ -1094,13 +1094,24 @@ class DataExporter
 					// PDO::quote adds quotes around the string, but our callers
 					// add quotes themselves, so we need to strip them
 					$quoted = $connection->quote( $value );
-					// Remove the surrounding quotes that PDO adds
+
+					// Check for strict failure (PDO::quote returns false on error)
+					if( $quoted === false )
+					{
+						// Fall back to original value only if quote() failed
+						return $value;
+					}
+
+					// Remove the surrounding quotes that PDO adds (if present)
 					if( strlen( $quoted ) >= 2 )
 					{
 						// Strip first and last character (the quotes)
 						return substr( $quoted, 1, -1 );
 					}
-					return $value;
+
+					// If $quoted is empty string or single character, return it as-is
+					// (don't return unescaped $value when quote succeeded)
+					return $quoted;
 				}
 			}
 			catch( \Exception $e )
