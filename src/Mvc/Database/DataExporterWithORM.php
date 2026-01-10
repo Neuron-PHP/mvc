@@ -384,7 +384,8 @@ class DataExporterWithORM
 				{
 					throw new \RuntimeException( "Failed to compress data for file: {$outputPath}" );
 				}
-				if( !str_ends_with( $outputPath, '.gz' ) )
+				// Case-insensitive check to match DataExporter behavior
+				if( !str_ends_with( strtolower( $outputPath ), '.gz' ) )
 				{
 					$outputPath .= '.gz';
 				}

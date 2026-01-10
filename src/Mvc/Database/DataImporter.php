@@ -101,8 +101,8 @@ class DataImporter
 			throw new \InvalidArgumentException( "File not found: {$FilePath}" );
 		}
 
-		// Handle compressed files
-		$isCompressed = str_ends_with( $FilePath, '.gz' );
+		// Handle compressed files (case-insensitive to match exporter behavior)
+		$isCompressed = str_ends_with( strtolower( $FilePath ), '.gz' );
 
 		if( $isCompressed )
 		{
@@ -156,8 +156,8 @@ class DataImporter
 	 */
 	private function detectFormat( string $filePath, string $content ): string
 	{
-		// Remove .gz extension if present
-		$filePath = str_replace( '.gz', '', $filePath );
+		// Remove .gz extension if present (case-insensitive)
+		$filePath = preg_replace( '/\.gz$/i', '', $filePath );
 
 		// Check file extension
 		$extension = strtolower( pathinfo( $filePath, PATHINFO_EXTENSION ) );

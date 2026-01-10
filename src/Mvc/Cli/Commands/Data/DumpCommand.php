@@ -297,13 +297,8 @@ class DumpCommand extends Command
 			$outputPath = $defaults[$format] ?? 'db/data_dump';
 		}
 
-		// Resolve relative paths
-		if( !str_starts_with( $outputPath, '/' ) )
-		{
-			$outputPath = $basePath . '/' . $outputPath;
-		}
-
 		// Get canonical path of base directory to prevent path traversal attacks
+		// Do this BEFORE prepending to relative paths to ensure consistency
 		$resolvedBasePath = realpath( $basePath );
 
 		// Check if realpath failed for base path (directory doesn't exist, unmounted, etc.)
@@ -316,14 +311,42 @@ class DumpCommand extends Command
 			throw new \InvalidArgumentException( "Base directory not found: {$basePath}" );
 		}
 
+		// Resolve relative paths using the canonical base path
+		// This ensures path comparison works correctly even with symlinks (e.g., /var -> /private/var)
+		if( !str_starts_with( $outputPath, '/' ) )
+		{
+			$outputPath = $resolvedBasePath . '/' . $outputPath;
+		}
+
 		// For output files that don't exist yet, validate the parent directory
 		$outputDir = dirname( $outputPath );
+
+		// SECURITY: Validate path BEFORE creating any directories
+		// This prevents attackers from creating arbitrary directories via path traversal
+
+		// Normalize the output directory path by resolving .. and . components
+		// This allows validation without requiring the path to exist
+		$normalizedOutputDir = $this->normalizePath( $outputDir );
+
+		// Check if the normalized output directory is within the allowed base path
+		// Must either be a subdirectory of base or exactly the base path
+		if( !str_starts_with( $normalizedOutputDir, $resolvedBasePath . '/' ) &&
+		    $normalizedOutputDir !== $resolvedBasePath )
+		{
+			if( isset( $this->output ) )
+			{
+				$this->output->error( "Security error: Output path is outside the allowed directory" );
+				$this->output->error( "Attempted path: {$outputPath}" );
+			}
+			throw new \InvalidArgumentException( "Output path is outside allowed directory" );
+		}
+
+		// Path is validated as safe (normalized check) - now we can create the directory if needed
 		$resolvedOutputDir = realpath( $outputDir );
 
-		// If the output directory doesn't exist, create it
 		if( $resolvedOutputDir === false )
 		{
-			// Try to create the directory
+			// Directory doesn't exist, create it (we've already validated it's safe)
 			if( !@mkdir( $outputDir, 0755, true ) )
 			{
 				if( isset( $this->output ) )
@@ -346,15 +369,16 @@ class DumpCommand extends Command
 			}
 		}
 
-		// Verify the output directory is within the allowed base path
-		// This prevents path traversal attacks using "../" sequences
+		// SECURITY: Validate again after resolving symlinks
+		// The normalized path check above prevents directory creation attacks,
+		// but we must also check the resolved path to catch symlink-based traversal
 		if( !str_starts_with( $resolvedOutputDir, $resolvedBasePath . '/' ) &&
 		    $resolvedOutputDir !== $resolvedBasePath )
 		{
 			if( isset( $this->output ) )
 			{
 				$this->output->error( "Security error: Output path is outside the allowed directory" );
-				$this->output->error( "Attempted path: {$outputPath}" );
+				$this->output->error( "Resolved path: {$resolvedOutputDir}" );
 			}
 			throw new \InvalidArgumentException( "Output path is outside allowed directory" );
 		}
@@ -539,6 +563,57 @@ class DumpCommand extends Command
 		}
 
 		return round( $bytes, 2 ) . ' ' . $units[$unitIndex];
+	}
+
+	/**
+	 * Normalize a file path by resolving . and .. components
+	 *
+	 * This allows path validation without requiring the path to exist on disk.
+	 * Critical for preventing directory creation before security validation.
+	 *
+	 * @param string $path Absolute path to normalize
+	 * @return string Normalized absolute path
+	 */
+	private function normalizePath( string $path ): string
+	{
+		// This method expects an absolute path (after basePath has been prepended)
+		// If not absolute, something is wrong with the calling code
+		if( !str_starts_with( $path, '/' ) )
+		{
+			throw new \InvalidArgumentException( "normalizePath expects absolute path, got: {$path}" );
+		}
+
+		// Split path into components
+		$parts = explode( '/', $path );
+		$normalized = [];
+
+		foreach( $parts as $part )
+		{
+			// Skip empty parts and current directory references
+			if( $part === '' || $part === '.' )
+			{
+				continue;
+			}
+
+			// Handle parent directory references
+			if( $part === '..' )
+			{
+				// Go up one level (remove last component) if possible
+				if( !empty( $normalized ) )
+				{
+					array_pop( $normalized );
+				}
+				// If we try to go above root, just ignore it (can't go higher than /)
+			}
+			else
+			{
+				// Add normal path component
+				$normalized[] = $part;
+			}
+		}
+
+		// Reconstruct the path
+		return '/' . implode( '/', $normalized );
 	}
 
 	/**
