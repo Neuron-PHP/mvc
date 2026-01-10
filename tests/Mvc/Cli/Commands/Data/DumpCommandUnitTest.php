@@ -232,28 +232,44 @@ class DumpCommandUnitTest extends TestCase
 		$input = new Input( [] );
 		$this->command->setInput( $input );
 
-		// Test default paths for each format
-		$basePath = '/test/project';
+		// Use real temporary directory for testing (validation requires it to exist)
+		$basePath = sys_get_temp_dir() . '/test_project_' . uniqid();
+		mkdir( $basePath, 0755, true );
 
-		// SQL format
-		$path = $method->invoke( $this->command, $basePath, 'sql' );
-		$this->assertStringContainsString( 'db/data_dump.sql', $path );
+		try
+		{
+			// SQL format
+			$path = $method->invoke( $this->command, $basePath, 'sql' );
+			$this->assertStringContainsString( 'db/data_dump.sql', $path );
 
-		// JSON format
-		$path = $method->invoke( $this->command, $basePath, 'json' );
-		$this->assertStringContainsString( 'db/data_dump.json', $path );
+			// JSON format
+			$path = $method->invoke( $this->command, $basePath, 'json' );
+			$this->assertStringContainsString( 'db/data_dump.json', $path );
 
-		// CSV format
-		$path = $method->invoke( $this->command, $basePath, 'csv' );
-		$this->assertStringContainsString( 'db/csv_export', $path );
+			// CSV format
+			$path = $method->invoke( $this->command, $basePath, 'csv' );
+			$this->assertStringContainsString( 'db/csv_export', $path );
 
-		// YAML format
-		$path = $method->invoke( $this->command, $basePath, 'yaml' );
-		$this->assertStringContainsString( 'db/data_dump.yaml', $path );
+			// YAML format
+			$path = $method->invoke( $this->command, $basePath, 'yaml' );
+			$this->assertStringContainsString( 'db/data_dump.yaml', $path );
+		}
+		finally
+		{
+			// Clean up - remove created directories
+			if( is_dir( $basePath . '/db' ) )
+			{
+				@rmdir( $basePath . '/db' );
+			}
+			if( is_dir( $basePath ) )
+			{
+				@rmdir( $basePath );
+			}
+		}
 	}
 
 	/**
-	 * Test custom output path handling
+	 * Test custom output path handling (must be within base directory for security)
 	 */
 	public function testCustomOutputPath(): void
 	{
@@ -262,14 +278,35 @@ class DumpCommandUnitTest extends TestCase
 		$method = $reflection->getMethod( 'determineOutputPath' );
 		$method->setAccessible( true );
 
-		// Set custom output
-		$input = new Input( ['--output=/custom/path/backup.sql'] );
-		$this->command->setInput( $input );
+		// Use real temporary directory with custom subdirectory inside it
+		$basePath = sys_get_temp_dir() . '/test_project_' . uniqid();
+		mkdir( $basePath, 0755, true );
+		mkdir( $basePath . '/custom', 0755, true );
 
-		$basePath = '/test/project';
-		$path = $method->invoke( $this->command, $basePath, 'sql' );
+		try
+		{
+			// Set custom output WITHIN the base directory (for security)
+			$input = new Input( ['--output=custom/backup.sql'] );
+			$this->command->setInput( $input );
 
-		$this->assertEquals( '/custom/path/backup.sql', $path );
+			$path = $method->invoke( $this->command, $basePath, 'sql' );
+
+			// Use realpath for expected value to handle symlinks
+			$expectedPath = realpath( $basePath . '/custom' ) . '/backup.sql';
+			$this->assertEquals( $expectedPath, $path );
+		}
+		finally
+		{
+			// Clean up
+			if( is_dir( $basePath . '/custom' ) )
+			{
+				@rmdir( $basePath . '/custom' );
+			}
+			if( is_dir( $basePath ) )
+			{
+				@rmdir( $basePath );
+			}
+		}
 	}
 
 	/**
@@ -282,14 +319,34 @@ class DumpCommandUnitTest extends TestCase
 		$method = $reflection->getMethod( 'determineOutputPath' );
 		$method->setAccessible( true );
 
-		// Set relative output
-		$input = new Input( ['--output=backups/data.sql'] );
-		$this->command->setInput( $input );
+		// Use real temporary directory
+		$basePath = sys_get_temp_dir() . '/test_project_' . uniqid();
+		mkdir( $basePath, 0755, true );
 
-		$basePath = '/test/project';
-		$path = $method->invoke( $this->command, $basePath, 'sql' );
+		try
+		{
+			// Set relative output
+			$input = new Input( ['--output=backups/data.sql'] );
+			$this->command->setInput( $input );
 
-		$this->assertEquals( '/test/project/backups/data.sql', $path );
+			$path = $method->invoke( $this->command, $basePath, 'sql' );
+
+			// Use realpath for expected value to handle symlinks (e.g., /var -> /private/var on macOS)
+			$expectedPath = realpath( $basePath ) . '/backups/data.sql';
+			$this->assertEquals( $expectedPath, $path );
+		}
+		finally
+		{
+			// Clean up
+			if( is_dir( $basePath . '/backups' ) )
+			{
+				@rmdir( $basePath . '/backups' );
+			}
+			if( is_dir( $basePath ) )
+			{
+				@rmdir( $basePath );
+			}
+		}
 	}
 
 	/**

@@ -20,13 +20,13 @@ class BatchSizeValidationTest extends TestCase
 	 * Path to temporary SQLite database file
 	 * @var string
 	 */
-	private string $dbPath;
+	private string $_dbPath;
 
 	/**
 	 * Phinx configuration object
 	 * @var Config
 	 */
-	private Config $config;
+	private Config $_config;
 
 	/**
 	 * Set up test database and configuration before each test
@@ -36,10 +36,10 @@ class BatchSizeValidationTest extends TestCase
 		parent::setUp();
 
 		// Create a temporary SQLite database
-		$this->dbPath = tempnam( sys_get_temp_dir(), 'batch_size_test_' ) . '.db';
+		$this->_dbPath = tempnam( sys_get_temp_dir(), 'batch_size_test_' ) . '.db';
 
 		// Create Phinx config
-		$this->config = new Config( [
+		$this->_config = new Config( [
 			'paths' => [
 				'migrations' => __DIR__
 			],
@@ -48,7 +48,7 @@ class BatchSizeValidationTest extends TestCase
 				'default_environment' => 'testing',
 				'testing' => [
 					'adapter' => 'sqlite',
-					'name' => $this->dbPath
+					'name' => $this->_dbPath
 				]
 			]
 		] );
@@ -59,9 +59,9 @@ class BatchSizeValidationTest extends TestCase
 	 */
 	protected function tearDown(): void
 	{
-		if( isset( $this->dbPath ) && file_exists( $this->dbPath ) )
+		if( isset( $this->_dbPath ) && file_exists( $this->_dbPath ) )
 		{
-			unlink( $this->dbPath );
+			unlink( $this->_dbPath );
 		}
 
 		parent::tearDown();
@@ -77,7 +77,7 @@ class BatchSizeValidationTest extends TestCase
 
 		// Try to create DataImporter with zero batch size
 		new DataImporter(
-			$this->config,
+			$this->_config,
 			'testing',
 			'phinx_log',
 			['batch_size' => 0]
@@ -94,7 +94,7 @@ class BatchSizeValidationTest extends TestCase
 
 		// Try to create DataImporter with negative batch size
 		new DataImporter(
-			$this->config,
+			$this->_config,
 			'testing',
 			'phinx_log',
 			['batch_size' => -1]
@@ -112,7 +112,7 @@ class BatchSizeValidationTest extends TestCase
 		foreach( $validBatchSizes as $batchSize )
 		{
 			$importer = new DataImporter(
-				$this->config,
+				$this->_config,
 				'testing',
 				'phinx_log',
 				['batch_size' => $batchSize]
@@ -131,7 +131,7 @@ class BatchSizeValidationTest extends TestCase
 	{
 		// Create DataImporter without specifying batch_size (should use default)
 		$importer = new DataImporter(
-			$this->config,
+			$this->_config,
 			'testing',
 			'phinx_log',
 			[]
@@ -149,7 +149,7 @@ class BatchSizeValidationTest extends TestCase
 	{
 		// Test very large batch size
 		$importer = new DataImporter(
-			$this->config,
+			$this->_config,
 			'testing',
 			'phinx_log',
 			['batch_size' => 100000]

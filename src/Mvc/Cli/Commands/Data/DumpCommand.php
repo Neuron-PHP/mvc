@@ -272,9 +272,13 @@ class DumpCommand extends Command
 	/**
 	 * Determine output path based on format
 	 *
+	 * Validates that the output path is within the allowed base directory
+	 * to prevent path traversal attacks (e.g., --output ../../../etc/passwd)
+	 *
 	 * @param string $basePath Base path
 	 * @param string $format Output format
 	 * @return string
+	 * @throws \InvalidArgumentException If path is outside allowed directory
 	 */
 	private function determineOutputPath( string $basePath, string $format ): string
 	{
@@ -299,7 +303,67 @@ class DumpCommand extends Command
 			$outputPath = $basePath . '/' . $outputPath;
 		}
 
-		return $outputPath;
+		// Get canonical path of base directory to prevent path traversal attacks
+		$resolvedBasePath = realpath( $basePath );
+
+		// Check if realpath failed for base path (directory doesn't exist, unmounted, etc.)
+		if( $resolvedBasePath === false )
+		{
+			if( isset( $this->output ) )
+			{
+				$this->output->error( "Base directory not found or inaccessible: {$basePath}" );
+			}
+			throw new \InvalidArgumentException( "Base directory not found: {$basePath}" );
+		}
+
+		// For output files that don't exist yet, validate the parent directory
+		$outputDir = dirname( $outputPath );
+		$resolvedOutputDir = realpath( $outputDir );
+
+		// If the output directory doesn't exist, create it
+		if( $resolvedOutputDir === false )
+		{
+			// Try to create the directory
+			if( !@mkdir( $outputDir, 0755, true ) )
+			{
+				if( isset( $this->output ) )
+				{
+					$this->output->error( "Output directory does not exist and could not be created: {$outputDir}" );
+				}
+				throw new \InvalidArgumentException( "Output directory not accessible: {$outputDir}" );
+			}
+
+			// Now get the real path after creating it
+			$resolvedOutputDir = realpath( $outputDir );
+
+			if( $resolvedOutputDir === false )
+			{
+				if( isset( $this->output ) )
+				{
+					$this->output->error( "Failed to resolve output directory path: {$outputDir}" );
+				}
+				throw new \InvalidArgumentException( "Failed to resolve output directory: {$outputDir}" );
+			}
+		}
+
+		// Verify the output directory is within the allowed base path
+		// This prevents path traversal attacks using "../" sequences
+		if( !str_starts_with( $resolvedOutputDir, $resolvedBasePath . '/' ) &&
+		    $resolvedOutputDir !== $resolvedBasePath )
+		{
+			if( isset( $this->output ) )
+			{
+				$this->output->error( "Security error: Output path is outside the allowed directory" );
+				$this->output->error( "Attempted path: {$outputPath}" );
+			}
+			throw new \InvalidArgumentException( "Output path is outside allowed directory" );
+		}
+
+		// Reconstruct the validated output path using the resolved directory
+		$outputFilename = basename( $outputPath );
+		$validatedPath = $resolvedOutputDir . '/' . $outputFilename;
+
+		return $validatedPath;
 	}
 
 	/**

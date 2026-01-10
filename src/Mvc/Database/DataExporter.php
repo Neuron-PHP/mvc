@@ -16,17 +16,17 @@ use Symfony\Component\Yaml\Yaml;
  */
 class DataExporter
 {
-	const FORMAT_SQL = 'sql';
-	const FORMAT_JSON = 'json';
-	const FORMAT_CSV = 'csv';
-	const FORMAT_YAML = 'yaml';
+	const string FORMAT_SQL = 'sql';
+	const string FORMAT_JSON = 'json';
+	const string FORMAT_CSV = 'csv';
+	const string FORMAT_YAML = 'yaml';
 	private AdapterInterface $_Adapter;
 
 	// Output format constants
-	private string           $_MigrationTable;
-	private string           $_AdapterType;
-	private IFileSystem      $fs;
-	private array            $_Options;
+	private string      $_MigrationTable;
+	private string      $_AdapterType;
+	private IFileSystem $fs;
+	private array       $_Options;
 
 	/**
 	 * @param Config $PhinxConfig Phinx configuration
@@ -41,19 +41,21 @@ class DataExporter
 	{
 		$this->_MigrationTable = $MigrationTable;
 		$this->_Options        = array_merge( [
-															  'format' => self::FORMAT_SQL,
-'tables' => null,
+			'format' => self::FORMAT_SQL,
+			'tables' => null,
 			// null = all tables
-																																																																																																																																																																																																																																																																																																																																					  'exclude' => [],
-'limit' => null,
+																																																																																																																																																																																																																																																																																																																																									  'exclude' => [],
+			'limit' => null,
 			// null = no limit
-																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																				  'where' => [],
+																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																	 'where' => [],
 			// table => where condition
-																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																				  'include_schema' => false,
-'drop_tables' => false,
-'use_transaction' => true,
-'compress' => false
-														  ], $Options );
+																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																	 'include_schema' => false,
+			'drop_tables' => false,
+			'use_transaction' => true,
+			'compress' => false
+		  ],
+		  $Options
+		 );
 
 		$this->fs = $fs ?? new RealFileSystem();
 
@@ -1100,11 +1102,15 @@ class DataExporter
 					{
 						// Fall back to manual SQL escaping when PDO::quote() is unavailable
 						// Escape single quotes (SQL standard) and backslashes, remove null bytes
-						return str_replace(
-							["\\", "\0", "'"],
-							["\\\\", "", "''"],
-							$value
-						);
+						return str_replace( [
+													  "\\",
+													  "\0",
+													  "'"
+												  ], [
+													  "\\\\",
+													  "",
+													  "''"
+												  ], $value );
 					}
 
 					// Remove the surrounding quotes that PDO adds (if present)

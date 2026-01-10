@@ -16,13 +16,13 @@ use Symfony\Component\Yaml\Yaml;
  */
 class DataImporter
 {
-	const FORMAT_SQL = 'sql';
-	const FORMAT_JSON = 'json';
-	const FORMAT_CSV = 'csv';
-	const FORMAT_YAML = 'yaml';
-	const CONFLICT_REPLACE = 'replace';
-	const CONFLICT_APPEND = 'append';
-	const CONFLICT_SKIP = 'skip';
+	const string FORMAT_SQL = 'sql';
+	const string FORMAT_JSON = 'json';
+	const string FORMAT_CSV = 'csv';
+	const string FORMAT_YAML = 'yaml';
+	const string CONFLICT_REPLACE = 'replace';
+	const string CONFLICT_APPEND = 'append';
+	const string CONFLICT_SKIP = 'skip';
 	private AdapterInterface $_Adapter;
 	private string           $_MigrationTable;
 
@@ -1415,72 +1415,76 @@ class DataImporter
 			throw new \RuntimeException( "Failed to create temporary stream for CSV parsing" );
 		}
 
-		fwrite( $stream, $content );
-		rewind( $stream );
-
-		// Parse header row using fgetcsv (handles quoted newlines)
-		$headers = fgetcsv( $stream, 0, ',', '"', '' );
-		if( $headers === false || empty( $headers ) )
+		try
 		{
-			fclose( $stream );
-			throw new \RuntimeException( "CSV file has no valid header: {$filePath}" );
-		}
+			fwrite( $stream, $content );
+			rewind( $stream );
 
-		// Prepare table
-		if( !$this->prepareTableForImport( $tableName ) )
-		{
-			fclose( $stream );
-			return;
-		}
-
-		// Process data in batches
-		$batch     = [];
-		$batchSize = $this->_Options[ 'batch_size' ];
-
-		// Read rows using fgetcsv (properly handles embedded newlines in quoted fields)
-		while( ( $row = fgetcsv( $stream, 0, ',', '"', '' ) ) !== false )
-		{
-			// Skip empty rows (fgetcsv returns array with single null element for blank lines)
-			if( count( $row ) === 1 && $row[ 0 ] === null )
+			// Parse header row using fgetcsv (handles quoted newlines)
+			$headers = fgetcsv( $stream, 0, ',', '"', '' );
+			if( $headers === false || empty( $headers ) )
 			{
-				continue;
+				throw new \RuntimeException( "CSV file has no valid header: {$filePath}" );
 			}
 
-			// Skip comment lines (first field starts with #)
-			if( isset( $row[ 0 ] ) && is_string( $row[ 0 ] ) && str_starts_with( $row[ 0 ], '#' ) )
+			// Prepare table
+			if( !$this->prepareTableForImport( $tableName ) )
 			{
-				continue;
+				return;
 			}
 
-			// Validate column count
-			if( count( $row ) !== count( $headers ) )
+			// Process data in batches
+			$batch     = [];
+			$batchSize = $this->_Options[ 'batch_size' ];
+
+			// Read rows using fgetcsv (properly handles embedded newlines in quoted fields)
+			while( ( $row = fgetcsv( $stream, 0, ',', '"', '' ) ) !== false )
 			{
-				continue; // Skip malformed rows
+				// Skip empty rows (fgetcsv returns array with single null element for blank lines)
+				if( count( $row ) === 1 && $row[ 0 ] === null )
+				{
+					continue;
+				}
+
+				// Skip comment lines (first field starts with #)
+				if( isset( $row[ 0 ] ) && is_string( $row[ 0 ] ) && str_starts_with( $row[ 0 ], '#' ) )
+				{
+					continue;
+				}
+
+				// Validate column count
+				if( count( $row ) !== count( $headers ) )
+				{
+					continue; // Skip malformed rows
+				}
+
+				// Create associative array
+				$data = array_combine( $headers, $row );
+				if( $data === false )
+				{
+					continue;
+				}
+
+				$batch[] = $data;
+
+				if( count( $batch ) >= $batchSize )
+				{
+					$this->insertBatch( $tableName, $batch );
+					$batch = [];
+				}
 			}
 
-			// Create associative array
-			$data = array_combine( $headers, $row );
-			if( $data === false )
-			{
-				continue;
-			}
-
-			$batch[] = $data;
-
-			if( count( $batch ) >= $batchSize )
+			// Insert remaining batch
+			if( !empty( $batch ) )
 			{
 				$this->insertBatch( $tableName, $batch );
-				$batch = [];
 			}
 		}
-
-		// Close stream
-		fclose( $stream );
-
-		// Insert remaining batch
-		if( !empty( $batch ) )
+		finally
 		{
-			$this->insertBatch( $tableName, $batch );
+			// Always close stream, even if an exception is thrown during processing
+			// This prevents resource leaks when insertBatch() or other operations fail
+			fclose( $stream );
 		}
 	}
 

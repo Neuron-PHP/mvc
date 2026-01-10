@@ -15,18 +15,18 @@ use PHPUnit\Framework\TestCase;
  */
 class DataImporterMalformedDataTest extends TestCase
 {
-	private string $dbPath;
-	private Config $config;
+	private string $_dbPath;
+	private Config $_config;
 
 	protected function setUp(): void
 	{
 		parent::setUp();
 
 		// Create temporary database path
-		$this->dbPath = tempnam( sys_get_temp_dir(), 'malformed_test_' ) . '.db';
+		$this->_dbPath = tempnam( sys_get_temp_dir(), 'malformed_test_' ) . '.db';
 
 		// Create Phinx config
-		$this->config = new Config( [
+		$this->_config = new Config( [
 			'paths' => [
 				'migrations' => __DIR__
 			],
@@ -35,7 +35,7 @@ class DataImporterMalformedDataTest extends TestCase
 				'default_environment' => 'testing',
 				'testing' => [
 					'adapter' => 'sqlite',
-					'name' => $this->dbPath
+					'name' => $this->_dbPath
 				]
 			]
 		] );
@@ -44,7 +44,7 @@ class DataImporterMalformedDataTest extends TestCase
 		$this->resetAdapterFactory();
 
 		// Create database with schema
-		$pdo = new \PDO( 'sqlite:' . $this->dbPath );
+		$pdo = new \PDO( 'sqlite:' . $this->_dbPath );
 		$pdo->setAttribute( \PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION );
 		$pdo->exec( "CREATE TABLE phinx_log (version INTEGER PRIMARY KEY)" );
 		$pdo->exec( "CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT NOT NULL)" );
@@ -53,9 +53,9 @@ class DataImporterMalformedDataTest extends TestCase
 
 	protected function tearDown(): void
 	{
-		if( isset( $this->dbPath ) && file_exists( $this->dbPath ) )
+		if( isset( $this->_dbPath ) && file_exists( $this->_dbPath ) )
 		{
-			unlink( $this->dbPath );
+			unlink( $this->_dbPath );
 		}
 
 		$this->resetAdapterFactory();
@@ -83,7 +83,7 @@ class DataImporterMalformedDataTest extends TestCase
 		$this->expectExceptionMessage( 'Invalid JSON structure: "data" must be an array, got string' );
 
 		$importer = new DataImporter(
-			$this->config,
+			$this->_config,
 			'testing',
 			'phinx_log',
 			['format' => 'json']
@@ -106,7 +106,7 @@ class DataImporterMalformedDataTest extends TestCase
 		$this->expectExceptionMessage( 'Invalid YAML structure: "data" must be an array, got string' );
 
 		$importer = new DataImporter(
-			$this->config,
+			$this->_config,
 			'testing',
 			'phinx_log',
 			['format' => 'yaml']
@@ -127,7 +127,7 @@ class DataImporterMalformedDataTest extends TestCase
 		$this->expectExceptionMessage( "Invalid data for table 'users': expected array, got string" );
 
 		$importer = new DataImporter(
-			$this->config,
+			$this->_config,
 			'testing',
 			'phinx_log',
 			[
@@ -152,7 +152,7 @@ class DataImporterMalformedDataTest extends TestCase
 	public function testJsonWithNonArrayTableDataLogsError(): void
 	{
 		$importer = new DataImporter(
-			$this->config,
+			$this->_config,
 			'testing',
 			'phinx_log',
 			[
@@ -189,7 +189,7 @@ class DataImporterMalformedDataTest extends TestCase
 		$this->expectExceptionMessage( "Invalid rows data for table 'users': expected array, got string" );
 
 		$importer = new DataImporter(
-			$this->config,
+			$this->_config,
 			'testing',
 			'phinx_log',
 			[
@@ -216,7 +216,7 @@ class DataImporterMalformedDataTest extends TestCase
 	public function testJsonWithNonArrayRowsLogsError(): void
 	{
 		$importer = new DataImporter(
-			$this->config,
+			$this->_config,
 			'testing',
 			'phinx_log',
 			[
