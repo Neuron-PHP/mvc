@@ -251,19 +251,199 @@ class DataExporterWhereClauseTest extends TestCase
 	}
 
 	/**
-	 * Test that parentheses are not supported
+	 * Test that parentheses are only supported for IN/NOT IN operators
 	 */
-	public function testParenthesesNotSupported(): void
+	public function testParenthesesOnlyForInOperators(): void
 	{
 		$exporter = $this->createTestExporter();
 
 		$this->expectException( \InvalidArgumentException::class );
-		$this->expectExceptionMessage( 'Parentheses are not supported in WHERE conditions' );
+		$this->expectExceptionMessage( 'Parentheses are only supported for IN/NOT IN operators' );
 
-		// Parentheses are not supported in simple parser
+		// Parentheses for grouping are not supported in simple parser
 		$exporter->testParseWhereClause(
 			"(status = 'active' AND type = 'user') OR category = 'admin'"
 		);
+	}
+
+	/**
+	 * Test IN operator with numeric values
+	 */
+	public function testInOperatorWithNumericValues(): void
+	{
+		$exporter = $this->createTestExporter();
+
+		$result = $exporter->testParseWhereClause( "id IN (1, 2, 3)" );
+
+		$this->assertEquals( "`id` IN (?, ?, ?)", $result['sql'] );
+		$this->assertEquals( ['1', '2', '3'], $result['bindings'] );
+	}
+
+	/**
+	 * Test IN operator with quoted string values
+	 */
+	public function testInOperatorWithStringValues(): void
+	{
+		$exporter = $this->createTestExporter();
+
+		$result = $exporter->testParseWhereClause( "status IN ('active', 'pending', 'approved')" );
+
+		$this->assertEquals( "`status` IN (?, ?, ?)", $result['sql'] );
+		$this->assertEquals( ['active', 'pending', 'approved'], $result['bindings'] );
+	}
+
+	/**
+	 * Test NOT IN operator
+	 */
+	public function testNotInOperator(): void
+	{
+		$exporter = $this->createTestExporter();
+
+		$result = $exporter->testParseWhereClause( "status NOT IN ('deleted', 'archived')" );
+
+		$this->assertEquals( "`status` NOT IN (?, ?)", $result['sql'] );
+		$this->assertEquals( ['deleted', 'archived'], $result['bindings'] );
+	}
+
+	/**
+	 * Test IN operator with mixed quotes
+	 */
+	public function testInOperatorWithMixedQuotes(): void
+	{
+		$exporter = $this->createTestExporter();
+
+		$result = $exporter->testParseWhereClause( 'type IN ("admin", \'user\', "guest")' );
+
+		$this->assertEquals( "`type` IN (?, ?, ?)", $result['sql'] );
+		$this->assertEquals( ['admin', 'user', 'guest'], $result['bindings'] );
+	}
+
+	/**
+	 * Test IN operator with SQL-escaped quotes
+	 */
+	public function testInOperatorWithEscapedQuotes(): void
+	{
+		$exporter = $this->createTestExporter();
+
+		$result = $exporter->testParseWhereClause( "name IN ('O''Brien', 'O''Connor', 'Smith')" );
+
+		$this->assertEquals( "`name` IN (?, ?, ?)", $result['sql'] );
+		$this->assertEquals( ["O'Brien", "O'Connor", 'Smith'], $result['bindings'] );
+	}
+
+	/**
+	 * Test IN operator with whitespace variations
+	 */
+	public function testInOperatorWithWhitespace(): void
+	{
+		$exporter = $this->createTestExporter();
+
+		$testCases = [
+			"id IN (1,2,3)",           // No spaces
+			"id IN ( 1 , 2 , 3 )",     // Extra spaces
+			"id IN (1, 2, 3)",         // Normal spacing
+			"id IN  (  1  ,  2  ,  3  )", // Lots of spaces
+		];
+
+		foreach( $testCases as $input )
+		{
+			$result = $exporter->testParseWhereClause( $input );
+
+			$this->assertEquals( "`id` IN (?, ?, ?)", $result['sql'], "Failed for: {$input}" );
+			$this->assertEquals( ['1', '2', '3'], $result['bindings'], "Bindings failed for: {$input}" );
+		}
+	}
+
+	/**
+	 * Test IN operator combined with AND/OR
+	 */
+	public function testInOperatorWithAndOr(): void
+	{
+		$exporter = $this->createTestExporter();
+
+		$result = $exporter->testParseWhereClause(
+			"status IN ('active', 'pending') AND type = 'user' OR priority > 5"
+		);
+
+		$this->assertEquals(
+			"`status` IN (?, ?) AND `type` = ? OR `priority` > ?",
+			$result['sql']
+		);
+
+		$this->assertEquals(
+			['active', 'pending', 'user', '5'],
+			$result['bindings']
+		);
+	}
+
+	/**
+	 * Test multiple IN operators in same clause
+	 */
+	public function testMultipleInOperators(): void
+	{
+		$exporter = $this->createTestExporter();
+
+		$result = $exporter->testParseWhereClause(
+			"status IN ('active', 'pending') AND role IN ('admin', 'moderator')"
+		);
+
+		$this->assertEquals(
+			"`status` IN (?, ?) AND `role` IN (?, ?)",
+			$result['sql']
+		);
+
+		$this->assertEquals(
+			['active', 'pending', 'admin', 'moderator'],
+			$result['bindings']
+		);
+	}
+
+	/**
+	 * Test IN with single value
+	 */
+	public function testInOperatorWithSingleValue(): void
+	{
+		$exporter = $this->createTestExporter();
+
+		$result = $exporter->testParseWhereClause( "id IN (42)" );
+
+		$this->assertEquals( "`id` IN (?)", $result['sql'] );
+		$this->assertEquals( ['42'], $result['bindings'] );
+	}
+
+	/**
+	 * Test empty IN list throws exception
+	 */
+	public function testInOperatorWithEmptyListThrows(): void
+	{
+		$exporter = $this->createTestExporter();
+
+		$this->expectException( \InvalidArgumentException::class );
+		$this->expectExceptionMessage( 'Empty IN list' );
+
+		$exporter->testParseWhereClause( "id IN ()" );
+	}
+
+	/**
+	 * Test case insensitive IN operator
+	 */
+	public function testInOperatorCaseInsensitive(): void
+	{
+		$exporter = $this->createTestExporter();
+
+		$testCases = [
+			"id in (1, 2, 3)",
+			"id In (1, 2, 3)",
+			"id IN (1, 2, 3)",
+		];
+
+		foreach( $testCases as $input )
+		{
+			$result = $exporter->testParseWhereClause( $input );
+
+			$this->assertEquals( "`id` IN (?, ?, ?)", $result['sql'], "Failed for: {$input}" );
+			$this->assertEquals( ['1', '2', '3'], $result['bindings'] );
+		}
 	}
 
 	/**

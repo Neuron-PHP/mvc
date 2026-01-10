@@ -20,22 +20,22 @@ class DataImporter
 	const FORMAT_JSON = 'json';
 	const FORMAT_CSV = 'csv';
 	const FORMAT_YAML = 'yaml';
-const CONFLICT_REPLACE = 'replace';
-const CONFLICT_APPEND = 'append';
-const CONFLICT_SKIP = 'skip';
+	const CONFLICT_REPLACE = 'replace';
+	const CONFLICT_APPEND = 'append';
+	const CONFLICT_SKIP = 'skip';
 	private AdapterInterface $_Adapter;
 	private string           $_MigrationTable;
 
 	// Input format constants (matching DataExporter)
-	private string           $_AdapterType;
-	private IFileSystem      $fs;
-	private array            $_Options;
-	private array            $_Errors         = [];
+	private string      $_AdapterType;
+	private IFileSystem $fs;
+	private array       $_Options;
+	private array       $_Errors = [];
 
 	// Conflict resolution modes
-		private array            $_Warnings       = [];  // Clear table and insert new data
-		private int              $_RowsImported   = 0;    // Keep existing data and add new
-		private int              $_TablesImported = 0;        // Skip if table has data
+	private array $_Warnings       = [];  // Clear table and insert new data
+	private int   $_RowsImported   = 0;    // Keep existing data and add new
+	private int   $_TablesImported = 0;        // Skip if table has data
 
 	/**
 	 * @param Config $PhinxConfig Phinx configuration
@@ -50,17 +50,18 @@ const CONFLICT_SKIP = 'skip';
 	{
 		$this->_MigrationTable = $MigrationTable;
 		$this->_Options        = array_merge( [
-															  'format' => null, // null = auto-detect from file extension/content
-'tables' => null,
-			// null = all tables in import file
-																																																																																																																																																																																																																																					  'exclude' => [],
+															  'format' => null,
+// null = auto-detect from file extension/content
+																																																																																																																																																																																																																																																	  'tables' => null,
+// null = all tables in import file
+																																																																																																																																																																																																																																																	  'exclude' => [],
 'clear_tables' => false,
-			// Clear all data before import
-																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																										'disable_foreign_keys' => true,
+// Clear all data before import
+																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																										  'disable_foreign_keys' => true,
 'use_transaction' => true,
 'batch_size' => 1000,
-			// For batch inserts
-																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																										  'conflict_mode' => self::CONFLICT_REPLACE,
+// For batch inserts
+																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																				  'conflict_mode' => self::CONFLICT_REPLACE,
 'validate_data' => true,
 'stop_on_error' => true,
 'progress_callback' => null
@@ -68,11 +69,9 @@ const CONFLICT_SKIP = 'skip';
 														  ], $Options );
 
 		// Validate batch_size is greater than zero
-		if( $this->_Options['batch_size'] <= 0 )
+		if( $this->_Options[ 'batch_size' ] <= 0 )
 		{
-			throw new \InvalidArgumentException(
-				"batch_size must be greater than 0, got: {$this->_Options['batch_size']}"
-			);
+			throw new \InvalidArgumentException( "batch_size must be greater than 0, got: {$this->_Options['batch_size']}" );
 		}
 
 		$this->fs = $fs ?? new RealFileSystem();
@@ -350,11 +349,244 @@ const CONFLICT_SKIP = 'skip';
 					// - Not in a transaction
 					// - Constraints not marked DEFERRABLE
 					// - No foreign key constraints exist
-					Log::warning(
-						"Could not defer PostgreSQL constraints: {$e->getMessage()}. " .
-						"This may cause foreign key violations during import. " .
-						"Ensure constraints are DEFERRABLE or disable foreign key checks in options."
-					);
+					Log::warning( "Could not defer PostgreSQL constraints: {$e->getMessage()}. " . "This may cause foreign key violations during import. " . "Ensure constraints are DEFERRABLE or disable foreign key checks in options." );
+				}
+				break;
+		}
+	}
+
+	/**
+	 * Clear all data from database (dangerous!)
+	 *
+	 * @param bool $includeMigrationTable Whether to clear migration table too
+	 * @return bool Success status
+	 */
+	public function clearAllData( bool $includeMigrationTable = false ): bool
+	{
+		try
+		{
+			// Disable foreign key checks
+			$this->disableForeignKeyChecks();
+
+			// Get all tables
+			$tables = $this->getAllTables();
+
+			foreach( $tables as $table )
+			{
+				// Skip migration table unless specified
+				if( !$includeMigrationTable && $table === $this->_MigrationTable )
+				{
+					continue;
+				}
+
+				// Skip if not in table filter
+				if( !$this->shouldProcessTable( $table ) )
+				{
+					continue;
+				}
+
+				$quotedTable = $this->quoteIdentifier( $table );
+				$this->_Adapter->execute( "DELETE FROM {$quotedTable}" );
+			}
+
+			// Re-enable foreign key checks
+			$this->enableForeignKeyChecks();
+
+			return true;
+		}
+		catch( \Exception $e )
+		{
+			$this->_Errors[] = "Error clearing data: " . $e->getMessage();
+
+			// Try to re-enable foreign key checks
+			try
+			{
+				$this->enableForeignKeyChecks();
+			}
+			catch( \Exception $fkException )
+			{
+				// Ignore
+			}
+
+			return false;
+		}
+	}
+
+	/**
+	 * Get list of all tables in database
+	 *
+	 * @return array
+	 */
+	private function getAllTables(): array
+	{
+		switch( $this->_AdapterType )
+		{
+			case 'mysql':
+				// Phinx adapters don't support parameterized queries natively
+				// Try to use PDO prepared statements directly, fallback to escaping
+				if( method_exists( $this->_Adapter, 'getConnection' ) )
+				{
+					try
+					{
+						$connection = $this->_Adapter->getConnection();
+						if( $connection instanceof \PDO )
+						{
+							$sql  = "SELECT TABLE_NAME FROM information_schema.TABLES
+								WHERE TABLE_SCHEMA = ? AND TABLE_TYPE = 'BASE TABLE'
+								ORDER BY TABLE_NAME";
+							$stmt = $connection->prepare( $sql );
+							if( $stmt !== false )
+							{
+								$stmt->execute( [ $this->_Adapter->getOption( 'name' ) ] );
+								$rows = $stmt->fetchAll( \PDO::FETCH_ASSOC );
+								return array_column( $rows, 'TABLE_NAME' );
+							}
+						}
+					}
+					catch( \Exception $e )
+					{
+						Log::warning( "Could not use PDO prepared statement for table listing, falling back to escaping" );
+					}
+				}
+
+				// Fallback: Use basic escaping for database name
+				// Database names are typically controlled by configuration, not user input
+				$dbName = $this->_Adapter->getOption( 'name' ) ?? '';
+				$dbName = str_replace( [
+												  "'",
+												  "\\"
+											  ], [
+												  "''",
+												  "\\\\"
+											  ], $dbName );
+				$sql    = "SELECT TABLE_NAME FROM information_schema.TABLES
+						WHERE TABLE_SCHEMA = '{$dbName}' AND TABLE_TYPE = 'BASE TABLE'
+						ORDER BY TABLE_NAME";
+				$rows   = $this->_Adapter->fetchAll( $sql );
+				return array_column( $rows, 'TABLE_NAME' );
+
+			case 'pgsql':
+			case 'postgres':
+				$sql  = "SELECT tablename FROM pg_catalog.pg_tables
+						WHERE schemaname = 'public'
+						ORDER BY tablename";
+				$rows = $this->_Adapter->fetchAll( $sql );
+				return array_column( $rows, 'tablename' );
+
+			case 'sqlite':
+				$sql  = "SELECT name FROM sqlite_master
+						WHERE type = 'table' AND name NOT LIKE 'sqlite_%'
+						ORDER BY name";
+				$rows = $this->_Adapter->fetchAll( $sql );
+				return array_column( $rows, 'name' );
+
+			default:
+				throw new \RuntimeException( "Unsupported adapter type: {$this->_AdapterType}" );
+		}
+	}
+
+	/**
+	 * Check if a table should be processed
+	 *
+	 * @param string $tableName Table name
+	 * @return bool
+	 */
+	private function shouldProcessTable( string $tableName ): bool
+	{
+		// Check if table is in the include list
+		if( $this->_Options[ 'tables' ] !== null )
+		{
+			if( !in_array( $tableName, $this->_Options[ 'tables' ] ) )
+			{
+				return false;
+			}
+		}
+
+		// Check if table is in the exclude list
+		if( !empty( $this->_Options[ 'exclude' ] ) )
+		{
+			if( in_array( $tableName, $this->_Options[ 'exclude' ] ) )
+			{
+				return false;
+			}
+		}
+
+		// Always skip migration table unless explicitly included
+		if( $tableName === $this->_MigrationTable && !in_array( $tableName, $this->_Options[ 'tables' ] ?? [] ) )
+		{
+			return false;
+		}
+
+		return true;
+	}
+
+	/**
+	 * Quote a database identifier (table or column name)
+	 *
+	 * @param string $identifier The identifier to quote
+	 * @return string The properly quoted identifier for the current adapter
+	 */
+	private function quoteIdentifier( string $identifier ): string
+	{
+		// Handle different database adapters
+		switch( $this->_AdapterType )
+		{
+			case 'mysql':
+				// MySQL uses backticks
+				return '`' . str_replace( '`', '``', $identifier ) . '`';
+
+			case 'pgsql':
+			case 'postgres':
+				// PostgreSQL uses double quotes
+				return '"' . str_replace( '"', '""', $identifier ) . '"';
+
+			case 'sqlite':
+				// SQLite can use double quotes, square brackets, or backticks
+				// We'll use double quotes for consistency with standard SQL
+				return '"' . str_replace( '"', '""', $identifier ) . '"';
+
+			case 'sqlsrv':
+			case 'mssql':
+				// SQL Server uses square brackets
+				return '[' . str_replace( ']', ']]', $identifier ) . ']';
+
+			default:
+				// Default to ANSI SQL double quotes
+				return '"' . str_replace( '"', '""', $identifier ) . '"';
+		}
+	}
+
+	/**
+	 * Enable foreign key checks
+	 */
+	private function enableForeignKeyChecks(): void
+	{
+		switch( $this->_AdapterType )
+		{
+			case 'mysql':
+				$this->_Adapter->execute( 'SET FOREIGN_KEY_CHECKS = 1' );
+				break;
+			case 'sqlite':
+				$this->_Adapter->execute( 'PRAGMA foreign_keys = ON' );
+				break;
+			case 'pgsql':
+			case 'postgres':
+				// Constraints will be checked at transaction commit
+				// SET CONSTRAINTS ALL IMMEDIATE requires:
+				// 1. Active transaction
+				// 2. Constraints marked as DEFERRABLE
+				// Guard against errors and warn instead of failing
+				try
+				{
+					$this->_Adapter->execute( 'SET CONSTRAINTS ALL IMMEDIATE' );
+				}
+				catch( \Exception $e )
+				{
+					// Common causes:
+					// - Not in a transaction
+					// - Constraints not marked DEFERRABLE
+					// - No foreign key constraints exist
+					Log::warning( "Could not set PostgreSQL constraints to IMMEDIATE: {$e->getMessage()}. " . "This is usually safe - constraints will be checked at transaction commit." );
 				}
 				break;
 		}
@@ -574,41 +806,6 @@ const CONFLICT_SKIP = 'skip';
 	}
 
 	/**
-	 * Check if a table should be processed
-	 *
-	 * @param string $tableName Table name
-	 * @return bool
-	 */
-	private function shouldProcessTable( string $tableName ): bool
-	{
-		// Check if table is in the include list
-		if( $this->_Options[ 'tables' ] !== null )
-		{
-			if( !in_array( $tableName, $this->_Options[ 'tables' ] ) )
-			{
-				return false;
-			}
-		}
-
-		// Check if table is in the exclude list
-		if( !empty( $this->_Options[ 'exclude' ] ) )
-		{
-			if( in_array( $tableName, $this->_Options[ 'exclude' ] ) )
-			{
-				return false;
-			}
-		}
-
-		// Always skip migration table unless explicitly included
-		if( $tableName === $this->_MigrationTable && !in_array( $tableName, $this->_Options[ 'tables' ] ?? [] ) )
-		{
-			return false;
-		}
-
-		return true;
-	}
-
-	/**
 	 * Estimate number of rows from INSERT statement
 	 *
 	 * @param string $statement INSERT statement
@@ -616,11 +813,16 @@ const CONFLICT_SKIP = 'skip';
 	 */
 	private function estimateRowsFromInsert( string $statement ): int
 	{
-		// Count opening parentheses after VALUES
+		// Count top-level value tuples after VALUES
 		if( preg_match( '/VALUES\s*(.+)/is', $statement, $matches ) )
 		{
-			// Count value sets - each starts with (
-			return substr_count( $matches[ 1 ], '(' );
+			// Count top-level parenthesized tuples (each value set is one tuple)
+			// This pattern matches balanced parentheses at the top level,
+			// allowing for nested parentheses within (e.g., function calls like NOW() or CONCAT(...))
+			$pattern = '/\([^()]*(?:\([^()]*\)[^()]*)*\)/';
+			$count = preg_match_all( $pattern, $matches[ 1 ] );
+
+			return $count > 0 ? $count : 1;
 		}
 
 		return 1;
@@ -785,42 +987,6 @@ const CONFLICT_SKIP = 'skip';
 	}
 
 	/**
-	 * Quote a database identifier (table or column name)
-	 *
-	 * @param string $identifier The identifier to quote
-	 * @return string The properly quoted identifier for the current adapter
-	 */
-	private function quoteIdentifier( string $identifier ): string
-	{
-		// Handle different database adapters
-		switch( $this->_AdapterType )
-		{
-			case 'mysql':
-				// MySQL uses backticks
-				return '`' . str_replace( '`', '``', $identifier ) . '`';
-
-			case 'pgsql':
-			case 'postgres':
-				// PostgreSQL uses double quotes
-				return '"' . str_replace( '"', '""', $identifier ) . '"';
-
-			case 'sqlite':
-				// SQLite can use double quotes, square brackets, or backticks
-				// We'll use double quotes for consistency with standard SQL
-				return '"' . str_replace( '"', '""', $identifier ) . '"';
-
-			case 'sqlsrv':
-			case 'mssql':
-				// SQL Server uses square brackets
-				return '[' . str_replace( ']', ']]', $identifier ) . ']';
-
-			default:
-				// Default to ANSI SQL double quotes
-				return '"' . str_replace( '"', '""', $identifier ) . '"';
-		}
-	}
-
-	/**
 	 * Import table data
 	 *
 	 * @param string $table Table name
@@ -902,6 +1068,25 @@ const CONFLICT_SKIP = 'skip';
 	}
 
 	/**
+	 * Format boolean value as adapter-appropriate SQL literal
+	 *
+	 * PostgreSQL requires TRUE/FALSE literals for boolean columns.
+	 * Other databases accept 1/0 for booleans.
+	 *
+	 * @param bool $value Boolean value to format
+	 * @return string SQL literal representation
+	 */
+	private function formatBooleanLiteral( bool $value ): string
+	{
+		// Keep INSERTs portable across adapters
+		return match ( $this->_AdapterType )
+		{
+			'pgsql', 'postgres' => $value ? 'TRUE' : 'FALSE',
+			default => $value ? '1' : '0',
+		};
+	}
+
+	/**
 	 * Check if a value has leading zeros that would be lost if treated as numeric
 	 *
 	 * @param mixed $value Value to check
@@ -928,25 +1113,6 @@ const CONFLICT_SKIP = 'skip';
 		}
 
 		return false;
-	}
-
-	/**
-	 * Format boolean value as adapter-appropriate SQL literal
-	 *
-	 * PostgreSQL requires TRUE/FALSE literals for boolean columns.
-	 * Other databases accept 1/0 for booleans.
-	 *
-	 * @param bool $value Boolean value to format
-	 * @return string SQL literal representation
-	 */
-	private function formatBooleanLiteral( bool $value ): string
-	{
-		// Keep INSERTs portable across adapters
-		return match( $this->_AdapterType )
-		{
-			'pgsql', 'postgres' => $value ? 'TRUE' : 'FALSE',
-			default => $value ? '1' : '0',
-		};
 	}
 
 	/**
@@ -1022,45 +1188,6 @@ const CONFLICT_SKIP = 'skip';
 		}
 
 		return $this->importStructuredData( $data[ 'data' ] );
-	}
-
-	/**
-	 * Enable foreign key checks
-	 */
-	private function enableForeignKeyChecks(): void
-	{
-		switch( $this->_AdapterType )
-		{
-			case 'mysql':
-				$this->_Adapter->execute( 'SET FOREIGN_KEY_CHECKS = 1' );
-				break;
-			case 'sqlite':
-				$this->_Adapter->execute( 'PRAGMA foreign_keys = ON' );
-				break;
-			case 'pgsql':
-			case 'postgres':
-				// Constraints will be checked at transaction commit
-				// SET CONSTRAINTS ALL IMMEDIATE requires:
-				// 1. Active transaction
-				// 2. Constraints marked as DEFERRABLE
-				// Guard against errors and warn instead of failing
-				try
-				{
-					$this->_Adapter->execute( 'SET CONSTRAINTS ALL IMMEDIATE' );
-				}
-				catch( \Exception $e )
-				{
-					// Common causes:
-					// - Not in a transaction
-					// - Constraints not marked DEFERRABLE
-					// - No foreign key constraints exist
-					Log::warning(
-						"Could not set PostgreSQL constraints to IMMEDIATE: {$e->getMessage()}. " .
-						"This is usually safe - constraints will be checked at transaction commit."
-					);
-				}
-				break;
-		}
 	}
 
 	/**
@@ -1362,136 +1489,6 @@ const CONFLICT_SKIP = 'skip';
 			'tables_imported' => $this->_TablesImported,
 			'errors'          => count( $this->_Errors )
 		];
-	}
-
-	/**
-	 * Clear all data from database (dangerous!)
-	 *
-	 * @param bool $includeMigrationTable Whether to clear migration table too
-	 * @return bool Success status
-	 */
-	public function clearAllData( bool $includeMigrationTable = false ): bool
-	{
-		try
-		{
-			// Disable foreign key checks
-			$this->disableForeignKeyChecks();
-
-			// Get all tables
-			$tables = $this->getAllTables();
-
-			foreach( $tables as $table )
-			{
-				// Skip migration table unless specified
-				if( !$includeMigrationTable && $table === $this->_MigrationTable )
-				{
-					continue;
-				}
-
-				// Skip if not in table filter
-				if( !$this->shouldProcessTable( $table ) )
-				{
-					continue;
-				}
-
-				$quotedTable = $this->quoteIdentifier( $table );
-				$this->_Adapter->execute( "DELETE FROM {$quotedTable}" );
-			}
-
-			// Re-enable foreign key checks
-			$this->enableForeignKeyChecks();
-
-			return true;
-		}
-		catch( \Exception $e )
-		{
-			$this->_Errors[] = "Error clearing data: " . $e->getMessage();
-
-			// Try to re-enable foreign key checks
-			try
-			{
-				$this->enableForeignKeyChecks();
-			}
-			catch( \Exception $fkException )
-			{
-				// Ignore
-			}
-
-			return false;
-		}
-	}
-
-	/**
-	 * Get list of all tables in database
-	 *
-	 * @return array
-	 */
-	private function getAllTables(): array
-	{
-		switch( $this->_AdapterType )
-		{
-			case 'mysql':
-				// Phinx adapters don't support parameterized queries natively
-				// Try to use PDO prepared statements directly, fallback to escaping
-			if( method_exists( $this->_Adapter, 'getConnection' ) )
-			{
-				try
-				{
-					$connection = $this->_Adapter->getConnection();
-					if( $connection instanceof \PDO )
-					{
-						$sql  = "SELECT TABLE_NAME FROM information_schema.TABLES
-								WHERE TABLE_SCHEMA = ? AND TABLE_TYPE = 'BASE TABLE'
-								ORDER BY TABLE_NAME";
-						$stmt = $connection->prepare( $sql );
-						if( $stmt !== false )
-						{
-							$stmt->execute( [ $this->_Adapter->getOption( 'name' ) ] );
-							$rows = $stmt->fetchAll( \PDO::FETCH_ASSOC );
-							return array_column( $rows, 'TABLE_NAME' );
-						}
-					}
-				}
-				catch( \Exception $e )
-				{
-					Log::warning( "Could not use PDO prepared statement for table listing, falling back to escaping" );
-				}
-			}
-
-				// Fallback: Use basic escaping for database name
-				// Database names are typically controlled by configuration, not user input
-				$dbName = $this->_Adapter->getOption( 'name' ) ?? '';
-				$dbName = str_replace( [
-												  "'",
-												  "\\"
-											  ], [
-												  "''",
-												  "\\\\"
-											  ], $dbName );
-				$sql    = "SELECT TABLE_NAME FROM information_schema.TABLES
-						WHERE TABLE_SCHEMA = '{$dbName}' AND TABLE_TYPE = 'BASE TABLE'
-						ORDER BY TABLE_NAME";
-				$rows   = $this->_Adapter->fetchAll( $sql );
-				return array_column( $rows, 'TABLE_NAME' );
-
-			case 'pgsql':
-			case 'postgres':
-				$sql  = "SELECT tablename FROM pg_catalog.pg_tables
-						WHERE schemaname = 'public'
-						ORDER BY tablename";
-				$rows = $this->_Adapter->fetchAll( $sql );
-				return array_column( $rows, 'tablename' );
-
-			case 'sqlite':
-				$sql  = "SELECT name FROM sqlite_master
-						WHERE type = 'table' AND name NOT LIKE 'sqlite_%'
-						ORDER BY name";
-				$rows = $this->_Adapter->fetchAll( $sql );
-				return array_column( $rows, 'name' );
-
-			default:
-				throw new \RuntimeException( "Unsupported adapter type: {$this->_AdapterType}" );
-		}
 	}
 
 	/**

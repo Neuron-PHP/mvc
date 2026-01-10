@@ -386,7 +386,7 @@ class WhereClauseParsingTest extends TestCase
 		$whereClause = "(a = 1 AND b = 2) OR c = 3";
 
 		$this->expectException( \InvalidArgumentException::class );
-		$this->expectExceptionMessage( 'Parentheses are not supported' );
+		$this->expectExceptionMessage( 'Parentheses are only supported for IN/NOT IN operators' );
 
 		$method->invoke( $exporter, $whereClause );
 	}
