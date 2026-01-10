@@ -1,4 +1,4 @@
-## 0.9.40
+## 0.9.40 2026-01-10
 * Added database dump and restore CLI commands.
 
 ## 0.9.39 2026-01-07
