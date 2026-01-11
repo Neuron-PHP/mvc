@@ -247,91 +247,6 @@ class ApplicationTest extends TestCase
 		}
 	}
 
-	public function testControllerRequestFailed()
-	{
-		setHeaders(
-			[
-				'Content-Type'		=> 'application/xml',
-				'Authorization'	=> 'Bearer some-token'
-			]
-		);
-
-		global $ControllerState;
-		$ControllerState = false;
-
-		$Json = '
-		{
-			"param1": "test",
-			"param2": "testtest"
-		}';
-
-		setInputStream( $Json );
-
-		$this->App->run(
-			[
-				"type"  => "POST",
-				"route" => "/test"
-			]
-		);
-
-		global $ControllerState;
-		$this->assertFalse( $ControllerState );
-	}
-
-	public function testControllerRequestSuccess()
-	{
-		setHeaders(
-			[
-				'Content-Type' => 'application/json',
-				'Authorization' => 'Bearer some-token'
-			]
-		);
-
-		global $ControllerState;
-		$ControllerState = false;
-
-		$Json = '
-		{
-			"array": 
-			[
-				"test", 
-				"test"
-			],
-			"boolean": true,
-			"date": "2020-01-01",
-			"date_time": "2020-01-01 12:00:00",
-			"ein": "12-3456789",
-			"email": "test@test.com",
-			"float": 1.23,
-			"integer": 123,
-			"ip_address": "192.168.1.1",
-			"name": "Testy McTestface",
-			"numeric": 123,
-			"object": {
-				"subparam1": "test",
-				"subparam2": "test"
-			},
-			"string": "test",
-			"time": "12:00:00 PM",
-			"upc": "123456789012",
-			"url": "http://www.test.com",
-			"us_phone": "555-555-5555",
-			"intl_phone": "+49 89 636 48098"
-		}';
-
-		setInputStream( $Json );
-
-		$this->App->run(
-			[
-				"type"  => "POST",
-				"route" => "/test"
-			]
-		);
-
-		global $ControllerState;
-		$this->assertFalse( $ControllerState );
-	}
-
 	public function testControllerNoRequest()
 	{
 		global $ControllerState;
@@ -412,25 +327,6 @@ class ApplicationTest extends TestCase
 		$this->assertTrue( $ControllerState );
 	}
 
-	public function testRoutesPath()
-	{
-		$this->App->setRoutesPath( 'test');
-		$this->assertEquals(
-			"test",
-			$this->App->getRoutesPath()
-		);
-	}
-
-	public function testBadRoutes()
-	{
-		$this->expectException( \Neuron\Core\Exceptions\Validation::class );
-
-		// Clear Registry to ensure clean state for this test
-		Registry::getInstance()->reset();
-
-		$Ini = new Yaml( './examples/bad/neuron.yaml' );
-		$App = new Application( "1.0.0", $Ini );
-	}
 
 	public function testGetRequest()
 	{
@@ -439,26 +335,14 @@ class ApplicationTest extends TestCase
 		$this->assertNull( $Request );
 	}
 
-	public function testMissingControllerMethod()
-	{
-		$this->App->run(
-			[
-				"type"  => "GET",
-				"route" => "/bad_request"
-			]
-		);
-
-		$this->assertTrue( $this->App->getCrashed() );
-	}
-
 	/**
-	 * Test that route names are loaded from YAML and set on RouteMap objects
+	 * Test that route names are loaded from attributes and set on RouteMap objects
 	 */
-	public function testRouteNamesLoadedFromYaml()
+	public function testRouteNamesLoadedFromAttributes()
 	{
 		$Router = $this->App->getRouter();
 
-		// Test that we can retrieve a route by its name from YAML
+		// Test that we can retrieve a route by its name from attributes
 		$LoginRoute = $Router->getRouteByName( 'login' );
 
 		$this->assertNotNull( $LoginRoute, 'Route "login" should be found by name' );

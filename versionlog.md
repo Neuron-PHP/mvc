@@ -1,4 +1,5 @@
 ## 0.9.41
+* Removed support for routes.yaml.
 
 ## 0.9.40 2026-01-10
 * Added database dump and restore CLI commands.
