@@ -26,8 +26,6 @@ use Neuron\Routing\RequestMethod;
 use Neuron\Routing\Router;
 use Neuron\Routing\RouteScanner;
 use Neuron\Routing\RouteDefinition;
-use Symfony\Component\Yaml\Exception\ParseException;
-use Symfony\Component\Yaml\Yaml;
 
 /**
  * Class Application
@@ -36,7 +34,6 @@ use Symfony\Component\Yaml\Yaml;
  */
 class Application extends Base implements IMvcApplication
 {
-	private string $_routesPath;
 	private Router $_router;
 	private array $_requests = [];
 	private bool $_captureOutput = false;
@@ -59,16 +56,8 @@ class Application extends Base implements IMvcApplication
 
 		parent::__construct( $version, $source );
 
-		$this->_routesPath = '';
-
 		Registry::getInstance()->set( 'BasePath', $this->getBasePath() );
 		Registry::getInstance()->set( 'App', $this );
-
-		$routesPath = $this->getSetting( 'system', 'routes_path' );
-		if( $routesPath )
-		{
-			$this->setRoutesPath( $routesPath );
-		}
 
 		// Load passthrough exceptions configuration
 		$passthroughExceptions = $this->getSetting( 'exceptions', 'passthrough' );
@@ -110,24 +99,6 @@ class Application extends Base implements IMvcApplication
 	public function getOutput(): ?string
 	{
 		return $this->_output;
-	}
-
-	/**
-	 * @return string
-	 */
-	public function getRoutesPath(): string
-	{
-		return $this->_routesPath;
-	}
-
-	/**
-	 * @param string $routesPath
-	 * @return Application
-	 */
-	public function setRoutesPath( string $routesPath ): Application
-	{
-		$this->_routesPath = $routesPath;
-		return $this;
 	}
 
 	/**
@@ -480,64 +451,7 @@ class Application extends Base implements IMvcApplication
 
 		$this->configure404Route();
 
-		$file = $this->getBasePath().'/config';
-
-		if( $this->getRoutesPath() )
-		{
-			$file = $this->getRoutesPath();
-		}
-
-		$routesFile = $file . '/routes.yaml';
-
-		// Load routes from YAML file if it exists
-		if( $this->fs->fileExists( $routesFile ) )
-		{
-			$content = $this->fs->readFile( $routesFile );
-
-			if( $content === false )
-			{
-				Log::error( "Failed to read routes.yaml" );
-			}
-			else
-			{
-				try
-				{
-					$data = Yaml::parse( $content );
-
-					foreach( $data[ 'routes' ] as $routeName => $route )
-					{
-						$request = $route[ 'request' ] ?? '';
-
-						// Support both 'filter' (string, backward compat) and 'filters' (array, new)
-						$filters = '';
-						if( isset( $route[ 'filters' ] ) )
-						{
-							$filters = $route[ 'filters' ]; // Already an array
-						}
-						elseif( isset( $route[ 'filter' ] ) )
-						{
-							$filters = $route[ 'filter' ]; // String, will be converted to array
-						}
-
-						$routeMap = $this->addRoute(
-							$route[ 'method' ],
-							$route[ 'route' ],
-							$route[ 'controller' ],
-							$request,
-							$filters
-						);
-						$routeMap->setName( $routeName );
-					}
-				}
-				catch( ParseException $exception )
-				{
-					Log::error( "Failed to load routes: ".$exception->getMessage() );
-					throw new Validation( $exception->getMessage(), [] );
-				}
-			}
-		}
-
-		// Load routes from controller attributes if configured
+		// Load routes from controller attributes
 		$this->loadAttributeRoutes();
 	}
 

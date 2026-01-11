@@ -55,7 +55,11 @@ api_limit:
 system:
   timezone: US/Eastern
   base_path: examples
-  routes_path: examples/config
+
+routing:
+  controller_paths:
+    - path: 'Controllers'
+      namespace: 'Mvc'
 
 # Exception handling configuration
 exceptions:

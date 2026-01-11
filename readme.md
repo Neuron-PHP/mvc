@@ -86,20 +86,14 @@ Create a `config/neuron.yaml` file:
 ```yaml
 system:
   base_path: .
-  routes_path: config
 
 views:
   path: resources/views
-```
 
-Create a `config/routes.yaml` file:
-
-```yaml
-routes:
-  home:
-    route: /
-    method: GET
-    controller: App\Controllers\HomeController@index
+routing:
+  controller_paths:
+    - path: 'app/Controllers'
+      namespace: 'App\Controllers'
 ```
 
 
@@ -108,7 +102,7 @@ routes:
 ### Application
 
 The main application class (`Neuron\Mvc\Application`) handles:
-- Route configuration loading from YAML files
+- Route discovery from controller attributes
 - Request routing and controller execution
 - Event dispatching for HTTP errors
 - Output capture for testing
@@ -170,20 +164,29 @@ Views support multiple formats and are stored in the configured views directory:
 
 ### Routing
 
-Routes are defined in YAML files and support various HTTP methods:
+Routes are defined using PHP attributes on controller methods:
 
-```yaml
-routes:
-  user_profile:
-    route: /user/{id}
-    method: GET
-    controller: App\Controllers\UserController@profile
-    request: user_profile  # optional request validation
-    
-  api_users:
-    route: /api/users
-    method: POST
-    controller: App\Controllers\Api\UserController@create
+```php
+use Neuron\Routing\Attributes\Get;
+use Neuron\Routing\Attributes\Post;
+use Neuron\Routing\Attributes\RouteGroup;
+
+#[RouteGroup(prefix: '/api', filters: ['auth'])]
+class UserController extends Base
+{
+    #[Get('/user/:id', name: 'user_profile')]
+    public function profile(Request $request): string
+    {
+        $userId = $request->getRouteParameter('id');
+        // ...
+    }
+
+    #[Post('/users', name: 'api_users', filters: ['csrf'])]
+    public function create(Request $request): string
+    {
+        // ...
+    }
+}
 ```
 
 ### Request Handling
@@ -842,29 +845,42 @@ rate_limit:
 ```
 
 #### Per-Route Application
-Apply rate limiting to specific routes using the `filter` parameter in `routes.yaml`:
+Apply rate limiting to specific routes using the `filters` parameter in route attributes:
 
-```yaml
-routes:
-  # Public page - no rate limiting
-  - name: home
-    method: GET
-    route: /
-    controller: HomeController@index
+```php
+use Neuron\Routing\Attributes\Get;
 
-  # Standard protected route with rate limiting
-  - name: user_profile
-    method: GET
-    route: /user/profile
-    controller: UserController@profile
-    filter: rate_limit      # Apply rate_limit (100/hour)
+class HomeController extends Base
+{
+    // Public page - no rate limiting
+    #[Get('/', name: 'home')]
+    public function index(Request $request): string
+    {
+        // ...
+    }
+}
 
-  # API endpoint with higher limits
-  - name: api_users
-    method: GET
-    route: /api/users
-    controller: ApiController@users
-    filter: api_limit       # Apply api_limit (1000/hour)
+class UserController extends Base
+{
+    // Standard protected route with rate limiting
+    #[Get('/user/profile', name: 'user_profile', filters: ['rate_limit'])]
+    public function profile(Request $request): string
+    {
+        // Apply rate_limit (100/hour)
+        // ...
+    }
+}
+
+class ApiController extends Base
+{
+    // API endpoint with higher limits
+    #[Get('/api/users', name: 'api_users', filters: ['api_limit'])]
+    public function users(Request $request): string
+    {
+        // Apply api_limit (1000/hour)
+        // ...
+    }
+}
 ```
 
 ### Storage Backends
@@ -927,20 +943,30 @@ api_limit:
   redis_host: 127.0.0.1
 ```
 
-2. Apply to routes in `routes.yaml`:
-```yaml
-routes:
-  - name: login
-    method: POST
-    route: /auth/login
-    controller: AuthController@login
-    filter: rate_limit    # Strict limit for login attempts
+2. Apply to routes using attributes:
+```php
+use Neuron\Routing\Attributes\Post;
+use Neuron\Routing\Attributes\Get;
 
-  - name: api_data
-    method: GET
-    route: /api/data
-    controller: ApiController@getData
-    filter: api_limit     # Higher limit for API access
+class AuthController extends Base
+{
+    #[Post('/auth/login', name: 'login', filters: ['rate_limit'])]
+    public function login(Request $request): string
+    {
+        // Strict limit for login attempts
+        // ...
+    }
+}
+
+class ApiController extends Base
+{
+    #[Get('/api/data', name: 'api_data', filters: ['api_limit'])]
+    public function getData(Request $request): string
+    {
+        // Higher limit for API access
+        // ...
+    }
+}
 ```
 
 ### Customization
