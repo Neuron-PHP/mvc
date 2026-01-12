@@ -505,10 +505,18 @@ class Application extends Base implements IMvcApplication
 			}
 
 			// Store controller paths in registry for loadAttributeRoutes()
+			// If routing.yaml exists, it takes precedence even if controller_paths is not defined
 			if( isset( $config['controller_paths'] ) && is_array( $config['controller_paths'] ) )
 			{
 				Registry::getInstance()->set( 'Routing.ControllerPaths', $config['controller_paths'] );
 				Log::debug( "Loaded " . count( $config['controller_paths'] ) . " controller path(s) from routing.yaml" );
+			}
+			else
+			{
+				// routing.yaml exists but doesn't define controller_paths
+				// Set to empty array to prevent fallback to neuron.yaml
+				Registry::getInstance()->set( 'Routing.ControllerPaths', [] );
+				Log::debug( "routing.yaml exists but has no controller_paths defined (no fallback to neuron.yaml)" );
 			}
 		}
 		catch( \Symfony\Component\Yaml\Exception\ParseException $e )
