@@ -529,14 +529,23 @@ class Application extends Base implements IMvcApplication
 		$controllerPaths = Registry::getInstance()->get( 'Routing.ControllerPaths' );
 
 		// Fall back to neuron.yaml for backward compatibility
-		if( !$controllerPaths )
+		// Use === null to distinguish between "not set" and "explicitly empty array"
+		if( $controllerPaths === null )
 		{
 			$controllerPaths = $this->getSetting( 'routing', 'controller_paths' );
 		}
 
-		if( !$controllerPaths || !is_array( $controllerPaths ) )
+		// If still null or not an array, no controller paths configured
+		if( $controllerPaths === null || !is_array( $controllerPaths ) )
 		{
 			Log::debug( "No controller_paths configured in routing settings" );
+			return;
+		}
+
+		// If explicitly set to empty array, respect that (don't scan any paths)
+		if( count( $controllerPaths ) === 0 )
+		{
+			Log::debug( "controller_paths explicitly set to empty array, skipping route scanning" );
 			return;
 		}
 
