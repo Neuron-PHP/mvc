@@ -143,7 +143,7 @@ class Application extends Base implements IMvcApplication
 	 * @throws BadRequestMethod
 	 * @throws Exception
 	 */
-	public function addRoute( string $method, string $route, string $controllerMethod, string $request = '', string|array $filters = '' ) : \Neuron\Routing\RouteMap
+	public function addRoute( string $method, string $route, string $controllerMethod, string $request = '', string|array $filters = '', ?string $name = null ) : \Neuron\Routing\RouteMap
 	{
 		switch( RequestMethod::getType( $method ) )
 		{
@@ -154,7 +154,8 @@ class Application extends Base implements IMvcApplication
 					{
 						return $this->executeController( $parameters, $request );
 					},
-					$filters
+					$filters,
+					$name
 				);
 
 				break;
@@ -166,7 +167,8 @@ class Application extends Base implements IMvcApplication
 					{
 						return $this->executeController( $parameters, $request );
 					},
-					$filters
+					$filters,
+					$name
 				);
 				break;
 
@@ -177,7 +179,8 @@ class Application extends Base implements IMvcApplication
 					{
 						return $this->executeController( $parameters, $request );
 					},
-					$filters
+					$filters,
+					$name
 				);
 				break;
 
@@ -188,7 +191,8 @@ class Application extends Base implements IMvcApplication
 					{
 						return $this->executeController( $parameters, $request );
 					},
-					$filters
+					$filters,
+					$name
 				);
 				break;
 
@@ -451,8 +455,74 @@ class Application extends Base implements IMvcApplication
 
 		$this->configure404Route();
 
+		// Load routing configuration (rewrites, controller paths)
+		$this->loadRoutingConfig();
+
 		// Load routes from controller attributes
 		$this->loadAttributeRoutes();
+	}
+
+	/**
+	 * Load routing configuration from routing.yaml file.
+	 *
+	 * This method loads URL rewrites and controller paths from the routing
+	 * configuration file. If routing.yaml doesn't exist, it falls back to
+	 * reading controller_paths from neuron.yaml for backward compatibility.
+	 *
+	 * @return void
+	 * @throws Exception
+	 */
+	protected function loadRoutingConfig(): void
+	{
+		$basePath = $this->getBasePath();
+		$routingFile = $basePath . '/config/routing.yaml';
+
+		// Check if routing.yaml exists
+		if( !$this->fs->fileExists( $routingFile ) )
+		{
+			Log::debug( "No routing.yaml found, using controller_paths from neuron.yaml" );
+			return;
+		}
+
+		// Load and parse routing.yaml
+		$content = $this->fs->readFile( $routingFile );
+
+		if( $content === false )
+		{
+			Log::warning( "Failed to read routing.yaml" );
+			return;
+		}
+
+		try
+		{
+			$config = \Symfony\Component\Yaml\Yaml::parse( $content );
+
+			// Configure URL rewrites
+			if( isset( $config['rewrites'] ) && is_array( $config['rewrites'] ) )
+			{
+				$this->_router->setUrlRewrites( $config['rewrites'] );
+				Log::debug( "Loaded " . count( $config['rewrites'] ) . " URL rewrite(s)" );
+			}
+
+			// Store controller paths in registry for loadAttributeRoutes()
+			// If routing.yaml exists, it takes precedence even if controller_paths is not defined
+			if( isset( $config['controller_paths'] ) && is_array( $config['controller_paths'] ) )
+			{
+				Registry::getInstance()->set( 'Routing.ControllerPaths', $config['controller_paths'] );
+				Log::debug( "Loaded " . count( $config['controller_paths'] ) . " controller path(s) from routing.yaml" );
+			}
+			else
+			{
+				// routing.yaml exists but doesn't define controller_paths
+				// Set to empty array to prevent fallback to neuron.yaml
+				Registry::getInstance()->set( 'Routing.ControllerPaths', [] );
+				Log::debug( "routing.yaml exists but has no controller_paths defined (no fallback to neuron.yaml)" );
+			}
+		}
+		catch( \Symfony\Component\Yaml\Exception\ParseException $e )
+		{
+			Log::error( "Failed to parse routing.yaml: " . $e->getMessage() );
+		}
 	}
 
 	/**
@@ -463,12 +533,27 @@ class Application extends Base implements IMvcApplication
 	 */
 	protected function loadAttributeRoutes(): void
 	{
-		// Get controller paths from settings
-		$controllerPaths = $this->getSetting( 'routing', 'controller_paths' );
+		// Try to get controller paths from routing.yaml (via Registry)
+		$controllerPaths = Registry::getInstance()->get( 'Routing.ControllerPaths' );
 
-		if( !$controllerPaths || !is_array( $controllerPaths ) )
+		// Fall back to neuron.yaml for backward compatibility
+		// Use === null to distinguish between "not set" and "explicitly empty array"
+		if( $controllerPaths === null )
+		{
+			$controllerPaths = $this->getSetting( 'routing', 'controller_paths' );
+		}
+
+		// If still null or not an array, no controller paths configured
+		if( $controllerPaths === null || !is_array( $controllerPaths ) )
 		{
 			Log::debug( "No controller_paths configured in routing settings" );
+			return;
+		}
+
+		// If explicitly set to empty array, respect that (don't scan any paths)
+		if( count( $controllerPaths ) === 0 )
+		{
+			Log::debug( "controller_paths explicitly set to empty array, skipping route scanning" );
 			return;
 		}
 
@@ -515,18 +600,14 @@ class Application extends Base implements IMvcApplication
 	 */
 	protected function registerAttributeRoute( RouteDefinition $def ): void
 	{
-		$routeMap = $this->addRoute(
+		$this->addRoute(
 			$def->method,
 			$def->path,
 			$def->getControllerMethod(),
 			'', // No request validation for attribute routes
-			$def->filters
+			$def->filters,
+			$def->name // Pass name directly for duplicate detection
 		);
-
-		if( $def->name )
-		{
-			$routeMap->setName( $def->name );
-		}
 	}
 
 	/**

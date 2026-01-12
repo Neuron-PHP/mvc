@@ -404,7 +404,6 @@ All YAML config file parameters can be overridden by environment variables in th
 system:
   timezone: US/Eastern
   base_path: .
-  routes_path: config
 
 # View settings
 views:
@@ -431,6 +430,51 @@ cache:
   gc_probability: 0.01  # 1% chance to run GC on cache write
   gc_divisor: 100      # Fine-tune probability calculation
 ```
+
+### Routing Configuration (routing.yaml)
+
+Routing configuration is now handled in a dedicated `config/routing.yaml` file. This separates routing concerns from the main application configuration.
+
+```yaml
+# config/routing.yaml
+
+# URL Rewrites (transparent, no HTTP redirect)
+rewrites:
+  '/': '/home'                    # Root goes to homepage
+  '/index': '/home'               # Legacy URL support
+  '/index.php': '/home'           # Handle old PHP URLs
+
+# Controller paths for route scanning
+controller_paths:
+  - path: 'app/Controllers'
+    namespace: 'App\Controllers'
+  - path: 'app/Admin/Controllers'
+    namespace: 'App\Admin\Controllers'
+```
+
+**Key Features:**
+
+1. **URL Rewrites**: Transparently rewrite URLs before route matching
+   - No HTTP redirects (faster, invisible to client)
+   - Override package-provided routes
+   - Support legacy URLs without duplicate routes
+
+2. **Controller Paths**: Specify where to scan for route attributes
+   - Order matters: first paths take precedence
+   - Allows overriding routes from packages
+
+**Backward Compatibility:**
+
+For backward compatibility, `controller_paths` can still be configured in `neuron.yaml`:
+
+```yaml
+routing:
+  controller_paths:
+    - path: 'app/Controllers'
+      namespace: 'App\Controllers'
+```
+
+If both files exist, `routing.yaml` takes precedence.
 
 ### Cache Configuration Options
 

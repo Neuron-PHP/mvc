@@ -18,17 +18,17 @@ class MockRouter extends Router
 	/**
 	 * Override to store routes with names for testing
 	 */
-	public function get( string $route, $function, string|array|null $filters = null ): RouteMap
+	public function get( string $route, $function, string|array|null $filters = null, ?string $name = null ): RouteMap
 	{
-		return parent::get( $route, $function, $filters );
+		return parent::get( $route, $function, $filters, $name );
 	}
 
 	/**
 	 * Override to store routes with names for testing
 	 */
-	public function post( string $route, $function, string|array|null $filters = null ): RouteMap
+	public function post( string $route, $function, string|array|null $filters = null, ?string $name = null ): RouteMap
 	{
-		return parent::post( $route, $function, $filters );
+		return parent::post( $route, $function, $filters, $name );
 	}
 
 	/**
