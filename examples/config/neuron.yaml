@@ -56,6 +56,7 @@ system:
   timezone: US/Eastern
   base_path: examples
 
+# Routing configuration (controller paths, see also config/routing.yaml)
 routing:
   controller_paths:
     - path: 'Controllers'

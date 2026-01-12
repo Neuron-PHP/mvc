@@ -1,3 +1,6 @@
+## 0.9.42 2026-01-12
+* Added url rewriting through routing.yaml
+
 ## 0.9.41 2026-01-11
 * Removed support for routes.yaml.
 
