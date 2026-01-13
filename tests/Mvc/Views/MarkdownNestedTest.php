@@ -4,6 +4,7 @@ namespace Mvc\Views;
 
 use Neuron\Mvc\Views\Markdown;
 use Neuron\Patterns\Registry;
+use Neuron\Core\Registry\RegistryKeys;
 use org\bovigo\vfs\vfsStream;
 use PHPUnit\Framework\TestCase;
 

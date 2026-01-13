@@ -13,6 +13,7 @@ use Neuron\Mvc\Views\Html;
 use Neuron\Mvc\Views\Json;
 use Neuron\Patterns\Registry;
 use Neuron\Routing\Router;
+use Neuron\Core\Registry\RegistryKeys;
 use org\bovigo\vfs\vfsStream;
 use PHPUnit\Framework\TestCase;
 
@@ -50,15 +51,15 @@ class DynamicCacheControlTest extends TestCase
 		
 		// Store original registry values
 		$this->OriginalRegistry = [
-			'ViewCache' => Registry::getInstance()->get( 'ViewCache' ),
-			'Settings' => Registry::getInstance()->get( 'Settings' ),
-			'Base.Path' => Registry::getInstance()->get( 'Base.Path' ),
-			'Views.Path' => Registry::getInstance()->get( 'Views.Path' )
+			RegistryKeys::VIEW_CACHE_LEGACY => Registry::getInstance()->get( RegistryKeys::VIEW_CACHE_LEGACY ),
+			RegistryKeys::SETTINGS => Registry::getInstance()->get( RegistryKeys::SETTINGS ),
+			RegistryKeys::BASE_PATH => Registry::getInstance()->get( RegistryKeys::BASE_PATH ),
+			RegistryKeys::VIEWS_PATH => Registry::getInstance()->get( RegistryKeys::VIEWS_PATH )
 		];
 		
 		// Set paths for views
-		Registry::getInstance()->set( 'Base.Path', vfsStream::url( 'test' ) );
-		Registry::getInstance()->set( 'Views.Path', vfsStream::url( 'test/resources/views' ) );
+		Registry::getInstance()->set( RegistryKeys::BASE_PATH, vfsStream::url( 'test' ) );
+		Registry::getInstance()->set( RegistryKeys::VIEWS_PATH, vfsStream::url( 'test/resources/views' ) );
 		
 		// Set up cache with flat structure (no nested 'views')
 		$Config = new CacheConfig( [
@@ -76,7 +77,7 @@ class DynamicCacheControlTest extends TestCase
 			$Config->getDefaultTtl(), 
 			$Config 
 		);
-		Registry::getInstance()->set( 'ViewCache', $Cache );
+		Registry::getInstance()->set( RegistryKeys::VIEW_CACHE_LEGACY, $Cache );
 	}
 	
 	protected function tearDown(): void

@@ -2,6 +2,7 @@
 
 namespace Tests;
 
+use Neuron\Core\Registry\RegistryKeys;
 use Neuron\Mvc\Application;
 use Neuron\Patterns\Registry;
 use org\bovigo\vfs\vfsStream;
@@ -32,8 +33,8 @@ class BootstrapTest extends TestCase
 		$this->OriginalEnv = $_ENV ?? [];
 		
 		// Clear registry
-		Registry::getInstance()->set( 'Settings', null );
-		Registry::getInstance()->set( 'Base.Path', null );
+		Registry::getInstance()->set( RegistryKeys::SETTINGS, null );
+		Registry::getInstance()->set( RegistryKeys::BASE_PATH, null );
 	}
 	
 	protected function tearDown(): void
@@ -92,7 +93,7 @@ YAML;
 		// Assertions
 		$this->assertInstanceOf( Application::class, $App );
 		$this->assertEquals( '1.2.3', $App->getVersion() );
-		$this->assertNotNull( Registry::getInstance()->get( 'Settings' ) );
+		$this->assertNotNull( Registry::getInstance()->get( RegistryKeys::SETTINGS ) );
 	}
 	
 	/**
@@ -260,7 +261,7 @@ YAML;
 	public function testDispatchWithPassthroughException()
 	{
 		// Register a custom exception class to pass through
-		Registry::getInstance()->set( 'PassthroughExceptions', [
+		Registry::getInstance()->set( RegistryKeys::PASSTHROUGH_EXCEPTIONS_LEGACY, [
 			'RuntimeException'
 		] );
 
@@ -287,7 +288,7 @@ YAML;
 	public function testDispatchWithNonPassthroughException()
 	{
 		// Register a specific exception class to pass through (not the one we'll throw)
-		Registry::getInstance()->set( 'PassthroughExceptions', [
+		Registry::getInstance()->set( RegistryKeys::PASSTHROUGH_EXCEPTIONS_LEGACY, [
 			'LogicException'  // Different from what we'll throw
 		] );
 

@@ -4,6 +4,7 @@ namespace Mvc\Views;
 
 use Neuron\Mvc\Views\ViewDataProvider;
 use Neuron\Patterns\Registry;
+use Neuron\Core\Registry\RegistryKeys;
 use PHPUnit\Framework\TestCase;
 
 class ViewDataProviderTest extends TestCase
@@ -29,7 +30,7 @@ class ViewDataProviderTest extends TestCase
 	public function testGetInstanceRegistersInRegistry()
 	{
 		$provider = ViewDataProvider::getInstance();
-		$fromRegistry = Registry::getInstance()->get( 'ViewDataProvider' );
+		$fromRegistry = Registry::getInstance()->get( RegistryKeys::VIEW_DATA_PROVIDER_LEGACY );
 
 		$this->assertSame( $provider, $fromRegistry );
 	}

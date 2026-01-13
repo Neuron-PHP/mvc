@@ -7,6 +7,7 @@ use Neuron\Mvc\Helpers\UrlHelper;
 use Neuron\Patterns\Registry;
 use Neuron\Routing\RouteMap;
 use Neuron\Routing\Router;
+use Neuron\Core\Registry\RegistryKeys;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -30,7 +31,7 @@ class UrlHelperTest extends TestCase
 
 		// Set up Registry for URL generation
 		$registry = Registry::getInstance();
-		$registry->set( 'Base.Url', 'https://example.com' );
+		$registry->set( RegistryKeys::BASE_URL, 'https://example.com' );
 	}
 
 	protected function tearDown(): void
@@ -216,8 +217,8 @@ class UrlHelperTest extends TestCase
 	{
 		// Arrange - Temporarily override Base.Url with null
 		$registry = Registry::getInstance();
-		$originalBaseUrl = $registry->get( 'Base.Url' );
-		$registry->set( 'Base.Url', null );
+		$originalBaseUrl = $registry->get( RegistryKeys::BASE_URL );
+		$registry->set( RegistryKeys::BASE_URL, null );
 
 		$this->router->addNamedRoute( 'user_profile', '/users/:id' );
 
@@ -225,7 +226,7 @@ class UrlHelperTest extends TestCase
 		$url = $this->urlHelper->routeUrl( 'user_profile', ['id' => 123] );
 
 		// Restore original value
-		$registry->set( 'Base.Url', $originalBaseUrl );
+		$registry->set( RegistryKeys::BASE_URL, $originalBaseUrl );
 
 		// Assert - Should return relative URL when no base URL is available
 		$this->assertEquals( '/users/123', $url );

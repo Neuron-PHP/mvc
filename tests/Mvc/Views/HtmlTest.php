@@ -9,6 +9,7 @@ use Neuron\Mvc\Responses\HttpResponseStatus;
 use Neuron\Mvc\Views\Html;
 use Neuron\Patterns\Registry;
 use Neuron\Routing\Router;
+use Neuron\Core\Registry\RegistryKeys;
 use org\bovigo\vfs\vfsStream;
 use PHPUnit\Framework\TestCase;
 
@@ -37,14 +38,14 @@ class HtmlTest extends TestCase
 			->withContent( $LayoutContent );
 			
 		// Set the views path in registry
-		Registry::getInstance()->set( 'Views.Path', vfsStream::url( 'views' ) );
+		Registry::getInstance()->set( RegistryKeys::VIEWS_PATH, vfsStream::url( 'views' ) );
 	}
 
 	protected function tearDown(): void
 	{
 		// Clear registry
-		Registry::getInstance()->set( 'Views.Path', null );
-		Registry::getInstance()->set( 'Base.Path', null );
+		Registry::getInstance()->set( RegistryKeys::VIEWS_PATH, null );
+		Registry::getInstance()->set( RegistryKeys::BASE_PATH, null );
 		Registry::getInstance()->set( 'Cache.Config', null );
 	}
 
@@ -93,10 +94,10 @@ class HtmlTest extends TestCase
 	public function testRenderWithoutRegistryPath()
 	{
 		// Clear registry path
-		Registry::getInstance()->set( 'Views.Path', null );
+		Registry::getInstance()->set( RegistryKeys::VIEWS_PATH, null );
 		
 		// Set Base.Path instead
-		Registry::getInstance()->set( 'Base.Path', vfsStream::url( 'views' ) );
+		Registry::getInstance()->set( RegistryKeys::BASE_PATH, vfsStream::url( 'views' ) );
 		
 		// Create resources/views structure
 		$ResourcesDir = vfsStream::newDirectory( 'resources' )->at( $this->Root );

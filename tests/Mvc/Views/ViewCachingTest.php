@@ -11,6 +11,7 @@ use Neuron\Mvc\Views\Json;
 use Neuron\Mvc\Views\Xml;
 use Neuron\Mvc\Views\Markdown;
 use Neuron\Patterns\Registry;
+use Neuron\Core\Registry\RegistryKeys;
 use org\bovigo\vfs\vfsStream;
 use PHPUnit\Framework\TestCase;
 
@@ -30,13 +31,13 @@ class ViewCachingTest extends TestCase
 		
 		// Store original registry values
 		$this->OriginalRegistry = [
-			'ViewCache' => Registry::getInstance()->get( 'ViewCache' ),
-			'Settings' => Registry::getInstance()->get( 'Settings' ),
-			'Base.Path' => Registry::getInstance()->get( 'Base.Path' )
+			RegistryKeys::VIEW_CACHE_LEGACY => Registry::getInstance()->get( RegistryKeys::VIEW_CACHE_LEGACY ),
+			RegistryKeys::SETTINGS => Registry::getInstance()->get( RegistryKeys::SETTINGS ),
+			RegistryKeys::BASE_PATH => Registry::getInstance()->get( RegistryKeys::BASE_PATH )
 		];
 		
 		// Set base path for views
-		Registry::getInstance()->set( 'Base.Path', vfsStream::url( 'test' ) );
+		Registry::getInstance()->set( RegistryKeys::BASE_PATH, vfsStream::url( 'test' ) );
 	}
 	
 	protected function tearDown(): void
@@ -83,7 +84,7 @@ class ViewCachingTest extends TestCase
 			$Config->getDefaultTtl(), 
 			$Config 
 		);
-		Registry::getInstance()->set( 'ViewCache', $Cache );
+		Registry::getInstance()->set( RegistryKeys::VIEW_CACHE_LEGACY, $Cache );
 		Registry::getInstance()->set( 'CacheConfig', $Config );
 		
 		return $Cache;
@@ -126,7 +127,7 @@ class ViewCachingTest extends TestCase
 			$Config->getDefaultTtl(), 
 			$Config 
 		);
-		Registry::getInstance()->set( 'ViewCache', $Cache );
+		Registry::getInstance()->set( RegistryKeys::VIEW_CACHE_LEGACY, $Cache );
 		Registry::getInstance()->set( 'CacheConfig', $Config );
 		
 		// HTML type is enabled but global cache is disabled

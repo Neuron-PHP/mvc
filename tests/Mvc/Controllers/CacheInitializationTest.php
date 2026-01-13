@@ -10,6 +10,7 @@ use Neuron\Mvc\IMvcApplication;
 use Neuron\Mvc\Responses\HttpResponseStatus;
 use Neuron\Patterns\Registry;
 use Neuron\Routing\Router;
+use Neuron\Core\Registry\RegistryKeys;
 use PHPUnit\Framework\TestCase;
 
 class CacheInitializationTest extends TestCase
@@ -28,9 +29,9 @@ class CacheInitializationTest extends TestCase
 		
 		// Clear registry keys we'll use
 		$Registry = Registry::getInstance();
-		$Registry->set( 'ViewCache', null );
-		$Registry->set( 'Settings', null );
-		$Registry->set( 'Base.Path', null );
+		$Registry->set( RegistryKeys::VIEW_CACHE_LEGACY, null );
+		$Registry->set( RegistryKeys::SETTINGS, null );
+		$Registry->set( RegistryKeys::BASE_PATH, null );
 		
 		// Create temp cache directory
 		$this->TempCacheDir = sys_get_temp_dir() . '/test_cache_' . uniqid();
@@ -49,9 +50,9 @@ class CacheInitializationTest extends TestCase
 		
 		// Clear registry keys we used
 		$Registry = Registry::getInstance();
-		$Registry->set( 'ViewCache', null );
-		$Registry->set( 'Settings', null );
-		$Registry->set( 'Base.Path', null );
+		$Registry->set( RegistryKeys::VIEW_CACHE_LEGACY, null );
+		$Registry->set( RegistryKeys::SETTINGS, null );
+		$Registry->set( RegistryKeys::BASE_PATH, null );
 	}
 	
 	public function testInitializeViewCacheCreatesInstanceWhenNotInRegistry()
@@ -70,8 +71,8 @@ class CacheInitializationTest extends TestCase
 			] );
 		
 		$Registry = Registry::getInstance();
-		$Registry->set( 'Settings', $Settings );
-		$Registry->set( 'Base.Path', $this->TempCacheDir );
+		$Registry->set( RegistryKeys::SETTINGS, $Settings );
+		$Registry->set( RegistryKeys::BASE_PATH, $this->TempCacheDir );
 		
 		// Create test controller
 		$Controller = new CacheInitTestController( $this->MockApp );
@@ -83,7 +84,7 @@ class CacheInitializationTest extends TestCase
 		$this->assertTrue( $ViewCache->isEnabled() );
 		
 		// Verify it was added to registry
-		$this->assertSame( $ViewCache, $Registry->get( 'ViewCache' ) );
+		$this->assertSame( $ViewCache, $Registry->get( RegistryKeys::VIEW_CACHE_LEGACY ) );
 	}
 	
 	public function testInitializeViewCacheReturnsExistingInstanceFromRegistry()
@@ -93,7 +94,7 @@ class CacheInitializationTest extends TestCase
 		$ExistingCache = new ViewCache( $Storage, true, 7200 );
 		
 		$Registry = Registry::getInstance();
-		$Registry->set( 'ViewCache', $ExistingCache );
+		$Registry->set( RegistryKeys::VIEW_CACHE_LEGACY, $ExistingCache );
 		
 		// Create test controller
 		$Controller = new CacheInitTestController( $this->MockApp );
@@ -120,7 +121,7 @@ class CacheInitializationTest extends TestCase
 		$Settings = new \Neuron\Data\Settings\SettingManager( $SettingSource );
 
 		$Registry = Registry::getInstance();
-		$Registry->set( 'Settings', $Settings );
+		$Registry->set( RegistryKeys::SETTINGS, $Settings );
 
 		// Create test controller
 		$Controller = new CacheInitTestController( $this->MockApp );
@@ -129,7 +130,7 @@ class CacheInitializationTest extends TestCase
 		$ViewCache = $Controller->testInitializeViewCache();
 
 		$this->assertNull( $ViewCache );
-		$this->assertNull( $Registry->get( 'ViewCache' ) );
+		$this->assertNull( $Registry->get( RegistryKeys::VIEW_CACHE_LEGACY ) );
 	}
 	
 	public function testHasViewCacheReturnsTrueWhenCacheExists()
@@ -143,7 +144,7 @@ class CacheInitializationTest extends TestCase
 		$ViewCache->set( $CacheKey, 'cached content' );
 		
 		$Registry = Registry::getInstance();
-		$Registry->set( 'ViewCache', $ViewCache );
+		$Registry->set( RegistryKeys::VIEW_CACHE_LEGACY, $ViewCache );
 		
 		// Create test controller
 		$Controller = new CacheInitTestController( $this->MockApp );
@@ -169,11 +170,11 @@ class CacheInitializationTest extends TestCase
 			] );
 		
 		$Registry = Registry::getInstance();
-		$Registry->set( 'Settings', $Settings );
-		$Registry->set( 'Base.Path', $this->TempCacheDir );
+		$Registry->set( RegistryKeys::SETTINGS, $Settings );
+		$Registry->set( RegistryKeys::BASE_PATH, $this->TempCacheDir );
 		
 		// Verify cache not in registry initially
-		$this->assertNull( $Registry->get( 'ViewCache' ) );
+		$this->assertNull( $Registry->get( RegistryKeys::VIEW_CACHE_LEGACY ) );
 		
 		// Create test controller
 		$Controller = new CacheInitTestController( $this->MockApp );
@@ -182,7 +183,7 @@ class CacheInitializationTest extends TestCase
 		$Result = $Controller->testHasViewCache( 'testpage', [] );
 		
 		// Cache should now be in registry
-		$this->assertInstanceOf( ViewCache::class, $Registry->get( 'ViewCache' ) );
+		$this->assertInstanceOf( ViewCache::class, $Registry->get( RegistryKeys::VIEW_CACHE_LEGACY ) );
 		$this->assertFalse( $Result ); // No cache exists yet
 	}
 	
@@ -198,7 +199,7 @@ class CacheInitializationTest extends TestCase
 		$ViewCache->set( $CacheKey, $TestContent );
 		
 		$Registry = Registry::getInstance();
-		$Registry->set( 'ViewCache', $ViewCache );
+		$Registry->set( RegistryKeys::VIEW_CACHE_LEGACY, $ViewCache );
 		
 		// Create test controller
 		$Controller = new CacheInitTestController( $this->MockApp );
@@ -227,11 +228,11 @@ class CacheInitializationTest extends TestCase
 			] );
 		
 		$Registry = Registry::getInstance();
-		$Registry->set( 'Settings', $Settings );
-		$Registry->set( 'Base.Path', $this->TempCacheDir );
+		$Registry->set( RegistryKeys::SETTINGS, $Settings );
+		$Registry->set( RegistryKeys::BASE_PATH, $this->TempCacheDir );
 		
 		// Verify cache not in registry initially
-		$this->assertNull( $Registry->get( 'ViewCache' ) );
+		$this->assertNull( $Registry->get( RegistryKeys::VIEW_CACHE_LEGACY ) );
 		
 		// Create test controller
 		$Controller = new CacheInitTestController( $this->MockApp );
@@ -240,7 +241,7 @@ class CacheInitializationTest extends TestCase
 		$Result = $Controller->testGetViewCache( 'testpage', [] );
 		
 		// Cache should now be in registry
-		$this->assertInstanceOf( ViewCache::class, $Registry->get( 'ViewCache' ) );
+		$this->assertInstanceOf( ViewCache::class, $Registry->get( RegistryKeys::VIEW_CACHE_LEGACY ) );
 		$this->assertNull( $Result ); // No cached content exists yet
 	}
 	

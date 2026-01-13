@@ -2,6 +2,7 @@
 namespace Neuron\Mvc;
 
 use Neuron\Core\Exceptions\NotFound;
+use Neuron\Core\Registry\RegistryKeys;
 use Neuron\Core\System\IFileSystem;
 use Neuron\Core\System\RealFileSystem;
 use Neuron\Data\Filters\Get;
@@ -112,7 +113,7 @@ function dispatch( Application $app ) : void
 	{
 		// Check if this exception should pass through to caller (e.g., public/index.php)
 		// Applications can configure exception classes via neuron.yaml under 'exceptions.passthrough'
-		$passthroughExceptions = Registry::getInstance()->get( 'PassthroughExceptions' ) ?? [];
+		$passthroughExceptions = Registry::getInstance()->get( RegistryKeys::PASSTHROUGH_EXCEPTIONS_LEGACY ) ?? [];
 		$exceptionClass = get_class( $e );
 
 		\Neuron\Log\Log::debug( 'Exception caught: ' . $exceptionClass );
@@ -156,11 +157,11 @@ function partial( string $name, array $data = [], ?IFileSystem $fs = null ) : vo
 	$fs = $fs ?? new RealFileSystem();
 
 	$path = Registry::getInstance()
-						 ->get( "Views.Path" );
+						 ->get( RegistryKeys::VIEWS_PATH );
 
 	if( !$path )
 	{
-		$basePath = Registry::getInstance()->get( "Base.Path" );
+		$basePath = Registry::getInstance()->get( RegistryKeys::BASE_PATH );
 		$path = "$basePath/resources/views";
 	}
 

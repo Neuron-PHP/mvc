@@ -10,6 +10,7 @@ use Neuron\Core\Exceptions\MissingMethod;
 use Neuron\Core\Exceptions\NotFound;
 use Neuron\Core\Exceptions\Unauthorized;
 use Neuron\Core\Exceptions\Validation;
+use Neuron\Core\Registry\RegistryKeys;
 use Neuron\Core\System\IFileSystem;
 use Neuron\Core\System\RealFileSystem;
 use Neuron\Data\Settings\Source\ISettingSource;
@@ -62,18 +63,18 @@ class Application extends Base implements IMvcApplication
 		$passthroughExceptions = $this->getSetting( 'exceptions', 'passthrough' );
 		if( is_array( $passthroughExceptions ) )
 		{
-			Registry::getInstance()->set( 'PassthroughExceptions', $passthroughExceptions );
+			Registry::getInstance()->set( RegistryKeys::PASSTHROUGH_EXCEPTIONS_LEGACY, $passthroughExceptions );
 			\Neuron\Log\Log::debug( 'Loaded passthrough exceptions: ' . json_encode( $passthroughExceptions ) );
 		}
 		else
 		{
 			// No exceptions configured, set to empty array
-			Registry::getInstance()->set( 'PassthroughExceptions', [] );
+			Registry::getInstance()->set( RegistryKeys::PASSTHROUGH_EXCEPTIONS_LEGACY, [] );
 			\Neuron\Log\Log::debug( 'No passthrough exceptions configured' );
 		}
 
-		Registry::getInstance()->set( 'BasePath', $this->getBasePath() );
-		Registry::getInstance()->set( 'App', $this );
+		Registry::getInstance()->set( RegistryKeys::BASE_PATH_LEGACY, $this->getBasePath() );
+		Registry::getInstance()->set( RegistryKeys::APP, $this );
 
 		$this->loadRequests();
 		$this->loadRoutes();
@@ -113,9 +114,9 @@ class Application extends Base implements IMvcApplication
 	{
 		$requestPath = $this->getBasePath().'/config/requests';
 
-		if( $this->getRegistryObject( 'Requests.Path' ) )
+		if( $this->getRegistryObject( RegistryKeys::REQUESTS_PATH ) )
 		{
-			$requestPath = $this->getRegistryObject( 'Requests.Path' );
+			$requestPath = $this->getRegistryObject( RegistryKeys::REQUESTS_PATH );
 		}
 
 		$files = $this->fs->glob($requestPath . '/*.yaml');
@@ -227,7 +228,7 @@ class Application extends Base implements IMvcApplication
 		$basePath = $this->getBasePath();
 
 		if( $viewPath )
-			Registry::getInstance()->set( "Views.Path", $basePath.'/'.$viewPath );
+			Registry::getInstance()->set( RegistryKeys::VIEWS_PATH, $basePath.'/'.$viewPath );
 
 		return parent::onStart();
 	}
@@ -405,7 +406,7 @@ class Application extends Base implements IMvcApplication
 		{
 			// Check if this exception should pass through to application-level handlers
 			// Applications can configure exception classes via neuron.yaml under 'exceptions.passthrough'
-			$passthroughExceptions = Registry::getInstance()->get( 'PassthroughExceptions' ) ?? [];
+			$passthroughExceptions = Registry::getInstance()->get( RegistryKeys::PASSTHROUGH_EXCEPTIONS_LEGACY ) ?? [];
 
 			if( in_array( get_class( $e ), $passthroughExceptions ) )
 			{
@@ -512,14 +513,14 @@ class Application extends Base implements IMvcApplication
 			// If routing.yaml exists, it takes precedence even if controller_paths is not defined
 			if( isset( $config['controller_paths'] ) && is_array( $config['controller_paths'] ) )
 			{
-				Registry::getInstance()->set( 'Routing.ControllerPaths', $config['controller_paths'] );
+				Registry::getInstance()->set( RegistryKeys::ROUTING_CONTROLLER_PATHS, $config['controller_paths'] );
 				Log::debug( "Loaded " . count( $config['controller_paths'] ) . " controller path(s) from routing.yaml" );
 			}
 			else
 			{
 				// routing.yaml exists but doesn't define controller_paths
 				// Set to empty array to prevent fallback to neuron.yaml
-				Registry::getInstance()->set( 'Routing.ControllerPaths', [] );
+				Registry::getInstance()->set( RegistryKeys::ROUTING_CONTROLLER_PATHS, [] );
 				Log::debug( "routing.yaml exists but has no controller_paths defined (no fallback to neuron.yaml)" );
 			}
 		}
@@ -538,7 +539,7 @@ class Application extends Base implements IMvcApplication
 	protected function loadAttributeRoutes(): void
 	{
 		// Try to get controller paths from routing.yaml (via Registry)
-		$controllerPaths = Registry::getInstance()->get( 'Routing.ControllerPaths' );
+		$controllerPaths = Registry::getInstance()->get( RegistryKeys::ROUTING_CONTROLLER_PATHS );
 
 		// Fall back to neuron.yaml for backward compatibility
 		// Use === null to distinguish between "not set" and "explicitly empty array"
@@ -725,7 +726,7 @@ class Application extends Base implements IMvcApplication
 	 */
 	public function clearExpiredCache(): int
 	{
-		$cache = Registry::getInstance()->get( 'ViewCache' );
+		$cache = Registry::getInstance()->get( RegistryKeys::VIEW_CACHE_LEGACY );
 
 		if( $cache instanceof \Neuron\Mvc\Cache\ViewCache )
 		{
