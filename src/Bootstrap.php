@@ -113,13 +113,20 @@ function dispatch( Application $app ) : void
 		// Check if this exception should pass through to caller (e.g., public/index.php)
 		// Applications can configure exception classes via neuron.yaml under 'exceptions.passthrough'
 		$passthroughExceptions = Registry::getInstance()->get( 'PassthroughExceptions' ) ?? [];
+		$exceptionClass = get_class( $e );
 
-		if( in_array( get_class( $e ), $passthroughExceptions ) )
+		\Neuron\Log\Log::debug( 'Exception caught: ' . $exceptionClass );
+		\Neuron\Log\Log::debug( 'Passthrough list: ' . json_encode( $passthroughExceptions ) );
+		\Neuron\Log\Log::debug( 'Is in array: ' . ( in_array( $exceptionClass, $passthroughExceptions ) ? 'YES' : 'NO' ) );
+
+		if( in_array( $exceptionClass, $passthroughExceptions ) )
 		{
+			\Neuron\Log\Log::debug( 'Re-throwing exception' );
 			throw $e;
 		}
 
 		// For all other exceptions, handle them normally
+		\Neuron\Log\Log::debug( 'Handling exception normally' );
 		echo $app->handleException( $e );
 	}
 }
