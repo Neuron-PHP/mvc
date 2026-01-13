@@ -1,4 +1,4 @@
-## 0.9.43
+## 0.9.43 2026-01-12
 
 ## 0.9.42 2026-01-12
 * Added url rewriting through routing.yaml
