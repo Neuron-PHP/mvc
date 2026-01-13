@@ -9,6 +9,7 @@ use Neuron\Mvc\IMvcApplication;
 use Neuron\Mvc\Responses\HttpResponseStatus;
 use Neuron\Patterns\Registry;
 use Neuron\Routing\Router;
+use Neuron\Core\Registry\RegistryKeys;
 use PHPUnit\Framework\TestCase;
 
 class CacheKeyDataTest extends TestCase
@@ -28,10 +29,10 @@ class CacheKeyDataTest extends TestCase
 		
 		// Clear registry keys we'll use
 		$Registry = Registry::getInstance();
-		$Registry->set( 'ViewCache', null );
-		$Registry->set( 'Settings', null );
-		$Registry->set( 'Base.Path', null );
-		$Registry->set( 'Views.Path', null );
+		$Registry->set( RegistryKeys::VIEW_CACHE_LEGACY, null );
+		$Registry->set( RegistryKeys::SETTINGS, null );
+		$Registry->set( RegistryKeys::BASE_PATH, null );
+		$Registry->set( RegistryKeys::VIEWS_PATH, null );
 		
 		// Create temp directories
 		$this->TempCacheDir = sys_get_temp_dir() . '/cache_key_test_' . uniqid();
@@ -71,7 +72,7 @@ class CacheKeyDataTest extends TestCase
 		);
 		
 		// Set Views.Path for view resolution
-		$Registry->set( 'Views.Path', $this->TempViewsDir );
+		$Registry->set( RegistryKeys::VIEWS_PATH, $this->TempViewsDir );
 	}
 	
 	protected function tearDown(): void
@@ -90,10 +91,10 @@ class CacheKeyDataTest extends TestCase
 		
 		// Clear registry
 		$Registry = Registry::getInstance();
-		$Registry->set( 'ViewCache', null );
-		$Registry->set( 'Settings', null );
-		$Registry->set( 'Base.Path', null );
-		$Registry->set( 'Views.Path', null );
+		$Registry->set( RegistryKeys::VIEW_CACHE_LEGACY, null );
+		$Registry->set( RegistryKeys::SETTINGS, null );
+		$Registry->set( RegistryKeys::BASE_PATH, null );
+		$Registry->set( RegistryKeys::VIEWS_PATH, null );
 	}
 	
 	public function testHasViewCacheByKeyWithEmptyCacheKey()
@@ -106,7 +107,7 @@ class CacheKeyDataTest extends TestCase
 		$CacheKey = $ViewCache->generateKey( 'CacheKeyTestController', 'static', [] );
 		$ViewCache->set( $CacheKey, '<html>Cached static content</html>' );
 		
-		Registry::getInstance()->set( 'ViewCache', $ViewCache );
+		Registry::getInstance()->set( RegistryKeys::VIEW_CACHE_LEGACY, $ViewCache );
 		
 		// Create controller and test
 		$Controller = new CacheKeyTestController( $this->MockApp );
@@ -129,7 +130,7 @@ class CacheKeyDataTest extends TestCase
 		$CacheKey = $ViewCache->generateKey( 'CacheKeyTestController', 'product', $CacheKeyData );
 		$ViewCache->set( $CacheKey, '<html>Product 123 blue</html>' );
 		
-		Registry::getInstance()->set( 'ViewCache', $ViewCache );
+		Registry::getInstance()->set( RegistryKeys::VIEW_CACHE_LEGACY, $ViewCache );
 		
 		// Create controller and test
 		$Controller = new CacheKeyTestController( $this->MockApp );
@@ -154,7 +155,7 @@ class CacheKeyDataTest extends TestCase
 		$CacheKey = $ViewCache->generateKey( 'CacheKeyTestController', 'product', $CacheKeyData );
 		$ViewCache->set( $CacheKey, $TestContent );
 		
-		Registry::getInstance()->set( 'ViewCache', $ViewCache );
+		Registry::getInstance()->set( RegistryKeys::VIEW_CACHE_LEGACY, $ViewCache );
 		
 		// Create controller and test
 		$Controller = new CacheKeyTestController( $this->MockApp );
@@ -178,7 +179,7 @@ class CacheKeyDataTest extends TestCase
 		$CacheKey = $ViewCache->generateKey( 'CacheKeyTestController', 'static', [] );
 		$ViewCache->set( $CacheKey, $CachedContent );
 		
-		Registry::getInstance()->set( 'ViewCache', $ViewCache );
+		Registry::getInstance()->set( RegistryKeys::VIEW_CACHE_LEGACY, $ViewCache );
 		
 		// Create controller
 		$Controller = new CacheKeyTestController( $this->MockApp );
@@ -201,7 +202,7 @@ class CacheKeyDataTest extends TestCase
 		// Setup empty cache
 		$Storage = new FileCacheStorage( $this->TempCacheDir );
 		$ViewCache = new ViewCache( $Storage, true, 3600 );
-		Registry::getInstance()->set( 'ViewCache', $ViewCache );
+		Registry::getInstance()->set( RegistryKeys::VIEW_CACHE_LEGACY, $ViewCache );
 		
 		// Create controller
 		$Controller = new CacheKeyTestController( $this->MockApp );
@@ -251,7 +252,7 @@ class CacheKeyDataTest extends TestCase
 		$CacheKey = $ViewCache->generateKey( 'CacheKeyTestController', 'index', [] );
 		$ViewCache->set( $CacheKey, $CachedContent );
 		
-		Registry::getInstance()->set( 'ViewCache', $ViewCache );
+		Registry::getInstance()->set( RegistryKeys::VIEW_CACHE_LEGACY, $ViewCache );
 		
 		// Create controller
 		$Controller = new CacheKeyTestController( $this->MockApp );
@@ -298,7 +299,7 @@ class CacheKeyDataTest extends TestCase
 		// Setup cache
 		$Storage = new FileCacheStorage( $this->TempCacheDir );
 		$ViewCache = new ViewCache( $Storage, true, 3600 );
-		Registry::getInstance()->set( 'ViewCache', $ViewCache );
+		Registry::getInstance()->set( RegistryKeys::VIEW_CACHE_LEGACY, $ViewCache );
 		
 		// Create controller
 		$Controller = new CacheKeyTestController( $this->MockApp );
@@ -376,7 +377,7 @@ class CacheKeyDataTest extends TestCase
 		// Setup cache that is enabled by default
 		$Storage = new FileCacheStorage( $this->TempCacheDir );
 		$ViewCache = new ViewCache( $Storage, true, 3600 );  // Cache enabled
-		Registry::getInstance()->set( 'ViewCache', $ViewCache );
+		Registry::getInstance()->set( RegistryKeys::VIEW_CACHE_LEGACY, $ViewCache );
 		
 		// Create controller
 		$Controller = new CacheKeyTestController( $this->MockApp );
@@ -417,7 +418,7 @@ class CacheKeyDataTest extends TestCase
 		// Setup cache that is disabled by default
 		$Storage = new FileCacheStorage( $this->TempCacheDir );
 		$ViewCache = new ViewCache( $Storage, false, 3600 );  // Cache disabled
-		Registry::getInstance()->set( 'ViewCache', $ViewCache );
+		Registry::getInstance()->set( RegistryKeys::VIEW_CACHE_LEGACY, $ViewCache );
 		
 		// Create controller
 		$Controller = new CacheKeyTestController( $this->MockApp );
@@ -446,7 +447,7 @@ class CacheKeyDataTest extends TestCase
 		// Setup cache that is disabled by default
 		$Storage = new FileCacheStorage( $this->TempCacheDir );
 		$ViewCache = new ViewCache( $Storage, false, 3600 );  // Cache disabled by default
-		Registry::getInstance()->set( 'ViewCache', $ViewCache );
+		Registry::getInstance()->set( RegistryKeys::VIEW_CACHE_LEGACY, $ViewCache );
 		
 		// Create controller
 		$Controller = new CacheKeyTestController( $this->MockApp );

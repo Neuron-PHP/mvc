@@ -3,6 +3,7 @@
 namespace Tests;
 
 use Neuron\Core\Exceptions\NotFound;
+use Neuron\Core\Registry\RegistryKeys;
 use Neuron\Patterns\Registry;
 use PHPUnit\Framework\TestCase;
 
@@ -28,13 +29,13 @@ class PartialTest extends TestCase
 		
 		// Store original registry values
 		$this->OriginalRegistry = [
-			'Views.Path' => Registry::getInstance()->get( 'Views.Path' ),
-			'Base.Path' => Registry::getInstance()->get( 'Base.Path' )
+			RegistryKeys::VIEWS_PATH => Registry::getInstance()->get( RegistryKeys::VIEWS_PATH ),
+			RegistryKeys::BASE_PATH => Registry::getInstance()->get( RegistryKeys::BASE_PATH )
 		];
-		
+
 		// Set Base.Path to temp directory
-		Registry::getInstance()->set( 'Views.Path', null );
-		Registry::getInstance()->set( 'Base.Path', $this->TempDir );
+		Registry::getInstance()->set( RegistryKeys::VIEWS_PATH, null );
+		Registry::getInstance()->set( RegistryKeys::BASE_PATH, $this->TempDir );
 	}
 	
 	protected function tearDown(): void
@@ -148,7 +149,7 @@ class PartialTest extends TestCase
 		$this->createPartial( 'custom', 'Custom View Path Content', $this->TempDir . '/custom/views/shared' );
 		
 		// Set custom views path
-		Registry::getInstance()->set( 'Views.Path', $this->TempDir . '/custom/views' );
+		Registry::getInstance()->set( RegistryKeys::VIEWS_PATH, $this->TempDir . '/custom/views' );
 		
 		$Result = $this->capturePartialOutput( 'custom' );
 		
@@ -161,7 +162,7 @@ class PartialTest extends TestCase
 	public function testDefaultPathFallback()
 	{
 		// Ensure Views.Path is null to test fallback
-		Registry::getInstance()->set( 'Views.Path', null );
+		Registry::getInstance()->set( RegistryKeys::VIEWS_PATH, null );
 		
 		// Create partial in default location
 		$this->createPartial( 'default', 'Default Path Content' );
@@ -311,8 +312,8 @@ $items = ["Apple", "Banana", "Orange"];
 	public function testPartialPathConstruction()
 	{
 		// Set a base path with trailing slash
-		Registry::getInstance()->set( 'Base.Path', $this->TempDir . '/' );
-		Registry::getInstance()->set( 'Views.Path', null );
+		Registry::getInstance()->set( RegistryKeys::BASE_PATH, $this->TempDir . '/' );
+		Registry::getInstance()->set( RegistryKeys::VIEWS_PATH, null );
 		
 		$this->createPartial( 'pathtest', 'Path Test' );
 		
@@ -328,8 +329,8 @@ $items = ["Apple", "Banana", "Orange"];
 	public function testRealTestPartial()
 	{
 		// Set Views.Path to the real project views
-		Registry::getInstance()->set( 'Views.Path', null );
-		Registry::getInstance()->set( 'Base.Path', dirname( __DIR__ ) );
+		Registry::getInstance()->set( RegistryKeys::VIEWS_PATH, null );
+		Registry::getInstance()->set( RegistryKeys::BASE_PATH, dirname( __DIR__ ) );
 		
 		// This should load the actual _test.php file from resources/views/shared/
 		$Result = $this->capturePartialOutput( 'test' );

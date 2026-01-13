@@ -12,6 +12,7 @@ use League\CommonMark\Extension\GithubFlavoredMarkdownExtension;
 use League\CommonMark\MarkdownConverter;
 use Neuron\Core\Exceptions\NotFound;
 use Neuron\Core\NString;
+use Neuron\Core\Registry\RegistryKeys;
 use Neuron\Patterns\Registry;
 
 /**
@@ -39,11 +40,11 @@ class Markdown extends Base implements IView
 		}
 
 		$path = Registry::getInstance()
-							 ->get( "Views.Path" );
+							 ->get( RegistryKeys::VIEWS_PATH );
 
 		if( !$path )
 		{
-			$basePath = Registry::getInstance()->get( "Base.Path" );
+			$basePath = Registry::getInstance()->get( RegistryKeys::BASE_PATH );
 			$path = "$basePath/resources/views";
 		}
 

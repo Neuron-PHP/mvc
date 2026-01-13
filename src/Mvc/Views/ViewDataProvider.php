@@ -2,6 +2,7 @@
 
 namespace Neuron\Mvc\Views;
 
+use Neuron\Core\Registry\RegistryKeys;
 use Neuron\Patterns\Registry;
 
 /**
@@ -60,7 +61,7 @@ class ViewDataProvider
 		if( self::$_instance === null )
 		{
 			self::$_instance = new self();
-			Registry::getInstance()->set( 'ViewDataProvider', self::$_instance );
+			Registry::getInstance()->set( RegistryKeys::VIEW_DATA_PROVIDER_LEGACY, self::$_instance );
 		}
 
 		return self::$_instance;

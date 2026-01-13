@@ -5,6 +5,7 @@ namespace Mvc\Controllers;
 use Neuron\Mvc\Application;
 use Neuron\Mvc\Controllers\Base;
 use Neuron\Routing\RequestMethod;
+use Neuron\Core\Registry\RegistryKeys;
 use PHPUnit\Framework\TestCase;
 
 class ControllerTest extends Base
@@ -123,7 +124,7 @@ class BaseTest extends TestCase
 		$App = new Application( "test" );
 		$Controller = new ControllerTest( $App );
 
-		\Neuron\Patterns\Registry::getInstance()->set( 'Base.Url', 'https://example.com' );
+		\Neuron\Patterns\Registry::getInstance()->set( RegistryKeys::BASE_URL, 'https://example.com' );
 
 		// Add a named route
 		$route = $App->getRouter()->get( '/users/:id', function() {} );
@@ -192,7 +193,7 @@ class BaseTest extends TestCase
 		$App = new Application( "test" );
 		$Controller = new ControllerTest( $App );
 
-		\Neuron\Patterns\Registry::getInstance()->set( 'Base.Url', 'https://test.com' );
+		\Neuron\Patterns\Registry::getInstance()->set( RegistryKeys::BASE_URL, 'https://test.com' );
 
 		// Add a named route
 		$route = $App->getRouter()->get( '/users/:id', function() {} );
@@ -297,8 +298,8 @@ class BaseTest extends TestCase
 		$Controller = new ControllerTest( $App );
 
 		// Clear Registry to simulate no settings
-		\Neuron\Patterns\Registry::getInstance()->set( 'Settings', null );
-		\Neuron\Patterns\Registry::getInstance()->set( 'ViewCache', null );
+		\Neuron\Patterns\Registry::getInstance()->set( RegistryKeys::SETTINGS, null );
+		\Neuron\Patterns\Registry::getInstance()->set( RegistryKeys::VIEW_CACHE_LEGACY, null );
 
 		$reflection = new \ReflectionClass( $Controller );
 		$method = $reflection->getMethod( 'initializeViewCache' );
@@ -315,8 +316,8 @@ class BaseTest extends TestCase
 		$Controller = new ControllerTest( $App );
 
 		// Clear ViewCache from Registry
-		\Neuron\Patterns\Registry::getInstance()->set( 'ViewCache', null );
-		\Neuron\Patterns\Registry::getInstance()->set( 'Settings', null );
+		\Neuron\Patterns\Registry::getInstance()->set( RegistryKeys::VIEW_CACHE_LEGACY, null );
+		\Neuron\Patterns\Registry::getInstance()->set( RegistryKeys::SETTINGS, null );
 
 		$reflection = new \ReflectionClass( $Controller );
 		$method = $reflection->getMethod( 'hasViewCache' );
@@ -333,8 +334,8 @@ class BaseTest extends TestCase
 		$Controller = new ControllerTest( $App );
 
 		// Clear ViewCache from Registry
-		\Neuron\Patterns\Registry::getInstance()->set( 'ViewCache', null );
-		\Neuron\Patterns\Registry::getInstance()->set( 'Settings', null );
+		\Neuron\Patterns\Registry::getInstance()->set( RegistryKeys::VIEW_CACHE_LEGACY, null );
+		\Neuron\Patterns\Registry::getInstance()->set( RegistryKeys::SETTINGS, null );
 
 		$reflection = new \ReflectionClass( $Controller );
 		$method = $reflection->getMethod( 'getViewCache' );
@@ -351,8 +352,8 @@ class BaseTest extends TestCase
 		$Controller = new ControllerTest( $App );
 
 		// Clear cache from Registry
-		\Neuron\Patterns\Registry::getInstance()->set( 'ViewCache', null );
-		\Neuron\Patterns\Registry::getInstance()->set( 'Settings', null );
+		\Neuron\Patterns\Registry::getInstance()->set( RegistryKeys::VIEW_CACHE_LEGACY, null );
+		\Neuron\Patterns\Registry::getInstance()->set( RegistryKeys::SETTINGS, null );
 
 		$reflection = new \ReflectionClass( $Controller );
 		$method = $reflection->getMethod( 'isCacheEnabledByDefault' );
@@ -370,8 +371,8 @@ class BaseTest extends TestCase
 		$Controller = new ControllerTest( $App );
 
 		// Clear ViewCache from Registry
-		\Neuron\Patterns\Registry::getInstance()->set( 'ViewCache', null );
-		\Neuron\Patterns\Registry::getInstance()->set( 'Settings', null );
+		\Neuron\Patterns\Registry::getInstance()->set( RegistryKeys::VIEW_CACHE_LEGACY, null );
+		\Neuron\Patterns\Registry::getInstance()->set( RegistryKeys::SETTINGS, null );
 
 		$reflection = new \ReflectionClass( $Controller );
 		$method = $reflection->getMethod( 'hasViewCacheByKey' );
@@ -388,8 +389,8 @@ class BaseTest extends TestCase
 		$Controller = new ControllerTest( $App );
 
 		// Clear ViewCache from Registry
-		\Neuron\Patterns\Registry::getInstance()->set( 'ViewCache', null );
-		\Neuron\Patterns\Registry::getInstance()->set( 'Settings', null );
+		\Neuron\Patterns\Registry::getInstance()->set( RegistryKeys::VIEW_CACHE_LEGACY, null );
+		\Neuron\Patterns\Registry::getInstance()->set( RegistryKeys::SETTINGS, null );
 
 		$reflection = new \ReflectionClass( $Controller );
 		$method = $reflection->getMethod( 'getViewCacheByKey' );

@@ -4,6 +4,7 @@ namespace Mvc;
 
 use Neuron\Routing\RouteMap;
 use Neuron\Routing\Router;
+use Neuron\Core\Registry\RegistryKeys;
 
 /**
  * Mock Router for testing URL helpers.
@@ -84,7 +85,7 @@ class MockRouter extends Router
 		// If absolute URL requested, prepend base URL
 		if( $absolute )
 		{
-			$baseUrl = \Neuron\Patterns\Registry::getInstance()->get( 'Base.Url' );
+			$baseUrl = \Neuron\Patterns\Registry::getInstance()->get( RegistryKeys::BASE_URL );
 			if( $baseUrl )
 			{
 				return rtrim( $baseUrl, '/' ) . $path;

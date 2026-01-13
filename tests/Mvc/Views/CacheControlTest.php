@@ -12,6 +12,7 @@ use Neuron\Mvc\Views\Html;
 use Neuron\Mvc\Views\Markdown;
 use Neuron\Patterns\Registry;
 use Neuron\Routing\Router;
+use Neuron\Core\Registry\RegistryKeys;
 use org\bovigo\vfs\vfsStream;
 use PHPUnit\Framework\TestCase;
 
@@ -37,11 +38,11 @@ class CacheControlTest extends TestCase
 		$this->MockApp->method( 'getRouter' )->willReturn( $router );
 		
 		// Clear any existing cache from registry
-		$this->Registry->set( 'ViewCache', null );
+		$this->Registry->set( RegistryKeys::VIEW_CACHE_LEGACY, null );
 		
 		// Set up base path and views path
-		$this->Registry->set( 'Base.Path', vfsStream::url( 'test' ) );
-		$this->Registry->set( 'Views.Path', vfsStream::url( 'test/resources/views' ) );
+		$this->Registry->set( RegistryKeys::BASE_PATH, vfsStream::url( 'test' ) );
+		$this->Registry->set( RegistryKeys::VIEWS_PATH, vfsStream::url( 'test/resources/views' ) );
 		
 		// Create view directories
 		vfsStream::newDirectory( 'resources/views/test' )->at( $this->Root );
@@ -78,8 +79,8 @@ class CacheControlTest extends TestCase
 	protected function tearDown(): void
 	{
 		// Clear cache from registry
-		$this->Registry->set( 'ViewCache', null );
-		$this->Registry->set( 'Base.Path', null );
+		$this->Registry->set( RegistryKeys::VIEW_CACHE_LEGACY, null );
+		$this->Registry->set( RegistryKeys::BASE_PATH, null );
 		parent::tearDown();
 	}
 	
@@ -92,7 +93,7 @@ class CacheControlTest extends TestCase
 		$CachePath = vfsStream::url( 'test/cache/views' );
 		$Storage = new FileCacheStorage( $CachePath );
 		$Cache = new ViewCache( $Storage, true );
-		$this->Registry->set( 'ViewCache', $Cache );
+		$this->Registry->set( RegistryKeys::VIEW_CACHE_LEGACY, $Cache );
 		
 		// Create view with cache disabled
 		$View = new Html();
@@ -132,7 +133,7 @@ class CacheControlTest extends TestCase
 		$CachePath = vfsStream::url( 'test/cache/views' );
 		$Storage = new FileCacheStorage( $CachePath );
 		$Cache = new ViewCache( $Storage, false ); // Globally disabled
-		$this->Registry->set( 'ViewCache', $Cache );
+		$this->Registry->set( RegistryKeys::VIEW_CACHE_LEGACY, $Cache );
 		
 		// Create view with cache explicitly enabled
 		$View = new Html();
@@ -174,7 +175,7 @@ class CacheControlTest extends TestCase
 		$CachePath = vfsStream::url( 'test/cache/views' );
 		$Storage = new FileCacheStorage( $CachePath );
 		$Cache = new ViewCache( $Storage, true );
-		$this->Registry->set( 'ViewCache', $Cache );
+		$this->Registry->set( RegistryKeys::VIEW_CACHE_LEGACY, $Cache );
 		
 		// Create test controller
 		$Controller = new TestControllerWithCache( $this->MockApp );
@@ -222,17 +223,17 @@ class CacheControlTest extends TestCase
 			file_put_contents( $LayoutsDir . '/default.php', '<?php echo $content; ?>' );
 
 			// Configure Registry with real paths
-			$OriginalBasePath = $this->Registry->get( 'Base.Path' );
-			$OriginalViewsPath = $this->Registry->get( 'Views.Path' );
-			$OriginalViewCache = $this->Registry->get( 'ViewCache' );
+			$OriginalBasePath = $this->Registry->get( RegistryKeys::BASE_PATH );
+			$OriginalViewsPath = $this->Registry->get( RegistryKeys::VIEWS_PATH );
+			$OriginalViewCache = $this->Registry->get( RegistryKeys::VIEW_CACHE_LEGACY );
 
-			$this->Registry->set( 'Base.Path', $TempDir );
-			$this->Registry->set( 'Views.Path', $ViewsDir );
+			$this->Registry->set( RegistryKeys::BASE_PATH, $TempDir );
+			$this->Registry->set( RegistryKeys::VIEWS_PATH, $ViewsDir );
 
 			// Set up cache
 			$Storage = new FileCacheStorage( $CacheDir );
 			$Cache = new ViewCache( $Storage, true );
-			$this->Registry->set( 'ViewCache', $Cache );
+			$this->Registry->set( RegistryKeys::VIEW_CACHE_LEGACY, $Cache );
 
 			// Create test controller
 			$Controller = new TestControllerWithCache( $this->MockApp );
@@ -260,9 +261,9 @@ class CacheControlTest extends TestCase
 			$this->assertEquals( $MarkdownContent, $MarkdownContent2 );
 
 			// Restore original registry values
-			$this->Registry->set( 'Base.Path', $OriginalBasePath );
-			$this->Registry->set( 'Views.Path', $OriginalViewsPath );
-			$this->Registry->set( 'ViewCache', $OriginalViewCache );
+			$this->Registry->set( RegistryKeys::BASE_PATH, $OriginalBasePath );
+			$this->Registry->set( RegistryKeys::VIEWS_PATH, $OriginalViewsPath );
+			$this->Registry->set( RegistryKeys::VIEW_CACHE_LEGACY, $OriginalViewCache );
 		}
 		finally
 		{
@@ -312,7 +313,7 @@ class CacheControlTest extends TestCase
 		$CachePath = vfsStream::url( 'test/cache/views' );
 		$Storage = new FileCacheStorage( $CachePath );
 		$Cache = new ViewCache( $Storage, true );
-		$this->Registry->set( 'ViewCache', $Cache );
+		$this->Registry->set( RegistryKeys::VIEW_CACHE_LEGACY, $Cache );
 		
 		// Create view with null cache setting (default)
 		$View = new Html();

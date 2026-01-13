@@ -8,6 +8,7 @@ use Neuron\Mvc\Requests\Request;
 use Neuron\Mvc\Responses\HttpResponseStatus;
 use Neuron\Patterns\Registry;
 use Neuron\Routing\Router;
+use Neuron\Core\Registry\RegistryKeys;
 use PHPUnit\Framework\TestCase;
 
 class HttpCodesTest extends TestCase
@@ -20,7 +21,7 @@ class HttpCodesTest extends TestCase
 		parent::setUp();
 
 		// Set up the base path for views
-		Registry::getInstance()->set( 'Base.Path', dirname( __DIR__, 3 ) );
+		Registry::getInstance()->set( RegistryKeys::BASE_PATH, dirname( __DIR__, 3 ) );
 
 		// Create mock application
 		$router = $this->createMock( Router::class );
@@ -33,7 +34,7 @@ class HttpCodesTest extends TestCase
 	protected function tearDown(): void
 	{
 		// Clean up registry
-		Registry::getInstance()->set( 'Base.Path', null );
+		Registry::getInstance()->set( RegistryKeys::BASE_PATH, null );
 
 		parent::tearDown();
 	}

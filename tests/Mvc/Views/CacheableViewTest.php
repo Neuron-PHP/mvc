@@ -8,6 +8,7 @@ use Neuron\Mvc\Cache\ViewCache;
 use Neuron\Mvc\Views\Base;
 use Neuron\Mvc\Views\CacheableView;
 use Neuron\Patterns\Registry;
+use Neuron\Core\Registry\RegistryKeys;
 use org\bovigo\vfs\vfsStream;
 use PHPUnit\Framework\TestCase;
 
@@ -71,15 +72,15 @@ class CacheableViewTest extends TestCase
 		$this->vfs = vfsStream::setup( 'cache' );
 
 		// Clear registry
-		Registry::getInstance()->set( 'ViewCache', null );
-		Registry::getInstance()->set( 'Settings', null );
+		Registry::getInstance()->set( RegistryKeys::VIEW_CACHE_LEGACY, null );
+		Registry::getInstance()->set( RegistryKeys::SETTINGS, null );
 	}
 
 	protected function tearDown(): void
 	{
 		// Clean up registry
-		Registry::getInstance()->set( 'ViewCache', null );
-		Registry::getInstance()->set( 'Settings', null );
+		Registry::getInstance()->set( RegistryKeys::VIEW_CACHE_LEGACY, null );
+		Registry::getInstance()->set( RegistryKeys::SETTINGS, null );
 
 		parent::tearDown();
 	}
@@ -114,7 +115,7 @@ class CacheableViewTest extends TestCase
 		$storage = new FileCacheStorage( vfsStream::url( 'cache' ) );
 		$config = new CacheConfig( ['enabled' => true] );
 		$cache = new ViewCache( $storage, true, 3600, $config );
-		Registry::getInstance()->set( 'ViewCache', $cache );
+		Registry::getInstance()->set( RegistryKeys::VIEW_CACHE_LEGACY, $cache );
 
 		$view = new TestableView();
 		$view->setController( 'test' );
@@ -132,7 +133,7 @@ class CacheableViewTest extends TestCase
 		$storage = new FileCacheStorage( vfsStream::url( 'cache' ) );
 		$config = new CacheConfig( ['enabled' => false] );
 		$cache = new ViewCache( $storage, false, 3600, $config );
-		Registry::getInstance()->set( 'ViewCache', $cache );
+		Registry::getInstance()->set( RegistryKeys::VIEW_CACHE_LEGACY, $cache );
 
 		$view = new TestableView();
 		$view->setController( 'test' );
@@ -170,7 +171,7 @@ class CacheableViewTest extends TestCase
 		$config = new CacheConfig( ['enabled' => true] );
 		$cache = new ViewCache( $storage, true, 3600, $config );
 		$cache->set( 'test_key', 'cached_content' );
-		Registry::getInstance()->set( 'ViewCache', $cache );
+		Registry::getInstance()->set( RegistryKeys::VIEW_CACHE_LEGACY, $cache );
 
 		$view = new TestableView();
 		$view->setController( 'test' );
@@ -187,7 +188,7 @@ class CacheableViewTest extends TestCase
 		$storage = new FileCacheStorage( vfsStream::url( 'cache' ) );
 		$config = new CacheConfig( ['enabled' => true] );
 		$cache = new ViewCache( $storage, true, 3600, $config );
-		Registry::getInstance()->set( 'ViewCache', $cache );
+		Registry::getInstance()->set( RegistryKeys::VIEW_CACHE_LEGACY, $cache );
 
 		$view = new TestableView();
 		$view->setController( 'test' );
@@ -204,7 +205,7 @@ class CacheableViewTest extends TestCase
 		$storage = new FileCacheStorage( vfsStream::url( 'cache' ) );
 		$config = new CacheConfig( ['enabled' => false] );
 		$cache = new ViewCache( $storage, false, 3600, $config );
-		Registry::getInstance()->set( 'ViewCache', $cache );
+		Registry::getInstance()->set( RegistryKeys::VIEW_CACHE_LEGACY, $cache );
 
 		// Store content using reflection
 		$reflection = new \ReflectionObject( $cache );
@@ -229,7 +230,7 @@ class CacheableViewTest extends TestCase
 		$storage = new FileCacheStorage( vfsStream::url( 'cache' ) );
 		$config = new CacheConfig( ['enabled' => true] );
 		$cache = new ViewCache( $storage, true, 3600, $config );
-		Registry::getInstance()->set( 'ViewCache', $cache );
+		Registry::getInstance()->set( RegistryKeys::VIEW_CACHE_LEGACY, $cache );
 
 		$view = new TestableView();
 		$view->setCacheEnabled( false );
@@ -255,7 +256,7 @@ class CacheableViewTest extends TestCase
 		$storage = new FileCacheStorage( vfsStream::url( 'cache' ) );
 		$config = new CacheConfig( ['enabled' => true] );
 		$cache = new ViewCache( $storage, true, 3600, $config );
-		Registry::getInstance()->set( 'ViewCache', $cache );
+		Registry::getInstance()->set( RegistryKeys::VIEW_CACHE_LEGACY, $cache );
 
 		$view = new TestableView();
 
@@ -271,7 +272,7 @@ class CacheableViewTest extends TestCase
 		$storage = new FileCacheStorage( vfsStream::url( 'cache' ) );
 		$config = new CacheConfig( ['enabled' => false] );
 		$cache = new ViewCache( $storage, false, 3600, $config );
-		Registry::getInstance()->set( 'ViewCache', $cache );
+		Registry::getInstance()->set( RegistryKeys::VIEW_CACHE_LEGACY, $cache );
 
 		$view = new TestableView();
 		$view->setCacheEnabled( true ); // Explicitly enable at view level
@@ -315,7 +316,7 @@ class CacheableViewTest extends TestCase
 		$storage = new FileCacheStorage( vfsStream::url( 'cache' ) );
 		$config = new CacheConfig( ['enabled' => true] );
 		$cache = new ViewCache( $storage, true, 3600, $config );
-		Registry::getInstance()->set( 'ViewCache', $cache );
+		Registry::getInstance()->set( RegistryKeys::VIEW_CACHE_LEGACY, $cache );
 
 		$view = new TestableView();
 		$view->setCacheEnabled( false ); // Override to false at view level
@@ -331,7 +332,7 @@ class CacheableViewTest extends TestCase
 		$storage = new FileCacheStorage( vfsStream::url( 'cache' ) );
 		$config = new CacheConfig( ['enabled' => true] );
 		$cache = new ViewCache( $storage, true, 3600, $config );
-		Registry::getInstance()->set( 'ViewCache', $cache );
+		Registry::getInstance()->set( RegistryKeys::VIEW_CACHE_LEGACY, $cache );
 
 		$view = new TestableView();
 
@@ -346,7 +347,7 @@ class CacheableViewTest extends TestCase
 		$storage = new FileCacheStorage( vfsStream::url( 'cache' ) );
 		$config = new CacheConfig( ['enabled' => true] );
 		$cache = new ViewCache( $storage, true, 3600, $config );
-		Registry::getInstance()->set( 'ViewCache', $cache );
+		Registry::getInstance()->set( RegistryKeys::VIEW_CACHE_LEGACY, $cache );
 
 		$view = new TestableView();
 		$view->setController( 'test' );
