@@ -7,8 +7,8 @@ use Neuron\Core\System\RealFileSystem;
 use Neuron\Data\Filters\Get;
 use Neuron\Data\Filters\Server;
 use Neuron\Data\Objects\Version;
-use Neuron\Data\Settings\Source\ISettingSource;
-use Neuron\Data\Settings\Source\Yaml;
+use Neuron\Data\Settings\SettingManager;
+use Neuron\Data\Settings\SettingManagerFactory;
 use Neuron\Patterns\Registry;
 
 /**
@@ -21,11 +21,24 @@ use Neuron\Patterns\Registry;
 
 function boot( string $configPath ) : Application
 {
-	/** @var ISettingSource $settings */
+	/** @var SettingManager $settings */
+	$settings = null;
+	$basePath = null;
 
 	try
 	{
-		$settings = new Yaml( "$configPath/neuron.yaml" );
+		// Determine environment from APP_ENV (defaults to 'production')
+		$environment = getenv( 'APP_ENV' ) ?: 'production';
+
+		// Use SettingManagerFactory for comprehensive configuration loading
+		// This automatically loads:
+		// 1. neuron.yaml (base configuration)
+		// 2. environments/{env}.yaml (environment-specific config if exists)
+		// 3. secrets.yml.enc (encrypted secrets if exists)
+		// 4. environments/{env}.secrets.yml.enc (environment secrets if exists)
+		// 5. Environment variables (highest priority)
+		$settings = SettingManagerFactory::create( $environment, $configPath );
+
 		$basePath = $settings->get( 'system', 'base_path' );
 
 		// If base_path not in settings, use environment variable or current directory
@@ -36,7 +49,23 @@ function boot( string $configPath ) : Application
 	}
 	catch( \Exception $e )
 	{
+		// Log the configuration error for debugging
+		\Neuron\Log\Log::error(
+			sprintf(
+				"Configuration loading failed: %s\nTrace: %s",
+				$e->getMessage(),
+				$e->getTraceAsString()
+			)
+		);
+
+		// Fall back to environment/default path
+		$basePath = getenv( 'SYSTEM_BASE_PATH' ) ?: '.';
 		$settings = null;
+	}
+
+	// Ensure basePath is set
+	if( empty( $basePath ) )
+	{
 		$basePath = getenv( 'SYSTEM_BASE_PATH' ) ?: '.';
 	}
 

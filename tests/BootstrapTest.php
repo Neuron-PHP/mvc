@@ -54,42 +54,41 @@ class BootstrapTest extends TestCase
 	 */
 	public function testBootWithValidConfig()
 	{
+		// Mock base path
+		$BasePath = vfsStream::url( 'test' );
+
+		// Set environment variable so bootstrap uses vfs path
+		putenv( "SYSTEM_BASE_PATH=$BasePath" );
+
 		// Create neuron.yaml
 		$ConfigContent = <<<YAML
 system:
-  base_path: /app
+  base_path: $BasePath
   environment: test
 
 database:
   host: localhost
   port: 3306
 YAML;
-		
+
 		vfsStream::newFile( 'neuron.yaml' )
 			->at( $this->Root )
 			->setContent( $ConfigContent );
-		
+
 		// Create version.json
 		$VersionContent = json_encode([
 			'major' => 1,
 			'minor' => 2,
 			'patch' => 3
 		]);
-		
+
 		vfsStream::newFile( '.version.json' )
 			->at( $this->Root )
 			->setContent( $VersionContent );
-		
-		// Mock base path
-		$BasePath = vfsStream::url( 'test' );
-		
-		// Update config to use virtual filesystem path
-		$ConfigContent = str_replace( '/app', $BasePath, $ConfigContent );
-		$this->Root->getChild( 'neuron.yaml' )->setContent( $ConfigContent );
-		
+
 		// Boot the application
 		$App = boot( $BasePath );
-		
+
 		// Assertions
 		$this->assertInstanceOf( Application::class, $App );
 		$this->assertEquals( '1.2.3', $App->getVersion() );
