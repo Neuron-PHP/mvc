@@ -64,11 +64,13 @@ class Application extends Base implements IMvcApplication
 		if( is_array( $passthroughExceptions ) )
 		{
 			Registry::getInstance()->set( 'PassthroughExceptions', $passthroughExceptions );
+			\Neuron\Log\Log::debug( 'Loaded passthrough exceptions: ' . json_encode( $passthroughExceptions ) );
 		}
 		else
 		{
 			// No exceptions configured, set to empty array
 			Registry::getInstance()->set( 'PassthroughExceptions', [] );
+			\Neuron\Log\Log::debug( 'No passthrough exceptions configured' );
 		}
 
 		$this->loadRequests();
