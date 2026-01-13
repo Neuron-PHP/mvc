@@ -54,12 +54,11 @@ class Application extends Base implements IMvcApplication
 		$this->setHandleErrors( true );
 		$this->fs = $fs ?? new RealFileSystem();
 
+		// Must call parent first to initialize settings
 		parent::__construct( $version, $source );
 
-		Registry::getInstance()->set( 'BasePath', $this->getBasePath() );
-		Registry::getInstance()->set( 'App', $this );
-
-		// Load passthrough exceptions configuration
+		// Load passthrough exceptions BEFORE anything else that might throw
+		// This must happen before loadRequests/loadRoutes/etc
 		$passthroughExceptions = $this->getSetting( 'exceptions', 'passthrough' );
 		if( is_array( $passthroughExceptions ) )
 		{
@@ -72,6 +71,9 @@ class Application extends Base implements IMvcApplication
 			Registry::getInstance()->set( 'PassthroughExceptions', [] );
 			\Neuron\Log\Log::debug( 'No passthrough exceptions configured' );
 		}
+
+		Registry::getInstance()->set( 'BasePath', $this->getBasePath() );
+		Registry::getInstance()->set( 'App', $this );
 
 		$this->loadRequests();
 		$this->loadRoutes();
