@@ -96,12 +96,27 @@ class ListCommand extends Command
 	{
 		$routes = [];
 
-		// Load neuron.yaml configuration
-		$configFile = $configPath . '/neuron.yaml';
+		// Try routing.yaml first (new location), fall back to neuron.yaml (legacy)
+		$routingFile = $configPath . '/routing.yaml';
+		$neuronFile = $configPath . '/neuron.yaml';
 
-		if( !file_exists( $configFile ) )
+		$configFile = null;
+		$configKey = null;
+
+		if( file_exists( $routingFile ) )
 		{
-			$this->output->error( 'Configuration file not found: ' . $configFile );
+			$configFile = $routingFile;
+			$configKey = 'controller_paths';
+		}
+		elseif( file_exists( $neuronFile ) )
+		{
+			$configFile = $neuronFile;
+			$configKey = 'controllers.paths';
+		}
+		else
+		{
+			$this->output->error( 'Configuration file not found' );
+			$this->output->info( 'Expected: ' . $routingFile . ' or ' . $neuronFile );
 			return [];
 		}
 
@@ -109,20 +124,39 @@ class ListCommand extends Command
 		{
 			$settings = new Yaml( $configFile );
 
-			// Get base path
-			$basePath = $settings->get( 'system', 'base_path' ) ?? dirname( $configPath );
+			// Get base path from neuron.yaml
+			$neuronSettings = file_exists( $neuronFile ) ? new Yaml( $neuronFile ) : null;
+			$basePath = $neuronSettings?->get( 'system', 'base_path' ) ?? dirname( $configPath );
 
 			// Get controller paths from configuration
-			$controllerPathsConfig = $settings->get( 'controllers', 'paths' );
+			if( $configKey === 'controller_paths' )
+			{
+				// New format in routing.yaml
+				$controllerPathsConfig = $settings->getSection( 'controller_paths' );
+			}
+			else
+			{
+				// Legacy format in neuron.yaml
+				$controllerPathsConfig = $settings->get( 'controllers', 'paths' );
+			}
 
 			if( empty( $controllerPathsConfig ) )
 			{
-				$this->output->warning( 'No controller paths configured in neuron.yaml' );
-				$this->output->info( 'Add controller paths to neuron.yaml under controllers.paths:' );
-				$this->output->info( '  controllers:' );
-				$this->output->info( '    paths:' );
-				$this->output->info( '      - path: app/Controllers' );
-				$this->output->info( '        namespace: App\\Controllers' );
+				$this->output->warning( 'No controller paths configured' );
+				$this->output->info( 'Add controller paths to ' . basename( $configFile ) . ':' );
+				if( $configKey === 'controller_paths' )
+				{
+					$this->output->info( '  controller_paths:' );
+					$this->output->info( '    - path: app/Controllers' );
+					$this->output->info( '      namespace: App\\Controllers' );
+				}
+				else
+				{
+					$this->output->info( '  controllers:' );
+					$this->output->info( '    paths:' );
+					$this->output->info( '      - path: app/Controllers' );
+					$this->output->info( '        namespace: App\\Controllers' );
+				}
 				return [];
 			}
 

@@ -1,4 +1,5 @@
 ## 0.9.47
+* Fixed routes:list cli command
 
 ## 0.9.46 2026-01-13
 
