@@ -124,9 +124,10 @@ class ListCommand extends Command
 		{
 			$settings = new Yaml( $configFile );
 
-			// Get base path from neuron.yaml
-			$neuronSettings = file_exists( $neuronFile ) ? new Yaml( $neuronFile ) : null;
-			$basePath = $neuronSettings?->get( 'system', 'base_path' ) ?? dirname( $configPath );
+			// Use actual filesystem path
+			// Don't use system.base_path which is for runtime/container deployment
+			// If config is in a 'config' directory, use parent; otherwise use config path itself
+			$basePath = (basename($configPath) === 'config') ? dirname($configPath) : $configPath;
 
 			// Get controller paths from configuration
 			if( $configKey === 'controller_paths' )
