@@ -514,7 +514,6 @@ class Application extends Base implements IMvcApplication
 			if( isset( $config['controller_paths'] ) && is_array( $config['controller_paths'] ) )
 			{
 				Registry::getInstance()->set( RegistryKeys::ROUTING_CONTROLLER_PATHS, $config['controller_paths'] );
-				Log::debug( "Loaded " . count( $config['controller_paths'] ) . " controller path(s) from routing.yaml" );
 			}
 			else
 			{
@@ -562,8 +561,6 @@ class Application extends Base implements IMvcApplication
 			return;
 		}
 
-		Log::debug( "Found " . count( $controllerPaths ) . " controller path(s) to scan" );
-
 		$scanner = new RouteScanner();
 		$basePath = $this->getBasePath();
 
@@ -586,8 +583,6 @@ class Application extends Base implements IMvcApplication
 				{
 					$this->registerAttributeRoute( $def );
 				}
-
-				Log::debug( "Loaded " . count( $routeDefinitions ) . " attribute routes from $directory" );
 			}
 			catch( \Exception $e )
 			{
