@@ -22,7 +22,6 @@ class StreamingLimitRespectTest extends TestCase
 		// Ensure clean state by resetting AdapterFactory at start of each test
 		$factoryClass = new \ReflectionClass( AdapterFactory::class );
 		$instanceProperty = $factoryClass->getProperty( 'instance' );
-		$instanceProperty->setAccessible( true );
 		$instanceProperty->setValue( null, null );
 	}
 
@@ -31,7 +30,6 @@ class StreamingLimitRespectTest extends TestCase
 		// Reset AdapterFactory to null to ensure clean state
 		$factoryClass = new \ReflectionClass( AdapterFactory::class );
 		$instanceProperty = $factoryClass->getProperty( 'instance' );
-		$instanceProperty->setAccessible( true );
 
 		// Always reset to null for clean state, don't restore saved value
 		// This ensures each test gets a fresh factory instance
@@ -230,7 +228,6 @@ class StreamingLimitRespectTest extends TestCase
 
 		$reflector = new \ReflectionClass( $exporter );
 		$method = $reflector->getMethod( 'streamCsvTable' );
-		$method->setAccessible( true );
 
 		$tempFile = tempnam( sys_get_temp_dir(), 'csv_limit_test' );
 		$handle = fopen( $tempFile, 'w' );
@@ -334,7 +331,6 @@ class StreamingLimitRespectTest extends TestCase
 
 		$reflector = new \ReflectionClass( $exporter );
 		$method = $reflector->getMethod( 'streamCsvTable' );
-		$method->setAccessible( true );
 
 		$tempFile = tempnam( sys_get_temp_dir(), 'csv_batch_test' );
 		$handle = fopen( $tempFile, 'w' );
@@ -491,7 +487,6 @@ class StreamingLimitRespectTest extends TestCase
 	{
 		$factoryClass = new \ReflectionClass( AdapterFactory::class );
 		$instanceProperty = $factoryClass->getProperty( 'instance' );
-		$instanceProperty->setAccessible( true );
 
 		$mockFactory = $this->createMock( AdapterFactory::class );
 		$mockFactory->method( 'getAdapter' )->willReturn( $mockAdapter );

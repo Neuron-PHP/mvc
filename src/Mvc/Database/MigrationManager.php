@@ -3,6 +3,7 @@
 namespace Neuron\Mvc\Database;
 
 use Neuron\Data\Settings\Source\ISettingSource;
+use Neuron\Data\Settings\EnvironmentDetector;
 use Neuron\Log\Log;
 use Phinx\Config\Config;
 use Phinx\Migration\Manager;
@@ -102,8 +103,9 @@ class MigrationManager
 			}
 
 			$host = $this->getSetting( 'database', 'host', 'localhost' );
-			$user = $this->getSetting( 'database', 'user', 'root' );
-			$pass = $this->getSetting( 'database', 'pass', '' );
+			// Accept both user/pass and username/password (encrypted secrets use the latter)
+			$user = $this->getSetting( 'database', 'user', $this->getSetting( 'database', 'username', 'root' ) );
+			$pass = $this->getSetting( 'database', 'pass', $this->getSetting( 'database', 'password', '' ) );
 			$port = $this->getSetting( 'database', 'port', 3306 );
 			$charset = $this->getSetting( 'database', 'charset', 'utf8mb4' );
 
@@ -182,7 +184,11 @@ class MigrationManager
 	 */
 	public function getEnvironment(): string
 	{
-		return $this->getSetting( 'system', 'environment', 'development' );
+		$environment = $this->getSetting( 'system', 'environment', null );
+
+		// Fall back to the framework environment detector (APP_ENV, etc.)
+		// so the active environment is reflected even when not set in config.
+		return $environment ?? EnvironmentDetector::detect();
 	}
 
 	/**

@@ -4,7 +4,8 @@ namespace Neuron\Mvc\Cli\Commands\Migrate;
 
 use Neuron\Cli\Commands\Command;
 use Neuron\Mvc\Database\MigrationManager;
-use Neuron\Data\Settings\Source\Yaml;
+use Neuron\Data\Settings\SettingManagerFactory;
+use Neuron\Data\Settings\Source\ISettingSource;
 
 /**
  * CLI command for running database seeders
@@ -109,10 +110,14 @@ class SeedCommand extends Command
 	/**
 	 * Load settings from config directory
 	 *
+	 * Uses the full settings pipeline (base config, environment config and
+	 * encrypted secrets) so database credentials stored in secrets are
+	 * available to the migration manager.
+	 *
 	 * @param string $configPath
-	 * @return Yaml|null
+	 * @return ISettingSource|null
 	 */
-	private function loadSettings( string $configPath ): ?Yaml
+	private function loadSettings( string $configPath ): ?ISettingSource
 	{
 		$configFile = $configPath . '/neuron.yaml';
 
@@ -123,7 +128,7 @@ class SeedCommand extends Command
 
 		try
 		{
-			return new Yaml( $configFile );
+			return SettingManagerFactory::create( null, $configPath );
 		}
 		catch( \Exception $e )
 		{
