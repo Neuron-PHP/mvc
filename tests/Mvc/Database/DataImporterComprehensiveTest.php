@@ -840,12 +840,6 @@ data:
 
 			$instanceProperty = $factoryClass->getProperty( 'instance' );
 
-			// Guard: Check if property is accessible or can be made accessible
-			if( !$instanceProperty->isPublic() )
-			{
-				$instanceProperty->setAccessible( true );
-			}
-
 			// Reset the singleton instance to null
 			$instanceProperty->setValue( null, null );
 		}
@@ -914,7 +908,6 @@ data:
 	{
 		$factoryClass = new \ReflectionClass( AdapterFactory::class );
 		$instanceProperty = $factoryClass->getProperty( 'instance' );
-		$instanceProperty->setAccessible( true );
 
 		$mockFactory = $this->createMock( AdapterFactory::class );
 		$mockFactory->method( 'getAdapter' )->willReturn( $mockAdapter );
