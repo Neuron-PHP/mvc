@@ -30,7 +30,6 @@ class DataImporterFormatStickinessTest extends TestCase
 		// Reset AdapterFactory
 		$factoryClass = new \ReflectionClass( AdapterFactory::class );
 		$instanceProperty = $factoryClass->getProperty( 'instance' );
-		$instanceProperty->setAccessible( true );
 		$instanceProperty->setValue( null, null );
 	}
 
@@ -45,7 +44,6 @@ class DataImporterFormatStickinessTest extends TestCase
 		// Reset AdapterFactory
 		$factoryClass = new \ReflectionClass( AdapterFactory::class );
 		$instanceProperty = $factoryClass->getProperty( 'instance' );
-		$instanceProperty->setAccessible( true );
 		$instanceProperty->setValue( null, null );
 
 		parent::tearDown();
@@ -88,7 +86,6 @@ class DataImporterFormatStickinessTest extends TestCase
 
 		$factoryClass = new \ReflectionClass( AdapterFactory::class );
 		$instanceProperty = $factoryClass->getProperty( 'instance' );
-		$instanceProperty->setAccessible( true );
 		$instanceProperty->setValue( null, $mockFactory );
 
 		$config = new Config( [
@@ -121,7 +118,6 @@ class DataImporterFormatStickinessTest extends TestCase
 		// Check that format is still null (restored)
 		$reflection = new \ReflectionClass( $importer );
 		$optionsProperty = $reflection->getProperty( '_Options' );
-		$optionsProperty->setAccessible( true );
 		$options = $optionsProperty->getValue( $importer );
 
 		$this->assertNull( $options['format'], 'Format should be restored to null after import' );
@@ -147,7 +143,6 @@ class DataImporterFormatStickinessTest extends TestCase
 
 		$factoryClass = new \ReflectionClass( AdapterFactory::class );
 		$instanceProperty = $factoryClass->getProperty( 'instance' );
-		$instanceProperty->setAccessible( true );
 		$instanceProperty->setValue( null, $mockFactory );
 
 		$config = new Config( [
@@ -195,7 +190,6 @@ class DataImporterFormatStickinessTest extends TestCase
 		// Format should still be null (not sticky)
 		$reflection = new \ReflectionClass( $importer );
 		$optionsProperty = $reflection->getProperty( '_Options' );
-		$optionsProperty->setAccessible( true );
 		$options = $optionsProperty->getValue( $importer );
 
 		$this->assertNull( $options['format'], 'Format should remain null after multiple imports' );
@@ -221,7 +215,6 @@ class DataImporterFormatStickinessTest extends TestCase
 
 		$factoryClass = new \ReflectionClass( AdapterFactory::class );
 		$instanceProperty = $factoryClass->getProperty( 'instance' );
-		$instanceProperty->setAccessible( true );
 		$instanceProperty->setValue( null, $mockFactory );
 
 		$config = new Config( [
@@ -262,7 +255,6 @@ class DataImporterFormatStickinessTest extends TestCase
 		// Check that format is still 'json' (restored to original explicit value)
 		$reflection = new \ReflectionClass( $importer );
 		$optionsProperty = $reflection->getProperty( '_Options' );
-		$optionsProperty->setAccessible( true );
 		$options = $optionsProperty->getValue( $importer );
 
 		$this->assertEquals( 'json', $options['format'], 'Format should be restored to explicit value' );
@@ -287,7 +279,6 @@ class DataImporterFormatStickinessTest extends TestCase
 
 		$factoryClass = new \ReflectionClass( AdapterFactory::class );
 		$instanceProperty = $factoryClass->getProperty( 'instance' );
-		$instanceProperty->setAccessible( true );
 		$instanceProperty->setValue( null, $mockFactory );
 
 		$config = new Config( [
@@ -326,7 +317,6 @@ class DataImporterFormatStickinessTest extends TestCase
 		// Format should still be restored to null despite failure
 		$reflection = new \ReflectionClass( $importer );
 		$optionsProperty = $reflection->getProperty( '_Options' );
-		$optionsProperty->setAccessible( true );
 		$options = $optionsProperty->getValue( $importer );
 
 		$this->assertNull( $options['format'], 'Format should be restored even when import fails' );

@@ -187,7 +187,6 @@ data:
 			throw new \RuntimeException( "AdapterFactory::instance property not found" );
 		}
 		$instanceProperty = $factoryClass->getProperty( 'instance' );
-		$instanceProperty->setAccessible( true );
 		$instanceProperty->setValue( null, null );
 	}
 }

@@ -60,7 +60,6 @@ class DataExporterWithORMBasicTest extends TestCase
 			// Verify we have a valid PDO connection
 			$reflection = new \ReflectionClass( $exporter );
 			$pdoProperty = $reflection->getProperty( '_pdo' );
-			$pdoProperty->setAccessible( true );
 			$pdo = $pdoProperty->getValue( $exporter );
 
 			$this->assertInstanceOf( \PDO::class, $pdo, 'Should have valid PDO connection' );
@@ -116,7 +115,6 @@ class DataExporterWithORMBasicTest extends TestCase
 			// Access the private adapter to verify it's connected
 			$reflection = new \ReflectionClass( $exporter );
 			$adapterProperty = $reflection->getProperty( '_adapter' );
-			$adapterProperty->setAccessible( true );
 			$adapter = $adapterProperty->getValue( $exporter );
 
 			// The adapter should have a valid connection
@@ -173,7 +171,6 @@ class DataExporterWithORMBasicTest extends TestCase
 			// Access PDO to verify we can execute queries
 			$reflection = new \ReflectionClass( $exporter );
 			$pdoProperty = $reflection->getProperty( '_pdo' );
-			$pdoProperty->setAccessible( true );
 			$pdo = $pdoProperty->getValue( $exporter );
 
 			// This should work if connection was established

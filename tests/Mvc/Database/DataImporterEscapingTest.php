@@ -27,7 +27,6 @@ class DataImporterEscapingTest extends TestCase
 		// Ensure clean state by resetting AdapterFactory at start of each test
 		$factoryClass = new \ReflectionClass( AdapterFactory::class );
 		$instanceProperty = $factoryClass->getProperty( 'instance' );
-		$instanceProperty->setAccessible( true );
 		$instanceProperty->setValue( null, null );
 	}
 
@@ -42,7 +41,6 @@ class DataImporterEscapingTest extends TestCase
 		// Reset AdapterFactory to null to ensure clean state
 		$factoryClass = new \ReflectionClass( AdapterFactory::class );
 		$instanceProperty = $factoryClass->getProperty( 'instance' );
-		$instanceProperty->setAccessible( true );
 		$instanceProperty->setValue( null, null );
 
 		parent::tearDown();
@@ -88,7 +86,6 @@ class DataImporterEscapingTest extends TestCase
 
 			$reflector = new \ReflectionClass( $importer );
 			$method = $reflector->getMethod( 'escapeString' );
-			$method->setAccessible( true );
 
 			// Call escapeString and verify it returns the unquoted escaped value
 			$result = $method->invoke( $importer, $input );
@@ -117,7 +114,6 @@ class DataImporterEscapingTest extends TestCase
 
 		$reflector = new \ReflectionClass( $importer );
 		$method = $reflector->getMethod( 'escapeString' );
-		$method->setAccessible( true );
 
 		// Test that manual escaping now throws an exception for security
 		$this->expectException( \RuntimeException::class );
@@ -205,7 +201,6 @@ class DataImporterEscapingTest extends TestCase
 	{
 		$factoryClass = new \ReflectionClass( AdapterFactory::class );
 		$instanceProperty = $factoryClass->getProperty( 'instance' );
-		$instanceProperty->setAccessible( true );
 
 		$mockFactory = $this->createMock( AdapterFactory::class );
 		$mockFactory->method( 'getAdapter' )->willReturn( $mockAdapter );

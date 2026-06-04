@@ -59,7 +59,6 @@ class MarkdownTest extends TestCase
 
 		$reflection = new \ReflectionClass( $markdown );
 		$method = $reflection->getMethod( 'findMarkdownFile' );
-		$method->setAccessible( true );
 
 		$result = $method->invoke( $markdown, '/nonexistent/path', 'test' );
 
@@ -72,7 +71,6 @@ class MarkdownTest extends TestCase
 
 		$reflection = new \ReflectionClass( $markdown );
 		$method = $reflection->getMethod( 'findMarkdownFile' );
-		$method->setAccessible( true );
 
 		// Test directory traversal attack
 		$result = $method->invoke( $markdown, '/tmp', '../etc/passwd' );
@@ -86,7 +84,6 @@ class MarkdownTest extends TestCase
 
 		$reflection = new \ReflectionClass( $markdown );
 		$method = $reflection->getMethod( 'findMarkdownFile' );
-		$method->setAccessible( true );
 
 		// Create a temporary directory and file for testing
 		$tmpDir = sys_get_temp_dir() . '/neuron_markdown_test_' . uniqid();
@@ -112,7 +109,6 @@ class MarkdownTest extends TestCase
 
 		$reflection = new \ReflectionClass( $markdown );
 		$method = $reflection->getMethod( 'findMarkdownFile' );
-		$method->setAccessible( true );
 
 		// Create a temporary directory and file for testing
 		$tmpDir = sys_get_temp_dir() . '/neuron_markdown_test_' . uniqid();
@@ -135,7 +131,6 @@ class MarkdownTest extends TestCase
 
 		$reflection = new \ReflectionClass( $markdown );
 		$method = $reflection->getMethod( 'findMarkdownFile' );
-		$method->setAccessible( true );
 
 		// Create a temporary directory without the file
 		$tmpDir = sys_get_temp_dir() . '/neuron_markdown_test_' . uniqid();
@@ -155,7 +150,6 @@ class MarkdownTest extends TestCase
 
 		$reflection = new \ReflectionClass( $markdown );
 		$method = $reflection->getMethod( 'getCommonmarkConverter' );
-		$method->setAccessible( true );
 
 		$converter = $method->invoke( $markdown );
 

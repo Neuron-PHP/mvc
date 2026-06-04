@@ -80,11 +80,9 @@ class DumpCommandPathTraversalTest extends TestCase
 			// Use reflection to inject mock dependencies
 			$reflection = new \ReflectionClass( $command );
 			$inputProperty = $reflection->getProperty( 'input' );
-			$inputProperty->setAccessible( true );
 			$inputProperty->setValue( $command, $input );
 
 			$outputProperty = $reflection->getProperty( 'output' );
-			$outputProperty->setAccessible( true );
 			$outputProperty->setValue( $command, $output );
 
 			// This should throw InvalidArgumentException
@@ -125,11 +123,9 @@ class DumpCommandPathTraversalTest extends TestCase
 		// Use reflection to inject mock dependencies
 		$reflection = new \ReflectionClass( $command );
 		$inputProperty = $reflection->getProperty( 'input' );
-		$inputProperty->setAccessible( true );
 		$inputProperty->setValue( $command, $input );
 
 		$outputProperty = $reflection->getProperty( 'output' );
-		$outputProperty->setAccessible( true );
 		$outputProperty->setValue( $command, $output );
 
 		// This should throw InvalidArgumentException
@@ -176,11 +172,9 @@ class DumpCommandPathTraversalTest extends TestCase
 		// Use reflection to inject mock dependencies
 		$reflection = new \ReflectionClass( $command );
 		$inputProperty = $reflection->getProperty( 'input' );
-		$inputProperty->setAccessible( true );
 		$inputProperty->setValue( $command, $input );
 
 		$outputProperty = $reflection->getProperty( 'output' );
-		$outputProperty->setAccessible( true );
 		$outputProperty->setValue( $command, $output );
 
 		// This should succeed
@@ -225,11 +219,9 @@ class DumpCommandPathTraversalTest extends TestCase
 			// Use reflection to inject mock dependencies
 			$reflection = new \ReflectionClass( $command );
 			$inputProperty = $reflection->getProperty( 'input' );
-			$inputProperty->setAccessible( true );
 			$inputProperty->setValue( $command, $input );
 
 			$outputProperty = $reflection->getProperty( 'output' );
-			$outputProperty->setAccessible( true );
 			$outputProperty->setValue( $command, $output );
 
 			// This should throw InvalidArgumentException

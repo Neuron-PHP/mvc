@@ -24,7 +24,6 @@ class DataImporterUnitTest extends TestCase
 		// Capture the original AdapterFactory instance
 		$factoryClass = new \ReflectionClass( AdapterFactory::class );
 		$instanceProperty = $factoryClass->getProperty( 'instance' );
-		$instanceProperty->setAccessible( true );
 		$instanceProperty->setValue( null, null );
 	}
 
@@ -36,7 +35,6 @@ class DataImporterUnitTest extends TestCase
 		// Reset AdapterFactory to null to ensure clean state
 		$factoryClass = new \ReflectionClass( AdapterFactory::class );
 		$instanceProperty = $factoryClass->getProperty( 'instance' );
-		$instanceProperty->setAccessible( true );
 		$instanceProperty->setValue( null, null );
 
 		parent::tearDown();
@@ -589,7 +587,6 @@ class DataImporterUnitTest extends TestCase
 			public function testSplitStatements( $sql ) {
 				$reflection = new \ReflectionClass( parent::class );
 				$method = $reflection->getMethod( 'splitSqlStatements' );
-				$method->setAccessible( true );
 				return $method->invoke( $this, $sql );
 			}
 		};
@@ -638,7 +635,6 @@ class DataImporterUnitTest extends TestCase
 		// Use reflection to replace the factory instance
 		$factoryClass = new \ReflectionClass( AdapterFactory::class );
 		$instanceProperty = $factoryClass->getProperty( 'instance' );
-		$instanceProperty->setAccessible( true );
 
 		$mockFactory = $this->createMock( AdapterFactory::class );
 		$mockFactory->method( 'getAdapter' )

@@ -24,7 +24,6 @@ class LeadingZeroPreservationTest extends TestCase
 		// Ensure clean state by resetting AdapterFactory at start of each test
 		$factoryClass = new \ReflectionClass( AdapterFactory::class );
 		$instanceProperty = $factoryClass->getProperty( 'instance' );
-		$instanceProperty->setAccessible( true );
 		$instanceProperty->setValue( null, null );
 	}
 
@@ -33,7 +32,6 @@ class LeadingZeroPreservationTest extends TestCase
 		// Reset AdapterFactory to null to ensure clean state
 		$factoryClass = new \ReflectionClass( AdapterFactory::class );
 		$instanceProperty = $factoryClass->getProperty( 'instance' );
-		$instanceProperty->setAccessible( true );
 		$instanceProperty->setValue( null, null );
 
 		parent::tearDown();
@@ -78,7 +76,6 @@ class LeadingZeroPreservationTest extends TestCase
 		// Use reflection to test private buildInsertStatements method
 		$reflector = new \ReflectionClass( $exporter );
 		$method = $reflector->getMethod( 'buildInsertStatements' );
-		$method->setAccessible( true );
 
 		// Test data with various leading zero cases
 		$testData = [
@@ -151,7 +148,6 @@ class LeadingZeroPreservationTest extends TestCase
 		// Use reflection to test private insertBatch method
 		$reflector = new \ReflectionClass( $importer );
 		$method = $reflector->getMethod( 'insertBatch' );
-		$method->setAccessible( true );
 
 		// Test data
 		$testData = [
@@ -206,7 +202,6 @@ class LeadingZeroPreservationTest extends TestCase
 		// Use reflection to test private escapeValue method
 		$reflector = new \ReflectionClass( $exporter );
 		$method = $reflector->getMethod( 'escapeValue' );
-		$method->setAccessible( true );
 
 		// Test various values
 		$this->assertEquals( "'00123'", $method->invoke( $exporter, '00123' ), "Should quote numeric string with leading zeros" );
@@ -234,7 +229,6 @@ class LeadingZeroPreservationTest extends TestCase
 		// Use reflection to test private hasLeadingZeros method
 		$reflector = new \ReflectionClass( $exporter );
 		$method = $reflector->getMethod( 'hasLeadingZeros' );
-		$method->setAccessible( true );
 
 		// Test various inputs
 		$this->assertTrue( $method->invoke( $exporter, '007' ), "'007' has leading zeros" );
@@ -277,7 +271,6 @@ class LeadingZeroPreservationTest extends TestCase
 
 		$reflector = new \ReflectionClass( $exporter );
 		$method = $reflector->getMethod( 'buildInsertStatements' );
-		$method->setAccessible( true );
 
 		// Test real-world data that commonly has leading zeros
 		$realWorldData = [
@@ -348,7 +341,6 @@ class LeadingZeroPreservationTest extends TestCase
 	{
 		$factoryClass = new \ReflectionClass( AdapterFactory::class );
 		$instanceProperty = $factoryClass->getProperty( 'instance' );
-		$instanceProperty->setAccessible( true );
 
 		$mockFactory = $this->createMock( AdapterFactory::class );
 		$mockFactory->method( 'getAdapter' )->willReturn( $mockAdapter );

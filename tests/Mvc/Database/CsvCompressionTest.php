@@ -23,7 +23,6 @@ class CsvCompressionTest extends TestCase
 		// Ensure clean state by resetting AdapterFactory at start of each test
 		$factoryClass = new \ReflectionClass( AdapterFactory::class );
 		$instanceProperty = $factoryClass->getProperty( 'instance' );
-		$instanceProperty->setAccessible( true );
 		$instanceProperty->setValue( null, null );
 	}
 
@@ -32,7 +31,6 @@ class CsvCompressionTest extends TestCase
 		// Reset AdapterFactory to null to ensure clean state
 		$factoryClass = new \ReflectionClass( AdapterFactory::class );
 		$instanceProperty = $factoryClass->getProperty( 'instance' );
-		$instanceProperty->setAccessible( true );
 		$instanceProperty->setValue( null, null );
 
 		parent::tearDown();
@@ -52,9 +50,7 @@ class CsvCompressionTest extends TestCase
 		// Use reflection to test private methods
 		$reflector = new \ReflectionClass( $exporter );
 		$writeCsvMethod = $reflector->getMethod( 'writeCsvToHandle' );
-		$writeCsvMethod->setAccessible( true );
 		$formatCsvMethod = $reflector->getMethod( 'formatCsvLine' );
-		$formatCsvMethod->setAccessible( true );
 
 		// Test data
 		$testRow = ['id' => 1, 'name' => 'Test', 'value' => '00123'];
@@ -246,7 +242,6 @@ class CsvCompressionTest extends TestCase
 		// Use reflection to test streaming
 		$reflector = new \ReflectionClass( $exporter );
 		$streamMethod = $reflector->getMethod( 'streamCsvTable' );
-		$streamMethod->setAccessible( true );
 
 		// Create compressed file handle
 		$tempFile = tempnam( sys_get_temp_dir(), 'stream_csv' ) . '.gz';
@@ -340,7 +335,6 @@ class CsvCompressionTest extends TestCase
 	{
 		$factoryClass = new \ReflectionClass( AdapterFactory::class );
 		$instanceProperty = $factoryClass->getProperty( 'instance' );
-		$instanceProperty->setAccessible( true );
 
 		$mockFactory = $this->createMock( AdapterFactory::class );
 		$mockFactory->method( 'getAdapter' )->willReturn( $mockAdapter );

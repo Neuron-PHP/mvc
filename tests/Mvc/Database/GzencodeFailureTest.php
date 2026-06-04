@@ -72,7 +72,6 @@ class GzencodeFailureTest extends TestCase
 		// Inject mock filesystem via reflection
 		$reflector = new \ReflectionClass( $exporter );
 		$fsProp = $reflector->getProperty( 'fs' );
-		$fsProp->setAccessible( true );
 		$fsProp->setValue( $exporter, $mockFs );
 
 		// Override export method to return invalid data that causes gzencode to fail
@@ -221,7 +220,6 @@ class GzencodeFailureTest extends TestCase
 			throw new \RuntimeException( "AdapterFactory::instance property not found" );
 		}
 		$instanceProperty = $factoryClass->getProperty( 'instance' );
-		$instanceProperty->setAccessible( true );
 
 		$mockFactory = $this->createMock( AdapterFactory::class );
 		$mockFactory->method( 'getAdapter' )->willReturn( $mockAdapter );
@@ -237,7 +235,6 @@ class GzencodeFailureTest extends TestCase
 			throw new \RuntimeException( "AdapterFactory::instance property not found" );
 		}
 		$instanceProperty = $factoryClass->getProperty( 'instance' );
-		$instanceProperty->setAccessible( true );
 		$instanceProperty->setValue( null, null );
 	}
 

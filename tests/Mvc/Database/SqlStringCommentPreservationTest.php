@@ -22,7 +22,6 @@ class SqlStringCommentPreservationTest extends TestCase
 		// Ensure clean state by resetting AdapterFactory at start of each test
 		$factoryClass = new \ReflectionClass( AdapterFactory::class );
 		$instanceProperty = $factoryClass->getProperty( 'instance' );
-		$instanceProperty->setAccessible( true );
 		$instanceProperty->setValue( null, null );
 	}
 
@@ -31,7 +30,6 @@ class SqlStringCommentPreservationTest extends TestCase
 		// Reset AdapterFactory to null to ensure clean state
 		$factoryClass = new \ReflectionClass( AdapterFactory::class );
 		$instanceProperty = $factoryClass->getProperty( 'instance' );
-		$instanceProperty->setAccessible( true );
 		$instanceProperty->setValue( null, null );
 
 		parent::tearDown();
@@ -53,7 +51,6 @@ class SqlStringCommentPreservationTest extends TestCase
 
 		$reflector = new \ReflectionClass( $importer );
 		$method = $reflector->getMethod( 'splitSqlStatements' );
-		$method->setAccessible( true );
 
 		// Test SQL with multi-line string containing comment-like lines
 		$sql = "INSERT INTO messages (id, content) VALUES (1, 'Hello\n-- This is NOT a comment\nIt is part of the string\nWorld');";
@@ -83,7 +80,6 @@ class SqlStringCommentPreservationTest extends TestCase
 
 		$reflector = new \ReflectionClass( $importer );
 		$method = $reflector->getMethod( 'splitSqlStatements' );
-		$method->setAccessible( true );
 
 		$sql = "INSERT INTO posts (title, body) VALUES ('My Post', 'First line\n# This looks like a comment\n# But it is not\nLast line');";
 
@@ -110,7 +106,6 @@ class SqlStringCommentPreservationTest extends TestCase
 
 		$reflector = new \ReflectionClass( $importer );
 		$method = $reflector->getMethod( 'splitSqlStatements' );
-		$method->setAccessible( true );
 
 		$sql = "-- This is a real comment\n" .
 		       "INSERT INTO users (name) VALUES ('John');\n" .
@@ -147,7 +142,6 @@ class SqlStringCommentPreservationTest extends TestCase
 
 		$reflector = new \ReflectionClass( $importer );
 		$method = $reflector->getMethod( 'splitSqlStatements' );
-		$method->setAccessible( true );
 
 		$sql = "-- Database setup\n" .
 		       "CREATE TABLE logs (id INT, entry TEXT);\n" .
@@ -200,7 +194,6 @@ class SqlStringCommentPreservationTest extends TestCase
 
 		$reflector = new \ReflectionClass( $importer );
 		$method = $reflector->getMethod( 'splitSqlStatements' );
-		$method->setAccessible( true );
 
 		// String with empty lines that might look like they should be skipped
 		$sql = "INSERT INTO documents (content) VALUES ('Line 1\n\n-- Comment-like line\n\nLine 4');";
@@ -229,7 +222,6 @@ class SqlStringCommentPreservationTest extends TestCase
 
 		$reflector = new \ReflectionClass( $importer );
 		$method = $reflector->getMethod( 'splitSqlStatements' );
-		$method->setAccessible( true );
 
 		$sql = "INSERT INTO t1 VALUES ('First\n-- not a comment');\n" .
 		       "INSERT INTO t2 VALUES ('Second\n# also not a comment');\n" .
@@ -276,7 +268,6 @@ class SqlStringCommentPreservationTest extends TestCase
 
 		$reflector = new \ReflectionClass( $importer );
 		$method = $reflector->getMethod( 'splitSqlStatements' );
-		$method->setAccessible( true );
 
 		// String value starts with comment pattern
 		$sql = "INSERT INTO config (key, value) VALUES ('script', '-- Script configuration\n-- Version: 1.0\n# Author: Test');";
@@ -305,7 +296,6 @@ class SqlStringCommentPreservationTest extends TestCase
 
 		$reflector = new \ReflectionClass( $importer );
 		$method = $reflector->getMethod( 'splitSqlStatements' );
-		$method->setAccessible( true );
 
 		// PostgreSQL style with double quotes for identifiers and single quotes for strings
 		$sql = 'INSERT INTO "messages" ("text") VALUES (\'Line 1\n-- preserved line\n# another preserved line\');' . "\n" .
@@ -351,7 +341,6 @@ class SqlStringCommentPreservationTest extends TestCase
 	{
 		$factoryClass = new \ReflectionClass( AdapterFactory::class );
 		$instanceProperty = $factoryClass->getProperty( 'instance' );
-		$instanceProperty->setAccessible( true );
 
 		$mockFactory = $this->createMock( AdapterFactory::class );
 		$mockFactory->method( 'getAdapter' )->willReturn( $mockAdapter );

@@ -229,7 +229,6 @@ class DataExporterWithORMPortabilityTest extends TestCase
 			// Use reflection to test formatBooleanLiteral
 			$reflection = new \ReflectionClass( $exporter );
 			$method = $reflection->getMethod( 'formatBooleanLiteral' );
-			$method->setAccessible( true );
 
 			// SQLite should use 1/0 for booleans
 			$this->assertEquals( '1', $method->invoke( $exporter, true ), 'SQLite should format true as 1' );

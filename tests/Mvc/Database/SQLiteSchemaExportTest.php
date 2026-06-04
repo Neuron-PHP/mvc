@@ -22,7 +22,6 @@ class SQLiteSchemaExportTest extends TestCase
 		// Ensure clean state by resetting AdapterFactory at start of each test
 		$factoryClass = new \ReflectionClass( AdapterFactory::class );
 		$instanceProperty = $factoryClass->getProperty( 'instance' );
-		$instanceProperty->setAccessible( true );
 		$instanceProperty->setValue( null, null );
 	}
 
@@ -31,7 +30,6 @@ class SQLiteSchemaExportTest extends TestCase
 		// Reset AdapterFactory to null to ensure clean state
 		$factoryClass = new \ReflectionClass( AdapterFactory::class );
 		$instanceProperty = $factoryClass->getProperty( 'instance' );
-		$instanceProperty->setAccessible( true );
 		$instanceProperty->setValue( null, null );
 
 		parent::tearDown();
@@ -83,7 +81,6 @@ class SQLiteSchemaExportTest extends TestCase
 		// Use reflection to call private getTableCreateStatement method
 		$reflector = new \ReflectionClass( $exporter );
 		$method = $reflector->getMethod( 'getTableCreateStatement' );
-		$method->setAccessible( true );
 
 		$result = $method->invoke( $exporter, 'users' );
 
@@ -124,7 +121,6 @@ class SQLiteSchemaExportTest extends TestCase
 		// Use reflection to call private getTableCreateStatement method
 		$reflector = new \ReflectionClass( $exporter );
 		$method = $reflector->getMethod( 'getTableCreateStatement' );
-		$method->setAccessible( true );
 
 		$result = $method->invoke( $exporter, 'posts' );
 
@@ -161,7 +157,6 @@ class SQLiteSchemaExportTest extends TestCase
 
 		$reflector = new \ReflectionClass( $exporter );
 		$method = $reflector->getMethod( 'getTableCreateStatement' );
-		$method->setAccessible( true );
 
 		$result = $method->invoke( $exporter, "user's_table" );
 
@@ -209,7 +204,6 @@ class SQLiteSchemaExportTest extends TestCase
 
 		$reflector = new \ReflectionClass( $exporter );
 		$method = $reflector->getMethod( 'getTableCreateStatement' );
-		$method->setAccessible( true );
 
 		$result = $method->invoke( $exporter, 'nonexistent' );
 
@@ -238,7 +232,6 @@ class SQLiteSchemaExportTest extends TestCase
 
 		$reflector = new \ReflectionClass( $exporter );
 		$method = $reflector->getMethod( 'getTableCreateStatement' );
-		$method->setAccessible( true );
 
 		$result = $method->invoke( $exporter, 'test_table' );
 
@@ -267,7 +260,6 @@ class SQLiteSchemaExportTest extends TestCase
 	{
 		$factoryClass = new \ReflectionClass( AdapterFactory::class );
 		$instanceProperty = $factoryClass->getProperty( 'instance' );
-		$instanceProperty->setAccessible( true );
 
 		$mockFactory = $this->createMock( AdapterFactory::class );
 		$mockFactory->method( 'getAdapter' )->willReturn( $mockAdapter );

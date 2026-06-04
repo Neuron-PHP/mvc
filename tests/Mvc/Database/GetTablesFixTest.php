@@ -23,7 +23,6 @@ class GetTablesFixTest extends TestCase
 		// Ensure clean state by resetting AdapterFactory at start of each test
 		$factoryClass = new \ReflectionClass( AdapterFactory::class );
 		$instanceProperty = $factoryClass->getProperty( 'instance' );
-		$instanceProperty->setAccessible( true );
 		$instanceProperty->setValue( null, null );
 	}
 
@@ -32,7 +31,6 @@ class GetTablesFixTest extends TestCase
 		// Reset AdapterFactory to null to ensure clean state
 		$factoryClass = new \ReflectionClass( AdapterFactory::class );
 		$instanceProperty = $factoryClass->getProperty( 'instance' );
-		$instanceProperty->setAccessible( true );
 		$instanceProperty->setValue( null, null );
 
 		parent::tearDown();
@@ -90,7 +88,6 @@ class GetTablesFixTest extends TestCase
 		// Use reflection to call private getTables method
 		$reflector = new \ReflectionClass( $exporter );
 		$method = $reflector->getMethod( 'getTables' );
-		$method->setAccessible( true );
 
 		$tables = $method->invoke( $exporter );
 
@@ -134,7 +131,6 @@ class GetTablesFixTest extends TestCase
 		// Use reflection to call private getTables method
 		$reflector = new \ReflectionClass( $exporter );
 		$method = $reflector->getMethod( 'getTables' );
-		$method->setAccessible( true );
 
 		$tables = $method->invoke( $exporter );
 
@@ -189,7 +185,6 @@ class GetTablesFixTest extends TestCase
 		// Use reflection to call private getTables method
 		$reflector = new \ReflectionClass( $exporter );
 		$method = $reflector->getMethod( 'getTables' );
-		$method->setAccessible( true );
 
 		$tables = $method->invoke( $exporter );
 
@@ -219,7 +214,6 @@ class GetTablesFixTest extends TestCase
 
 		$reflector = new \ReflectionClass( $exporter );
 		$method = $reflector->getMethod( 'getTables' );
-		$method->setAccessible( true );
 		$tables = $method->invoke( $exporter );
 
 		$this->assertEquals( ['pg_table1'], $tables );
@@ -267,7 +261,6 @@ class GetTablesFixTest extends TestCase
 	{
 		$factoryClass = new \ReflectionClass( AdapterFactory::class );
 		$instanceProperty = $factoryClass->getProperty( 'instance' );
-		$instanceProperty->setAccessible( true );
 
 		$mockFactory = $this->createMock( AdapterFactory::class );
 		$mockFactory->method( 'getAdapter' )->willReturn( $mockAdapter );

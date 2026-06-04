@@ -22,7 +22,6 @@ class DataImporterClearTablesTest extends TestCase
 		// Reset AdapterFactory to ensure clean state
 		$factoryClass = new \ReflectionClass( AdapterFactory::class );
 		$instanceProperty = $factoryClass->getProperty( 'instance' );
-		$instanceProperty->setAccessible( true );
 		$instanceProperty->setValue( null, null );
 
 		parent::tearDown();
@@ -71,7 +70,6 @@ class DataImporterClearTablesTest extends TestCase
 
 		$factoryClass = new \ReflectionClass( AdapterFactory::class );
 		$instanceProperty = $factoryClass->getProperty( 'instance' );
-		$instanceProperty->setAccessible( true );
 		$instanceProperty->setValue( null, $mockFactory );
 
 		$config = new Config( [
@@ -131,7 +129,6 @@ class DataImporterClearTablesTest extends TestCase
 
 		$factoryClass = new \ReflectionClass( AdapterFactory::class );
 		$instanceProperty = $factoryClass->getProperty( 'instance' );
-		$instanceProperty->setAccessible( true );
 		$instanceProperty->setValue( null, $mockFactory );
 
 		$config = new Config( [
@@ -194,7 +191,6 @@ class DataImporterClearTablesTest extends TestCase
 
 		$factoryClass = new \ReflectionClass( AdapterFactory::class );
 		$instanceProperty = $factoryClass->getProperty( 'instance' );
-		$instanceProperty->setAccessible( true );
 		$instanceProperty->setValue( null, $mockFactory );
 
 		$config = new Config( [

@@ -46,7 +46,6 @@ class MarkdownNestedTest extends TestCase
 	{
 		$reflection = new \ReflectionClass( $this->markdown );
 		$method = $reflection->getMethod( 'findMarkdownFile' );
-		$method->setAccessible( true );
 
 		$basePath = vfsStream::url( 'views/testcontroller' );
 		$result = $method->invoke( $this->markdown, $basePath, 'page1' );
@@ -59,7 +58,6 @@ class MarkdownNestedTest extends TestCase
 	{
 		$reflection = new \ReflectionClass( $this->markdown );
 		$method = $reflection->getMethod( 'findMarkdownFile' );
-		$method->setAccessible( true );
 
 		$basePath = vfsStream::url( 'views/testcontroller' );
 		$result = $method->invoke( $this->markdown, $basePath, 'subfolder/page2' );
@@ -73,7 +71,6 @@ class MarkdownNestedTest extends TestCase
 	{
 		$reflection = new \ReflectionClass( $this->markdown );
 		$method = $reflection->getMethod( 'findMarkdownFile' );
-		$method->setAccessible( true );
 
 		$basePath = vfsStream::url( 'views/testcontroller' );
 		$result = $method->invoke( $this->markdown, $basePath, 'subfolder/deep/page3' );
@@ -87,7 +84,6 @@ class MarkdownNestedTest extends TestCase
 	{
 		$reflection = new \ReflectionClass( $this->markdown );
 		$method = $reflection->getMethod( 'findMarkdownFile' );
-		$method->setAccessible( true );
 
 		$basePath = vfsStream::url( 'views/testcontroller' );
 		$result = $method->invoke( $this->markdown, $basePath, 'nonexistent' );
@@ -99,7 +95,6 @@ class MarkdownNestedTest extends TestCase
 	{
 		$reflection = new \ReflectionClass( $this->markdown );
 		$method = $reflection->getMethod( 'findMarkdownFile' );
-		$method->setAccessible( true );
 
 		$result = $method->invoke( $this->markdown, '/invalid/path', 'page1' );
 
@@ -121,7 +116,6 @@ class MarkdownNestedTest extends TestCase
 	{
 		$reflection = new \ReflectionClass( $this->markdown );
 		$method = $reflection->getMethod( 'findMarkdownFile' );
-		$method->setAccessible( true );
 
 		$basePath = vfsStream::url( 'views/testcontroller' );
 		$result = $method->invoke( $this->markdown, $basePath, 'subfolder\page2' );
@@ -135,7 +129,6 @@ class MarkdownNestedTest extends TestCase
 	{
 		$reflection = new \ReflectionClass( $this->markdown );
 		$method = $reflection->getMethod( 'findMarkdownFile' );
-		$method->setAccessible( true );
 
 		$basePath = vfsStream::url( 'views/testcontroller' );
 		$result = $method->invoke( $this->markdown, $basePath, '../page1' );
@@ -147,7 +140,6 @@ class MarkdownNestedTest extends TestCase
 	{
 		$reflection = new \ReflectionClass( $this->markdown );
 		$method = $reflection->getMethod( 'findMarkdownFile' );
-		$method->setAccessible( true );
 
 		$basePath = vfsStream::url( 'views/testcontroller' );
 		$result = $method->invoke( $this->markdown, $basePath, 'subfolder/../../page1' );

@@ -51,15 +51,12 @@ class RedisCacheStorageUnitTest extends TestCase
 
 			// Set private properties using reflection
 			$RedisProperty = $Reflection->getProperty( '_Redis' );
-			$RedisProperty->setAccessible( true );
 			$RedisProperty->setValue( $Storage, $MockRedis );
 
 			$PrefixProperty = $Reflection->getProperty( '_Prefix' );
-			$PrefixProperty->setAccessible( true );
 			$PrefixProperty->setValue( $Storage, $Config['prefix'] ?? 'neuron_cache_' );
 
 			$ConfigProperty = $Reflection->getProperty( '_Config' );
-			$ConfigProperty->setAccessible( true );
 			$ConfigProperty->setValue( $Storage, array_merge( [
 				'host' => '127.0.0.1',
 				'port' => 6379,
@@ -76,7 +73,6 @@ class RedisCacheStorageUnitTest extends TestCase
 		// If we got here, Redis is actually running - inject mock anyway for consistency
 		$Reflection = new \ReflectionClass( $Storage );
 		$RedisProperty = $Reflection->getProperty( '_Redis' );
-		$RedisProperty->setAccessible( true );
 		$RedisProperty->setValue( $Storage, $MockRedis );
 
 		return $Storage;

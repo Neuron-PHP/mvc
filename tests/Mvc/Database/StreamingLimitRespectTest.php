@@ -112,7 +112,6 @@ class StreamingLimitRespectTest extends TestCase
 		// Use reflection to test private streamSqlTable method
 		$reflector = new \ReflectionClass( $exporter );
 		$method = $reflector->getMethod( 'streamSqlTable' );
-		$method->setAccessible( true );
 
 		// Create temp file for output
 		$tempFile = tempnam( sys_get_temp_dir(), 'sql_limit_test' );
@@ -437,7 +436,6 @@ class StreamingLimitRespectTest extends TestCase
 
 		$reflector = new \ReflectionClass( $exporter );
 		$method = $reflector->getMethod( 'streamSqlTable' );
-		$method->setAccessible( true );
 
 		$tempFile = tempnam( sys_get_temp_dir(), 'sql_nolimit_test' );
 		$handle = fopen( $tempFile, 'w' );

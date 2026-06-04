@@ -15,7 +15,6 @@ class ViewDataProviderTest extends TestCase
 		Registry::getInstance()->reset();
 		$reflection = new \ReflectionClass( ViewDataProvider::class );
 		$instance = $reflection->getProperty( '_instance' );
-		$instance->setAccessible( true );
 		$instance->setValue( null, null );
 	}
 

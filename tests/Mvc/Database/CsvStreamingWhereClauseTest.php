@@ -23,7 +23,6 @@ class CsvStreamingWhereClauseTest extends TestCase
 		// Ensure clean state by resetting AdapterFactory at start of each test
 		$factoryClass = new \ReflectionClass( AdapterFactory::class );
 		$instanceProperty = $factoryClass->getProperty( 'instance' );
-		$instanceProperty->setAccessible( true );
 		$instanceProperty->setValue( null, null );
 	}
 
@@ -32,7 +31,6 @@ class CsvStreamingWhereClauseTest extends TestCase
 		// Reset AdapterFactory to null to ensure clean state
 		$factoryClass = new \ReflectionClass( AdapterFactory::class );
 		$instanceProperty = $factoryClass->getProperty( 'instance' );
-		$instanceProperty->setAccessible( true );
 		$instanceProperty->setValue( null, null );
 
 		parent::tearDown();
@@ -140,7 +138,6 @@ class CsvStreamingWhereClauseTest extends TestCase
 		// Use reflection to test private streamCsvTable method
 		$reflector = new \ReflectionClass( $exporter );
 		$method = $reflector->getMethod( 'streamCsvTable' );
-		$method->setAccessible( true );
 
 		// Create temp file for output
 		$tempFile = tempnam( sys_get_temp_dir(), 'csv_stream_test' );
@@ -259,7 +256,6 @@ class CsvStreamingWhereClauseTest extends TestCase
 
 		$reflector = new \ReflectionClass( $exporter );
 		$method = $reflector->getMethod( 'streamCsvTable' );
-		$method->setAccessible( true );
 
 		$tempFile = tempnam( sys_get_temp_dir(), 'csv_stream_test' );
 		$handle = fopen( $tempFile, 'w' );
@@ -352,9 +348,7 @@ class CsvStreamingWhereClauseTest extends TestCase
 
 		$reflector = new \ReflectionClass( $exporter );
 		$streamSql = $reflector->getMethod( 'streamSqlTable' );
-		$streamSql->setAccessible( true );
 		$streamCsv = $reflector->getMethod( 'streamCsvTable' );
-		$streamCsv->setAccessible( true );
 
 		// Test SQL streaming
 		$tempFile1 = tempnam( sys_get_temp_dir(), 'sql_test' );
@@ -416,7 +410,6 @@ class CsvStreamingWhereClauseTest extends TestCase
 	{
 		$factoryClass = new \ReflectionClass( AdapterFactory::class );
 		$instanceProperty = $factoryClass->getProperty( 'instance' );
-		$instanceProperty->setAccessible( true );
 
 		$mockFactory = $this->createMock( AdapterFactory::class );
 		$mockFactory->method( 'getAdapter' )->willReturn( $mockAdapter );

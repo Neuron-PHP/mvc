@@ -78,6 +78,20 @@ class ApplicationTest extends TestCase
 	}
 
 	/**
+	 * The application must populate the canonical Base.Path registry key (and
+	 * the deprecated legacy key) so readers do not have to fall back to '.'.
+	 */
+	public function testBasePathRegistryKeysArePopulated()
+	{
+		$registry = Registry::getInstance();
+		$expected = $this->App->getBasePath();
+
+		$this->assertNotNull( $registry->get( RegistryKeys::BASE_PATH ) );
+		$this->assertEquals( $expected, $registry->get( RegistryKeys::BASE_PATH ) );
+		$this->assertEquals( $expected, $registry->get( RegistryKeys::BASE_PATH_LEGACY ) );
+	}
+
+	/**
 	 * @throws \Exception
 	 */
 	public function testConfig()

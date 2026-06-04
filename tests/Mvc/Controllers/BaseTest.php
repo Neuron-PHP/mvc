@@ -97,7 +97,6 @@ class BaseTest extends TestCase
 		// Use reflection to test protected method
 		$reflection = new \ReflectionClass( $Controller );
 		$method = $reflection->getMethod( 'urlFor' );
-		$method->setAccessible( true );
 
 		$url = $method->invoke( $Controller, 'user_profile', ['id' => 123] );
 
@@ -111,7 +110,6 @@ class BaseTest extends TestCase
 
 		$reflection = new \ReflectionClass( $Controller );
 		$method = $reflection->getMethod( 'urlFor' );
-		$method->setAccessible( true );
 
 		// Test with nonexistent route and fallback
 		$url = $method->invoke( $Controller, 'nonexistent', [], '/fallback' );
@@ -132,7 +130,6 @@ class BaseTest extends TestCase
 
 		$reflection = new \ReflectionClass( $Controller );
 		$method = $reflection->getMethod( 'urlForAbsolute' );
-		$method->setAccessible( true );
 
 		$url = $method->invoke( $Controller, 'user_profile', ['id' => 123] );
 
@@ -146,7 +143,6 @@ class BaseTest extends TestCase
 
 		$reflection = new \ReflectionClass( $Controller );
 		$method = $reflection->getMethod( 'urlHelper' );
-		$method->setAccessible( true );
 
 		$helper = $method->invoke( $Controller );
 
@@ -164,7 +160,6 @@ class BaseTest extends TestCase
 
 		$reflection = new \ReflectionClass( $Controller );
 		$method = $reflection->getMethod( 'routeExists' );
-		$method->setAccessible( true );
 
 		$exists = $method->invoke( $Controller, 'test_route' );
 		$this->assertTrue( $exists );
@@ -222,7 +217,6 @@ class BaseTest extends TestCase
 
 		$reflection = new \ReflectionClass( $Controller );
 		$method = $reflection->getMethod( 'getControllerName' );
-		$method->setAccessible( true );
 
 		$name = $method->invoke( $Controller );
 
@@ -236,7 +230,6 @@ class BaseTest extends TestCase
 
 		$reflection = new \ReflectionClass( $Controller );
 		$method = $reflection->getMethod( 'getControllerViewPath' );
-		$method->setAccessible( true );
 
 		$path = $method->invoke( $Controller );
 
@@ -251,7 +244,6 @@ class BaseTest extends TestCase
 
 		$reflection = new \ReflectionClass( $Controller );
 		$method = $reflection->getMethod( 'injectHelpers' );
-		$method->setAccessible( true );
 
 		$data = ['key' => 'value'];
 		$result = $method->invoke( $Controller, $data );
@@ -303,7 +295,6 @@ class BaseTest extends TestCase
 
 		$reflection = new \ReflectionClass( $Controller );
 		$method = $reflection->getMethod( 'initializeViewCache' );
-		$method->setAccessible( true );
 
 		$result = $method->invoke( $Controller );
 
@@ -321,7 +312,6 @@ class BaseTest extends TestCase
 
 		$reflection = new \ReflectionClass( $Controller );
 		$method = $reflection->getMethod( 'hasViewCache' );
-		$method->setAccessible( true );
 
 		$result = $method->invoke( $Controller, 'index', [] );
 
@@ -339,7 +329,6 @@ class BaseTest extends TestCase
 
 		$reflection = new \ReflectionClass( $Controller );
 		$method = $reflection->getMethod( 'getViewCache' );
-		$method->setAccessible( true );
 
 		$result = $method->invoke( $Controller, 'index', [] );
 
@@ -357,7 +346,6 @@ class BaseTest extends TestCase
 
 		$reflection = new \ReflectionClass( $Controller );
 		$method = $reflection->getMethod( 'isCacheEnabledByDefault' );
-		$method->setAccessible( true );
 
 		$result = $method->invoke( $Controller );
 
@@ -376,7 +364,6 @@ class BaseTest extends TestCase
 
 		$reflection = new \ReflectionClass( $Controller );
 		$method = $reflection->getMethod( 'hasViewCacheByKey' );
-		$method->setAccessible( true );
 
 		$result = $method->invoke( $Controller, 'index', ['id' => 1] );
 
@@ -394,7 +381,6 @@ class BaseTest extends TestCase
 
 		$reflection = new \ReflectionClass( $Controller );
 		$method = $reflection->getMethod( 'getViewCacheByKey' );
-		$method->setAccessible( true );
 
 		$result = $method->invoke( $Controller, 'index', ['id' => 1] );
 
@@ -448,7 +434,6 @@ class BaseTest extends TestCase
 
 		$reflection = new \ReflectionClass( $Controller );
 		$method = $reflection->getMethod( 'urlFor' );
-		$method->setAccessible( true );
 
 		// Without router, should return fallback
 		$result = $method->invoke( $Controller, 'test_route', [], '/fallback' );
@@ -467,7 +452,6 @@ class BaseTest extends TestCase
 
 		$reflection = new \ReflectionClass( $Controller );
 		$method = $reflection->getMethod( 'urlForAbsolute' );
-		$method->setAccessible( true );
 
 		// Without router, should return fallback
 		$result = $method->invoke( $Controller, 'test_route', [], '/fallback' );
@@ -482,7 +466,6 @@ class BaseTest extends TestCase
 
 		$reflection = new \ReflectionClass( $Controller );
 		$method = $reflection->getMethod( 'urlHelper' );
-		$method->setAccessible( true );
 
 		// Without router, should return null
 		$result = $method->invoke( $Controller );
@@ -497,7 +480,6 @@ class BaseTest extends TestCase
 
 		$reflection = new \ReflectionClass( $Controller );
 		$method = $reflection->getMethod( 'routeExists' );
-		$method->setAccessible( true );
 
 		// Without router, should return false
 		$result = $method->invoke( $Controller, 'test_route' );
@@ -512,7 +494,6 @@ class BaseTest extends TestCase
 
 		$reflection = new \ReflectionClass( $Controller );
 		$method = $reflection->getMethod( 'injectHelpers' );
-		$method->setAccessible( true );
 
 		$data = ['key' => 'value'];
 		$result = $method->invoke( $Controller, $data );
