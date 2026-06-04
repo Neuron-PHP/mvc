@@ -31,7 +31,6 @@ class IdentifierQuotingSecurityTest extends TestCase
 			throw new \RuntimeException( "AdapterFactory::instance property not found - Phinx internals may have changed" );
 		}
 		$instanceProperty = $factoryClass->getProperty( 'instance' );
-		$instanceProperty->setAccessible( true );
 		$instanceProperty->setValue( null, null );
 	}
 
@@ -50,7 +49,6 @@ class IdentifierQuotingSecurityTest extends TestCase
 			throw new \RuntimeException( "AdapterFactory::instance property not found - Phinx internals may have changed" );
 		}
 		$instanceProperty = $factoryClass->getProperty( 'instance' );
-		$instanceProperty->setAccessible( true );
 		$instanceProperty->setValue( null, null );
 
 		parent::tearDown();
@@ -132,7 +130,6 @@ class IdentifierQuotingSecurityTest extends TestCase
 		// Inject filesystem mock via reflection
 		$reflector = new \ReflectionClass( $importer );
 		$fsProp = $reflector->getProperty( 'fs' );
-		$fsProp->setAccessible( true );
 		$fsProp->setValue( $importer, $mockFs );
 
 		// Import the file
@@ -367,7 +364,6 @@ class IdentifierQuotingSecurityTest extends TestCase
 			throw new \RuntimeException( "AdapterFactory::instance property not found - Phinx internals may have changed" );
 		}
 		$instanceProperty = $factoryClass->getProperty( 'instance' );
-		$instanceProperty->setAccessible( true );
 
 		$mockFactory = $this->createMock( AdapterFactory::class );
 		$mockFactory->method( 'getAdapter' )->willReturn( $mockAdapter );

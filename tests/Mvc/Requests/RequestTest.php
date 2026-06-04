@@ -420,7 +420,6 @@ class RequestTest extends TestCase
 
 		$reflection = new \ReflectionClass( $Request );
 		$method = $reflection->getMethod( 'resolveDtoPath' );
-		$method->setAccessible( true );
 
 		// Test with absolute path
 		$result = $method->invoke( $Request, $tmpFile );
@@ -440,7 +439,6 @@ class RequestTest extends TestCase
 
 		$reflection = new \ReflectionClass( $Request );
 		$method = $reflection->getMethod( 'resolveDtoPath' );
-		$method->setAccessible( true );
 
 		// Test with path without .yaml extension
 		$pathWithoutExt = substr( $tmpFile, 0, -5 ); // Remove .yaml
@@ -457,7 +455,6 @@ class RequestTest extends TestCase
 
 		$reflection = new \ReflectionClass( $Request );
 		$method = $reflection->getMethod( 'resolveDtoPath' );
-		$method->setAccessible( true );
 
 		$this->expectException( \Exception::class );
 		$this->expectExceptionMessage( 'DTO file not found' );
@@ -475,7 +472,6 @@ class RequestTest extends TestCase
 
 		$reflection = new \ReflectionClass( $Request );
 		$method = $reflection->getMethod( 'validateHeaders' );
-		$method->setAccessible( true );
 
 		// This should add errors
 		$method->invoke( $Request );
@@ -497,7 +493,6 @@ class RequestTest extends TestCase
 
 		$reflection = new \ReflectionClass( $Request );
 		$method = $reflection->getMethod( 'validateHeaders' );
-		$method->setAccessible( true );
 
 		$method->invoke( $Request );
 
@@ -512,7 +507,6 @@ class RequestTest extends TestCase
 
 		$reflection = new \ReflectionClass( $Request );
 		$method = $reflection->getMethod( 'populateDto' );
-		$method->setAccessible( true );
 
 		$dto = $Request->getDto();
 

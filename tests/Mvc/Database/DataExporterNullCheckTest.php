@@ -28,7 +28,6 @@ class DataExporterNullCheckTest extends TestCase
 		// Ensure clean state by resetting AdapterFactory at start of each test
 		$factoryClass = new \ReflectionClass( AdapterFactory::class );
 		$instanceProperty = $factoryClass->getProperty( 'instance' );
-		$instanceProperty->setAccessible( true );
 		$instanceProperty->setValue( null, null );
 	}
 
@@ -37,7 +36,6 @@ class DataExporterNullCheckTest extends TestCase
 		// Reset AdapterFactory to null to ensure clean state
 		$factoryClass = new \ReflectionClass( AdapterFactory::class );
 		$instanceProperty = $factoryClass->getProperty( 'instance' );
-		$instanceProperty->setAccessible( true );
 		$instanceProperty->setValue( null, null );
 
 		// Clean up temporary directory
@@ -359,7 +357,6 @@ class DataExporterNullCheckTest extends TestCase
 	{
 		$factoryClass = new \ReflectionClass( AdapterFactory::class );
 		$instanceProperty = $factoryClass->getProperty( 'instance' );
-		$instanceProperty->setAccessible( true );
 
 		$mockFactory = $this->createMock( AdapterFactory::class );
 		$mockFactory->method( 'getAdapter' )->willReturn( $mockAdapter );

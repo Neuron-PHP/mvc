@@ -210,7 +210,6 @@ class CacheableViewTest extends TestCase
 		// Store content using reflection
 		$reflection = new \ReflectionObject( $cache );
 		$enabledProperty = $reflection->getProperty( '_enabled' );
-		$enabledProperty->setAccessible( true );
 		$enabledProperty->setValue( $cache, true );
 		$cache->set( 'test_key', 'cached_content' );
 		$enabledProperty->setValue( $cache, false );
@@ -283,7 +282,6 @@ class CacheableViewTest extends TestCase
 		// Need to enable cache temporarily to read
 		$reflection = new \ReflectionObject( $cache );
 		$enabledProperty = $reflection->getProperty( '_enabled' );
-		$enabledProperty->setAccessible( true );
 		$enabledProperty->setValue( $cache, true );
 		$content = $cache->get( 'test_key' );
 		$enabledProperty->setValue( $cache, false );

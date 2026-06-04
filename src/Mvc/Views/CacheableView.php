@@ -77,7 +77,6 @@ trait CacheableView
 				// Use reflection to temporarily enable cache
 				$reflection = new \ReflectionObject( $cache );
 				$enabledProperty = $reflection->getProperty( '_enabled' );
-				$enabledProperty->setAccessible( true );
 				$enabledProperty->setValue( $cache, true );
 			}
 
@@ -172,7 +171,6 @@ trait CacheableView
 				// Use reflection to temporarily enable cache
 				$reflection = new \ReflectionObject( $cache );
 				$enabledProperty = $reflection->getProperty( '_enabled' );
-				$enabledProperty->setAccessible( true );
 				$enabledProperty->setValue( $cache, true );
 			}
 

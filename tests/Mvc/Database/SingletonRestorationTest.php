@@ -19,7 +19,6 @@ class SingletonRestorationTest extends TestCase
 		// Get initial state before any test modifications
 		$factoryClass = new \ReflectionClass( AdapterFactory::class );
 		$instanceProperty = $factoryClass->getProperty( 'instance' );
-		$instanceProperty->setAccessible( true );
 		$initialInstance = $instanceProperty->getValue();
 
 		// Create a DataImporterUnitTest instance
@@ -53,7 +52,6 @@ class SingletonRestorationTest extends TestCase
 	{
 		$factoryClass = new \ReflectionClass( AdapterFactory::class );
 		$instanceProperty = $factoryClass->getProperty( 'instance' );
-		$instanceProperty->setAccessible( true );
 
 		// Save current state
 		$originalState = $instanceProperty->getValue();

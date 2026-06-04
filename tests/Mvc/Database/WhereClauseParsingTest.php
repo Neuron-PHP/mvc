@@ -23,7 +23,6 @@ class WhereClauseParsingTest extends TestCase
 		// Ensure clean state by resetting AdapterFactory at start of each test
 		$factoryClass = new \ReflectionClass( AdapterFactory::class );
 		$instanceProperty = $factoryClass->getProperty( 'instance' );
-		$instanceProperty->setAccessible( true );
 		$instanceProperty->setValue( null, null );
 	}
 
@@ -32,7 +31,6 @@ class WhereClauseParsingTest extends TestCase
 		// Reset AdapterFactory to null to ensure clean state
 		$factoryClass = new \ReflectionClass( AdapterFactory::class );
 		$instanceProperty = $factoryClass->getProperty( 'instance' );
-		$instanceProperty->setAccessible( true );
 		$instanceProperty->setValue( null, null );
 
 		parent::tearDown();
@@ -64,7 +62,6 @@ class WhereClauseParsingTest extends TestCase
 		// Use reflection to test private parseSimpleWhereClause method
 		$reflector = new \ReflectionClass( $exporter );
 		$method = $reflector->getMethod( 'parseSimpleWhereClause' );
-		$method->setAccessible( true );
 
 		// Test case: a = 1 AND b = 2 OR c = 3
 		$whereClause = "status = 'active' AND age > 18 OR role = 'admin'";
@@ -105,7 +102,6 @@ class WhereClauseParsingTest extends TestCase
 
 		$reflector = new \ReflectionClass( $exporter );
 		$method = $reflector->getMethod( 'parseSimpleWhereClause' );
-		$method->setAccessible( true );
 
 		// Complex case: a = 1 OR b = 2 AND c = 3 OR d = 4
 		$whereClause = "priority = 'high' OR status = 'pending' AND created > '2024-01-01' OR type = 'urgent'";
@@ -146,7 +142,6 @@ class WhereClauseParsingTest extends TestCase
 		// Use reflection to test private parseWhereClause method
 		$reflector = new \ReflectionClass( $exporter );
 		$method = $reflector->getMethod( 'parseWhereClause' );
-		$method->setAccessible( true );
 
 		// Test mixed operators
 		$whereClause = "id = 5 AND name = 'test' OR status = 'active'";
@@ -185,7 +180,6 @@ class WhereClauseParsingTest extends TestCase
 
 		$reflector = new \ReflectionClass( $exporter );
 		$method = $reflector->getMethod( 'parseSimpleWhereClause' );
-		$method->setAccessible( true );
 
 		$whereClause = "a = 1 AND b = 2 AND c = 3";
 		$result = $method->invoke( $exporter, $whereClause );
@@ -223,7 +217,6 @@ class WhereClauseParsingTest extends TestCase
 
 		$reflector = new \ReflectionClass( $exporter );
 		$method = $reflector->getMethod( 'parseSimpleWhereClause' );
-		$method->setAccessible( true );
 
 		$whereClause = "a = 1 OR b = 2 OR c = 3";
 		$result = $method->invoke( $exporter, $whereClause );
@@ -261,7 +254,6 @@ class WhereClauseParsingTest extends TestCase
 
 		$reflector = new \ReflectionClass( $exporter );
 		$method = $reflector->getMethod( 'parseSimpleWhereClause' );
-		$method->setAccessible( true );
 
 		$whereClause = "status = 'active'";
 		$result = $method->invoke( $exporter, $whereClause );
@@ -302,7 +294,6 @@ class WhereClauseParsingTest extends TestCase
 
 		$reflector = new \ReflectionClass( $exporter );
 		$method = $reflector->getMethod( 'parseSimpleWhereClause' );
-		$method->setAccessible( true );
 
 		// Test SQL-escaped single quote ('' represents a literal single quote)
 		$whereClause = "name = 'O''Brien'";
@@ -348,7 +339,6 @@ class WhereClauseParsingTest extends TestCase
 
 		$reflector = new \ReflectionClass( $exporter );
 		$method = $reflector->getMethod( 'parseSimpleWhereClause' );
-		$method->setAccessible( true );
 
 		// Test SQL-escaped double quote ("" represents a literal double quote)
 		$whereClause = 'message = "He said ""Hello"""';
@@ -381,7 +371,6 @@ class WhereClauseParsingTest extends TestCase
 
 		$reflector = new \ReflectionClass( $exporter );
 		$method = $reflector->getMethod( 'parseSimpleWhereClause' );
-		$method->setAccessible( true );
 
 		$whereClause = "(a = 1 AND b = 2) OR c = 3";
 
@@ -416,7 +405,6 @@ class WhereClauseParsingTest extends TestCase
 	{
 		$factoryClass = new \ReflectionClass( AdapterFactory::class );
 		$instanceProperty = $factoryClass->getProperty( 'instance' );
-		$instanceProperty->setAccessible( true );
 
 		$mockFactory = $this->createMock( AdapterFactory::class );
 		$mockFactory->method( 'getAdapter' )->willReturn( $mockAdapter );

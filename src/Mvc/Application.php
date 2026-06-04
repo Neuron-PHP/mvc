@@ -73,6 +73,9 @@ class Application extends Base implements IMvcApplication
 			\Neuron\Log\Log::debug( 'No passthrough exceptions configured' );
 		}
 
+		// Populate the canonical base path key, plus the deprecated legacy key
+		// for backward compatibility during the deprecation window.
+		Registry::getInstance()->set( RegistryKeys::BASE_PATH, $this->getBasePath() );
 		Registry::getInstance()->set( RegistryKeys::BASE_PATH_LEGACY, $this->getBasePath() );
 		Registry::getInstance()->set( RegistryKeys::APP, $this );
 

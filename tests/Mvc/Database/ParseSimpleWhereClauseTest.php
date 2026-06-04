@@ -54,7 +54,6 @@ class ParseSimpleWhereClauseTest extends TestCase
 		// Use reflection to access private parseSimpleWhereClause method
 		$reflection = new \ReflectionClass( $this->exporter );
 		$this->method = $reflection->getMethod( 'parseSimpleWhereClause' );
-		$this->method->setAccessible( true );
 	}
 
 	protected function tearDown(): void

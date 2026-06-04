@@ -22,7 +22,6 @@ class MixedWhereClauseTest extends TestCase
 		// Ensure clean state by resetting AdapterFactory at start of each test
 		$factoryClass = new \ReflectionClass( AdapterFactory::class );
 		$instanceProperty = $factoryClass->getProperty( 'instance' );
-		$instanceProperty->setAccessible( true );
 		$instanceProperty->setValue( null, null );
 	}
 
@@ -31,7 +30,6 @@ class MixedWhereClauseTest extends TestCase
 		// Reset AdapterFactory to null to ensure clean state
 		$factoryClass = new \ReflectionClass( AdapterFactory::class );
 		$instanceProperty = $factoryClass->getProperty( 'instance' );
-		$instanceProperty->setAccessible( true );
 		$instanceProperty->setValue( null, null );
 
 		parent::tearDown();
@@ -51,7 +49,6 @@ class MixedWhereClauseTest extends TestCase
 		// Use reflection to test private parseWhereClause method
 		$reflector = new \ReflectionClass( $exporter );
 		$method = $reflector->getMethod( 'parseWhereClause' );
-		$method->setAccessible( true );
 
 		// Test case: status = 'active' AND type = 'user' OR deleted = '0'
 		$whereClause = "status = 'active' AND type = 'user' OR deleted = '0'";
@@ -89,7 +86,6 @@ class MixedWhereClauseTest extends TestCase
 
 		$reflector = new \ReflectionClass( $exporter );
 		$method = $reflector->getMethod( 'parseWhereClause' );
-		$method->setAccessible( true );
 
 		// Test case: type = 'admin' OR type = 'moderator' AND active = '1'
 		$whereClause = "type = 'admin' OR type = 'moderator' AND active = '1'";
@@ -121,7 +117,6 @@ class MixedWhereClauseTest extends TestCase
 
 		$reflector = new \ReflectionClass( $exporter );
 		$method = $reflector->getMethod( 'parseWhereClause' );
-		$method->setAccessible( true );
 
 		// Test case: status = 'active' AND role = 'user' OR role = 'guest' AND verified = '1'
 		$whereClause = "status = 'active' AND role = 'user' OR role = 'guest' AND verified = '1'";
@@ -161,7 +156,6 @@ class MixedWhereClauseTest extends TestCase
 
 		$reflector = new \ReflectionClass( $exporter );
 		$method = $reflector->getMethod( 'parseWhereClause' );
-		$method->setAccessible( true );
 
 		// Test case: Multiple OR conditions
 		$whereClause = "type = 'admin' OR type = 'mod' OR type = 'user' OR type = 'guest'";
@@ -191,7 +185,6 @@ class MixedWhereClauseTest extends TestCase
 
 		$reflector = new \ReflectionClass( $exporter );
 		$method = $reflector->getMethod( 'parseWhereClause' );
-		$method->setAccessible( true );
 
 		// Test case: Multiple AND conditions
 		$whereClause = "active = '1' AND verified = '1' AND enabled = '1' AND visible = '1'";
@@ -221,7 +214,6 @@ class MixedWhereClauseTest extends TestCase
 
 		$reflector = new \ReflectionClass( $exporter );
 		$method = $reflector->getMethod( 'parseWhereClause' );
-		$method->setAccessible( true );
 
 		// Complex WHERE clause that might be used in practice
 		$whereClause = "deleted = '0' AND status = 'active' OR status = 'pending' AND type = 'user' OR type = 'admin' AND verified = '1'";
@@ -253,7 +245,6 @@ class MixedWhereClauseTest extends TestCase
 
 		$reflector = new \ReflectionClass( $exporter );
 		$method = $reflector->getMethod( 'parseWhereClause' );
-		$method->setAccessible( true );
 
 		// Mixed case operators
 		$whereClause = "status = 'active' and type = 'user' Or deleted = '0' AnD visible = '1'";
@@ -316,7 +307,6 @@ class MixedWhereClauseTest extends TestCase
 	{
 		$factoryClass = new \ReflectionClass( AdapterFactory::class );
 		$instanceProperty = $factoryClass->getProperty( 'instance' );
-		$instanceProperty->setAccessible( true );
 
 		$mockFactory = $this->createMock( AdapterFactory::class );
 		$mockFactory->method( 'getAdapter' )->willReturn( $mockAdapter );

@@ -90,7 +90,6 @@ class RestoreCommandUnitTest extends TestCase
 			// Create reflection to test protected method
 			$reflection = new \ReflectionClass( $this->command );
 			$method = $reflection->getMethod( 'parseImportOptions' );
-			$method->setAccessible( true );
 
 			// Set up input
 			$input = new Input( ['--format=' . $format] );
@@ -115,7 +114,6 @@ class RestoreCommandUnitTest extends TestCase
 			// Create reflection to test protected method
 			$reflection = new \ReflectionClass( $this->command );
 			$method = $reflection->getMethod( 'parseImportOptions' );
-			$method->setAccessible( true );
 
 			// Set up input
 			$input = new Input( ['--conflict-mode=' . $mode] );
@@ -136,7 +134,6 @@ class RestoreCommandUnitTest extends TestCase
 		// Create reflection to test protected method
 		$reflection = new \ReflectionClass( $this->command );
 		$method = $reflection->getMethod( 'parseImportOptions' );
-		$method->setAccessible( true );
 
 		// Test tables option
 		$input = new Input( ['--tables=users,posts,comments'] );
@@ -166,7 +163,6 @@ class RestoreCommandUnitTest extends TestCase
 		// Create reflection to test protected method
 		$reflection = new \ReflectionClass( $this->command );
 		$method = $reflection->getMethod( 'parseImportOptions' );
-		$method->setAccessible( true );
 
 		$input = new Input( ['--clear-tables'] );
 		$this->command->setInput( $input );
@@ -183,7 +179,6 @@ class RestoreCommandUnitTest extends TestCase
 		// Create reflection to test protected method
 		$reflection = new \ReflectionClass( $this->command );
 		$method = $reflection->getMethod( 'parseImportOptions' );
-		$method->setAccessible( true );
 
 		$input = new Input( [
 			'--no-transaction',
@@ -204,7 +199,6 @@ class RestoreCommandUnitTest extends TestCase
 		// Create reflection to test protected method
 		$reflection = new \ReflectionClass( $this->command );
 		$method = $reflection->getMethod( 'parseImportOptions' );
-		$method->setAccessible( true );
 
 		$input = new Input( ['--batch-size=500'] );
 		$this->command->setInput( $input );
@@ -221,7 +215,6 @@ class RestoreCommandUnitTest extends TestCase
 		// Create reflection to test protected method
 		$reflection = new \ReflectionClass( $this->command );
 		$method = $reflection->getMethod( 'parseImportOptions' );
-		$method->setAccessible( true );
 
 		// Test continue on error
 		$input = new Input( ['--continue-on-error'] );
@@ -253,7 +246,6 @@ class RestoreCommandUnitTest extends TestCase
 		// Create reflection to test protected method
 		$reflection = new \ReflectionClass( $this->command );
 		$method = $reflection->getMethod( 'formatFileSize' );
-		$method->setAccessible( true );
 
 		// Test different sizes
 		$this->assertEquals( '100 B', $method->invoke( $this->command, 100 ) );
@@ -271,7 +263,6 @@ class RestoreCommandUnitTest extends TestCase
 		// Create reflection to test protected method
 		$reflection = new \ReflectionClass( $this->command );
 		$method = $reflection->getMethod( 'parseImportOptions' );
-		$method->setAccessible( true );
 
 		// Mock output to capture warnings
 		$output = $this->createMock( Output::class );
@@ -300,7 +291,6 @@ class RestoreCommandUnitTest extends TestCase
 		// Create reflection to test protected method
 		$reflection = new \ReflectionClass( $this->command );
 		$method = $reflection->getMethod( 'parseImportOptions' );
-		$method->setAccessible( true );
 
 		// Mock output to capture warnings
 		$output = $this->createMock( Output::class );
@@ -329,7 +319,6 @@ class RestoreCommandUnitTest extends TestCase
 		// Create reflection to test protected method
 		$reflection = new \ReflectionClass( $this->command );
 		$method = $reflection->getMethod( 'parseImportOptions' );
-		$method->setAccessible( true );
 
 		// No format specified
 		$input = new Input( [] );
@@ -355,11 +344,9 @@ class RestoreCommandUnitTest extends TestCase
 		$reflection = new \ReflectionClass( $this->command );
 
 		$outputProperty = $reflection->getProperty( 'output' );
-		$outputProperty->setAccessible( true );
 		$this->assertSame( $output, $outputProperty->getValue( $this->command ) );
 
 		$inputProperty = $reflection->getProperty( 'input' );
-		$inputProperty->setAccessible( true );
 		$this->assertSame( $input, $inputProperty->getValue( $this->command ) );
 	}
 }

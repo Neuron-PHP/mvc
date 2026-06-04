@@ -81,7 +81,6 @@ class DumpCommandUnitTest extends TestCase
 			// Create reflection to test protected method
 			$reflection = new \ReflectionClass( $this->command );
 			$method = $reflection->getMethod( 'parseExportOptions' );
-			$method->setAccessible( true );
 
 			// Set up input
 			$input = new Input( ['--format=' . $format] );
@@ -102,7 +101,6 @@ class DumpCommandUnitTest extends TestCase
 		// Create reflection to test protected method
 		$reflection = new \ReflectionClass( $this->command );
 		$method = $reflection->getMethod( 'parseExportOptions' );
-		$method->setAccessible( true );
 
 		// Test tables option
 		$input = new Input( ['--tables=users,posts,comments'] );
@@ -132,7 +130,6 @@ class DumpCommandUnitTest extends TestCase
 		// Create reflection to test protected method
 		$reflection = new \ReflectionClass( $this->command );
 		$method = $reflection->getMethod( 'parseExportOptions' );
-		$method->setAccessible( true );
 
 		$input = new Input( ['--limit=100'] );
 		$this->command->setInput( $input );
@@ -149,7 +146,6 @@ class DumpCommandUnitTest extends TestCase
 		// Create reflection to test protected method
 		$reflection = new \ReflectionClass( $this->command );
 		$method = $reflection->getMethod( 'parseExportOptions' );
-		$method->setAccessible( true );
 
 		$input = new Input( ['--where=users:active=1'] );
 		$this->command->setInput( $input );
@@ -168,7 +164,6 @@ class DumpCommandUnitTest extends TestCase
 		// Create reflection to test protected method
 		$reflection = new \ReflectionClass( $this->command );
 		$method = $reflection->getMethod( 'parseExportOptions' );
-		$method->setAccessible( true );
 
 		$input = new Input( [
 			'--include-schema',
@@ -191,7 +186,6 @@ class DumpCommandUnitTest extends TestCase
 		// Create reflection to test protected method
 		$reflection = new \ReflectionClass( $this->command );
 		$method = $reflection->getMethod( 'parseExportOptions' );
-		$method->setAccessible( true );
 
 		$input = new Input( ['--compress'] );
 		$this->command->setInput( $input );
@@ -208,7 +202,6 @@ class DumpCommandUnitTest extends TestCase
 		// Create reflection to test protected method
 		$reflection = new \ReflectionClass( $this->command );
 		$method = $reflection->getMethod( 'formatFileSize' );
-		$method->setAccessible( true );
 
 		// Test different sizes
 		$this->assertEquals( '100 B', $method->invoke( $this->command, 100 ) );
@@ -226,7 +219,6 @@ class DumpCommandUnitTest extends TestCase
 		// Create reflection to test protected method
 		$reflection = new \ReflectionClass( $this->command );
 		$method = $reflection->getMethod( 'determineOutputPath' );
-		$method->setAccessible( true );
 
 		// Initialize input with no output option (to get default paths)
 		$input = new Input( [] );
@@ -276,7 +268,6 @@ class DumpCommandUnitTest extends TestCase
 		// Create reflection to test protected method
 		$reflection = new \ReflectionClass( $this->command );
 		$method = $reflection->getMethod( 'determineOutputPath' );
-		$method->setAccessible( true );
 
 		// Use real temporary directory with custom subdirectory inside it
 		$basePath = sys_get_temp_dir() . '/test_project_' . uniqid();
@@ -317,7 +308,6 @@ class DumpCommandUnitTest extends TestCase
 		// Create reflection to test protected method
 		$reflection = new \ReflectionClass( $this->command );
 		$method = $reflection->getMethod( 'determineOutputPath' );
-		$method->setAccessible( true );
 
 		// Use real temporary directory
 		$basePath = sys_get_temp_dir() . '/test_project_' . uniqid();
@@ -364,11 +354,9 @@ class DumpCommandUnitTest extends TestCase
 		$reflection = new \ReflectionClass( $this->command );
 
 		$outputProperty = $reflection->getProperty( 'output' );
-		$outputProperty->setAccessible( true );
 		$this->assertSame( $output, $outputProperty->getValue( $this->command ) );
 
 		$inputProperty = $reflection->getProperty( 'input' );
-		$inputProperty->setAccessible( true );
 		$this->assertSame( $input, $inputProperty->getValue( $this->command ) );
 	}
 }

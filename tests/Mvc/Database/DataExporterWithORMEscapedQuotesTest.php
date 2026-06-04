@@ -100,7 +100,6 @@ class DataExporterWithORMEscapedQuotesTest extends TestCase
 			// Use reflection to test the private parseWhereClause method
 			$reflection = new \ReflectionClass( $exporter );
 			$method = $reflection->getMethod( 'parseWhereClause' );
-			$method->setAccessible( true );
 
 			// Parse the WHERE clause
 			$result = $method->invoke( $exporter, "name = 'O''Brien'" );
@@ -162,7 +161,6 @@ class DataExporterWithORMEscapedQuotesTest extends TestCase
 			// Use reflection to test parseWhereClause
 			$reflection = new \ReflectionClass( $exporter );
 			$method = $reflection->getMethod( 'parseWhereClause' );
-			$method->setAccessible( true );
 
 			// Parse WHERE clause with escaped double quotes
 			$result = $method->invoke( $exporter, 'description = "He said ""hi"""' );
@@ -220,7 +218,6 @@ class DataExporterWithORMEscapedQuotesTest extends TestCase
 			// Use reflection to test parseWhereClause
 			$reflection = new \ReflectionClass( $exporter );
 			$method = $reflection->getMethod( 'parseWhereClause' );
-			$method->setAccessible( true );
 
 			// Parse WHERE clause with multiple escaped quotes
 			$result = $method->invoke( $exporter, "name = 'It''s John''s'" );
@@ -278,7 +275,6 @@ class DataExporterWithORMEscapedQuotesTest extends TestCase
 			// Use reflection to test parseWhereClause
 			$reflection = new \ReflectionClass( $exporter );
 			$method = $reflection->getMethod( 'parseWhereClause' );
-			$method->setAccessible( true );
 
 			// Parse compound WHERE with multiple escaped values
 			$result = $method->invoke( $exporter, "name = 'O''Brien' OR name = 'O''Connor'" );
@@ -340,7 +336,6 @@ class DataExporterWithORMEscapedQuotesTest extends TestCase
 			// Use reflection to test parseWhereClause
 			$reflection = new \ReflectionClass( $exporter );
 			$method = $reflection->getMethod( 'parseWhereClause' );
-			$method->setAccessible( true );
 
 			// Test various regular values
 			$testCases = [
@@ -407,7 +402,6 @@ class DataExporterWithORMEscapedQuotesTest extends TestCase
 			// Use reflection to test parseWhereClause
 			$reflection = new \ReflectionClass( $exporter );
 			$method = $reflection->getMethod( 'parseWhereClause' );
-			$method->setAccessible( true );
 
 			// Test empty single-quoted value
 			$result = $method->invoke( $exporter, "status = ''" );

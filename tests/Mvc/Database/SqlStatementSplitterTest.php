@@ -22,7 +22,6 @@ class SqlStatementSplitterTest extends TestCase
 		// Ensure clean state by resetting AdapterFactory at start of each test
 		$factoryClass = new \ReflectionClass( AdapterFactory::class );
 		$instanceProperty = $factoryClass->getProperty( 'instance' );
-		$instanceProperty->setAccessible( true );
 		$instanceProperty->setValue( null, null );
 	}
 
@@ -31,7 +30,6 @@ class SqlStatementSplitterTest extends TestCase
 		// Reset AdapterFactory to null to ensure clean state
 		$factoryClass = new \ReflectionClass( AdapterFactory::class );
 		$instanceProperty = $factoryClass->getProperty( 'instance' );
-		$instanceProperty->setAccessible( true );
 		$instanceProperty->setValue( null, null );
 
 		parent::tearDown();
@@ -54,7 +52,6 @@ class SqlStatementSplitterTest extends TestCase
 		// Use reflection to test private splitSqlStatements method
 		$reflector = new \ReflectionClass( $importer );
 		$method = $reflector->getMethod( 'splitSqlStatements' );
-		$method->setAccessible( true );
 
 		// Test SQL with backslash-escaped single quotes
 		$sql = "INSERT INTO users (name, path) VALUES ('John\\'s file', '/usr/local/bin');\n" .
@@ -83,7 +80,6 @@ class SqlStatementSplitterTest extends TestCase
 
 		$reflector = new \ReflectionClass( $importer );
 		$method = $reflector->getMethod( 'splitSqlStatements' );
-		$method->setAccessible( true );
 
 		// Test SQL with doubled single quotes (SQL standard)
 		$sql = "INSERT INTO users (name) VALUES ('John''s file');\n" .
@@ -112,7 +108,6 @@ class SqlStatementSplitterTest extends TestCase
 
 		$reflector = new \ReflectionClass( $importer );
 		$method = $reflector->getMethod( 'splitSqlStatements' );
-		$method->setAccessible( true );
 
 		// Mix of backslash and doubled quotes
 		$sql = "INSERT INTO data (col1, col2) VALUES ('Value with \\'backslash', 'Value with ''doubled');\n" .
@@ -143,7 +138,6 @@ class SqlStatementSplitterTest extends TestCase
 
 		$reflector = new \ReflectionClass( $importer );
 		$method = $reflector->getMethod( 'splitSqlStatements' );
-		$method->setAccessible( true );
 
 		// Test various backslash counts
 		// Note: In the SQL string literals below, PHP also processes backslashes,
@@ -202,7 +196,6 @@ class SqlStatementSplitterTest extends TestCase
 
 		$reflector = new \ReflectionClass( $importer );
 		$method = $reflector->getMethod( 'splitSqlStatements' );
-		$method->setAccessible( true );
 
 		// Test with double quotes and backslash escaping
 		$sql = 'INSERT INTO config (key, value) VALUES ("escaped_path", "C:\\Users\\Admin");' . "\n" .
@@ -231,7 +224,6 @@ class SqlStatementSplitterTest extends TestCase
 
 		$reflector = new \ReflectionClass( $importer );
 		$method = $reflector->getMethod( 'splitSqlStatements' );
-		$method->setAccessible( true );
 
 		// Complex SQL with various escaping scenarios
 		$sql = "-- User data with special characters\n" .
@@ -287,7 +279,6 @@ class SqlStatementSplitterTest extends TestCase
 	{
 		$factoryClass = new \ReflectionClass( AdapterFactory::class );
 		$instanceProperty = $factoryClass->getProperty( 'instance' );
-		$instanceProperty->setAccessible( true );
 
 		$mockFactory = $this->createMock( AdapterFactory::class );
 		$mockFactory->method( 'getAdapter' )->willReturn( $mockAdapter );
