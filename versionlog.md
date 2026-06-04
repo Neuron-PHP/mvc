@@ -1,4 +1,4 @@
-## 0.9.50
+## 0.9.50 2026-06-04
 
 ## 0.9.49 2026-05-29
 * Migration manager now supports the secrets pipeline.
