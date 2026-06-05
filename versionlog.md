@@ -1,3 +1,5 @@
+## 0.9.52
+
 ## 0.9.51 2026-06-05
 * Added csrf filter and token.
 
