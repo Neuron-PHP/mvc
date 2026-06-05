@@ -12,6 +12,9 @@ use Neuron\Data\Settings\SettingManager;
 use Neuron\Data\Settings\SettingManagerFactory;
 use Neuron\Patterns\Registry;
 
+// Load framework-level global view helpers (csrf_token, csrf_field, ...).
+require_once __DIR__ . '/helpers.php';
+
 /**
  * Initialize the application.
  *

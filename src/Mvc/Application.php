@@ -461,6 +461,9 @@ class Application extends Base implements IMvcApplication
 		// Configure rate limiting if enabled
 		$this->configureRateLimit();
 
+		// Configure framework-level CSRF protection (enabled by default)
+		$this->configureCsrf();
+
 		$this->configure404Route();
 
 		// Load routing configuration (rewrites, controller paths)
@@ -714,6 +717,48 @@ class Application extends Base implements IMvcApplication
 			{
 				Log::warning( 'Failed to configure API rate limiting: ' . $e->getMessage() );
 			}
+		}
+	}
+
+	/**
+	 * Register framework-level CSRF protection.
+	 *
+	 * Registers the 'csrf' route filter so any route can opt in via
+	 * `filters: ['csrf']`, and seeds the current token into the registry so
+	 * the csrf_field() / csrf_token() view helpers work with no per-app wiring.
+	 *
+	 * Enabled by default; disable by setting `security.csrf` to false.
+	 *
+	 * @return void
+	 */
+	protected function configureCsrf(): void
+	{
+		$source = $this->getSettingManager()?->getSource();
+		$enabled = $source?->get( 'security', 'csrf' );
+
+		// Default on: only skip when explicitly disabled.
+		if( in_array( $enabled, [ false, 0, '0', 'false', 'off', 'no' ], true ) )
+		{
+			return;
+		}
+
+		try
+		{
+			$csrfToken = new \Neuron\Mvc\Security\CsrfToken( new \Neuron\Core\System\RealSession() );
+			$this->_router->registerFilter( 'csrf', new \Neuron\Mvc\Security\CsrfFilter( $csrfToken ) );
+
+			// Seed the token for views. Avoid starting a session in CLI/test
+			// contexts or once output has begun.
+			if( PHP_SAPI !== 'cli' && !headers_sent() )
+			{
+				Registry::getInstance()->set( RegistryKeys::AUTH_CSRF_TOKEN, $csrfToken->getToken() );
+			}
+
+			Log::debug( 'CSRF protection configured' );
+		}
+		catch( \Exception $e )
+		{
+			Log::warning( 'Failed to configure CSRF: ' . $e->getMessage() );
 		}
 	}
 
