@@ -1,4 +1,5 @@
 ## 0.9.53
+* Removed the migration command and moved it to orm.
 
 ## 0.9.52 2026-09-10
 
@@ -18,11 +19,8 @@
 ## 0.9.46 2026-01-13
 
 ## 0.9.45 2026-01-12
-
 ## 0.9.44 2026-01-12
-
 ## 0.9.43 2026-01-12
-
 ## 0.9.42 2026-01-12
 * Added url rewriting through routing.yaml
 

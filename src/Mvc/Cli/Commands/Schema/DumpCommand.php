@@ -3,8 +3,8 @@
 namespace Neuron\Mvc\Cli\Commands\Schema;
 
 use Neuron\Cli\Commands\Command;
-use Neuron\Mvc\Database\MigrationManager;
-use Neuron\Mvc\Database\SchemaExporter;
+use Neuron\Orm\Database\MigrationManager;
+use Neuron\Orm\Database\SchemaExporter;
 use Neuron\Data\Settings\Source\Yaml;
 
 /**

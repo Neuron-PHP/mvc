@@ -35,33 +35,6 @@ class Provider
 			'Neuron\\Mvc\\Cli\\Commands\\Routes\\ListCommand'
 		);
 
-
-		// Database migration commands
-		$registry->register(
-			'db:migration:generate',
-			'Neuron\\Mvc\\Cli\\Commands\\Migrate\\CreateCommand'
-		);
-
-		$registry->register(
-			'db:migrate',
-			'Neuron\\Mvc\\Cli\\Commands\\Migrate\\RunCommand'
-		);
-
-		$registry->register(
-			'db:rollback',
-			'Neuron\\Mvc\\Cli\\Commands\\Migrate\\RollbackCommand'
-		);
-
-		$registry->register(
-			'db:migrate:status',
-			'Neuron\\Mvc\\Cli\\Commands\\Migrate\\StatusCommand'
-		);
-
-		$registry->register(
-			'db:seed',
-			'Neuron\\Mvc\\Cli\\Commands\\Migrate\\SeedCommand'
-		);
-
 		// Schema export commands
 		$registry->register(
 			'db:schema:dump',

@@ -18,6 +18,7 @@
       "neuron-php/dto": "0.0.*",
       "league/commonmark": "^2.6",
       "neuron-php/cli": "0.8.*",
+      "neuron-php/orm": "0.1.*",
       "robmorgan/phinx": "^0.16",
       "neuron-php/jobs": "0.2.*"
     },
