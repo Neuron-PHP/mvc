@@ -1,4 +1,4 @@
-## 0.9.53
+## 0.9.53 2026-09-11
 * Removed the migration command and moved it to orm.
 
 ## 0.9.52 2026-09-10
