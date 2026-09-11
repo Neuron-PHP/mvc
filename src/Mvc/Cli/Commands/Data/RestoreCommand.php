@@ -3,7 +3,7 @@
 namespace Neuron\Mvc\Cli\Commands\Data;
 
 use Neuron\Cli\Commands\Command;
-use Neuron\Mvc\Database\MigrationManager;
+use Neuron\Orm\Database\MigrationManager;
 use Neuron\Mvc\Database\DataImporter;
 use Neuron\Data\Settings\Source\Yaml;
 

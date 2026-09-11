@@ -3,7 +3,7 @@
 namespace Tests\Mvc\Database;
 
 use Neuron\Mvc\Database\DataExporter;
-use Neuron\Mvc\Database\SchemaExporter;
+use Neuron\Orm\Database\SchemaExporter;
 use PHPUnit\Framework\TestCase;
 use Phinx\Config\Config;
 use Phinx\Db\Adapter\AdapterFactory;
