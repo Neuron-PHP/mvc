@@ -12,8 +12,6 @@ use League\CommonMark\Extension\GithubFlavoredMarkdownExtension;
 use League\CommonMark\MarkdownConverter;
 use Neuron\Core\Exceptions\NotFound;
 use Neuron\Core\NString;
-use Neuron\Core\Registry\RegistryKeys;
-use Neuron\Patterns\Registry;
 
 /**
  * Generate html output by combining
@@ -39,31 +37,24 @@ class Markdown extends Base implements IView
 			return $cachedContent;
 		}
 
-		$path = Registry::getInstance()
-							 ->get( RegistryKeys::VIEWS_PATH );
-
-		if( !$path )
-		{
-			$basePath = Registry::getInstance()->get( RegistryKeys::BASE_PATH );
-			$path = "$basePath/resources/views";
-		}
-
 		$controllerName = new NString( $this->getController() )->toSnakeCase();
-		$controllerPath = "$path/$controllerName";
-		$view = $this->findMarkdownFile( $controllerPath, $this->getPage() );
+		$locator = new ViewLocator( $this->fs );
+		$viewRelative = $controllerName . '/' . ltrim( str_replace( '\\', '/', $this->getPage() ), '/' ) . '.md';
+		$view = $locator->locate( $viewRelative );
 
 		if( !$view )
 		{
-			throw new NotFound( "View notfound: {$this->getPage()}.md in $controllerPath" );
+			throw new NotFound( "View notfound: {$this->getPage()}.md" );
 		}
 
 		extract( $data );
 
-		$layout = "$path/layouts/{$this->getLayout()}.php";
+		$layoutRelative = "layouts/{$this->getLayout()}.php";
+		$layout = $locator->locate( $layoutRelative );
 
-		if( !$this->fs->fileExists( $layout ) )
+		if( !$layout )
 		{
-			throw new NotFound( "View notfound: $layout" );
+			throw new NotFound( "View notfound: $layoutRelative" );
 		}
 
 		$markdownContent = $this->fs->readFile( $view );

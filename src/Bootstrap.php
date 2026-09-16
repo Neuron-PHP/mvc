@@ -159,20 +159,12 @@ function partial( string $name, array $data = [], ?IFileSystem $fs = null ) : vo
 {
 	$fs = $fs ?? new RealFileSystem();
 
-	$path = Registry::getInstance()
-						 ->get( RegistryKeys::VIEWS_PATH );
+	$viewRelative = "shared/_$name.php";
+	$view = ( new Views\ViewLocator( $fs ) )->locate( $viewRelative );
 
-	if( !$path )
+	if( !$view )
 	{
-		$basePath = Registry::getInstance()->get( RegistryKeys::BASE_PATH );
-		$path = "$basePath/resources/views";
-	}
-
-	$view = "$path/shared/_$name.php";
-
-	if( !$fs->fileExists( $view ) )
-	{
-		throw new NotFound( "Partial not found: $view" );
+		throw new NotFound( "Partial not found: $viewRelative" );
 	}
 
 	// Extract data array as variables in the partial's scope

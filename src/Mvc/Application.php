@@ -21,6 +21,7 @@ use Neuron\Mvc\Events\Http403;
 use Neuron\Mvc\Events\Http404;
 use Neuron\Mvc\Events\Http500;
 use Neuron\Mvc\Requests\Request;
+use Neuron\Mvc\Views\ViewLocator;
 use Neuron\Patterns\Container\IContainer;
 use Neuron\Patterns\Registry;
 use Neuron\Routing\RequestMethod;
@@ -227,13 +228,88 @@ class Application extends Base implements IMvcApplication
 	 */
 	protected function onStart(): bool
 	{
-		$viewPath = $this->getSetting( 'views', 'path' );
-		$basePath = $this->getBasePath();
-
-		if( $viewPath )
-			Registry::getInstance()->set( RegistryKeys::VIEWS_PATH, $basePath.'/'.$viewPath );
+		$this->registerViewPaths();
 
 		return parent::onStart();
+	}
+
+	/**
+	 * Register the site view root and any configured fallbacks.
+	 *
+	 * views.path remains the first root (and is stored as a string when it is
+	 * the only path, matching existing tests). views.paths and any roots
+	 * already in the registry (e.g. CMS package views) are appended.
+	 */
+	private function registerViewPaths(): void
+	{
+		$viewPath  = $this->getSetting( 'views', 'path' );
+		$viewPaths = $this->getSetting( 'views', 'paths' );
+		$basePath  = $this->getBasePath();
+		$registry  = Registry::getInstance();
+		$existing  = ViewLocator::normalize( $registry->get( RegistryKeys::VIEWS_PATH ) );
+
+		$paths = [];
+
+		if( is_string( $viewPath ) && $viewPath !== '' )
+		{
+			$paths[] = $basePath . '/' . $viewPath;
+		}
+
+		if( is_array( $viewPaths ) )
+		{
+			foreach( $viewPaths as $extra )
+			{
+				if( !is_string( $extra ) || $extra === '' )
+				{
+					continue;
+				}
+
+				$resolved = $this->resolveViewRoot( $extra, $basePath );
+
+				if( !in_array( $resolved, $paths, true ) )
+				{
+					$paths[] = $resolved;
+				}
+			}
+		}
+
+		foreach( $existing as $extra )
+		{
+			if( !in_array( $extra, $paths, true ) )
+			{
+				$paths[] = $extra;
+			}
+		}
+
+		if( $paths === [] )
+		{
+			return;
+		}
+
+		$registry->set(
+			RegistryKeys::VIEWS_PATH,
+			count( $paths ) === 1 ? $paths[0] : $paths
+		);
+	}
+
+	/**
+	 * Resolve a configured view root against the application base path.
+	 */
+	private function resolveViewRoot( string $path, string $basePath ): string
+	{
+		$path = rtrim( str_replace( '\\', '/', $path ), '/' );
+
+		if( $path === '' )
+		{
+			return $basePath;
+		}
+
+		if( str_starts_with( $path, '/' ) || preg_match( '/^[A-Za-z]:\//', $path ) === 1 )
+		{
+			return $path;
+		}
+
+		return $basePath . '/' . $path;
 	}
 
 	/**
