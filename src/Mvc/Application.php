@@ -281,6 +281,13 @@ class Application extends Base implements IMvcApplication
 			}
 		}
 
+		$mvcViews = dirname( __DIR__, 2 ) . '/resources/views';
+
+		if( is_dir( $mvcViews ) && !in_array( $mvcViews, $paths, true ) )
+		{
+			$paths[] = $mvcViews;
+		}
+
 		if( $paths === [] )
 		{
 			return;

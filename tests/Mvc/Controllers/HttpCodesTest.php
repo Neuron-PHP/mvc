@@ -65,6 +65,36 @@ class HttpCodesTest extends TestCase
 		$this->assertNotEmpty( $result );
 	}
 
+	public function testCode404FallsBackToPackageWhenSiteHasNoCopy(): void
+	{
+		$site = sys_get_temp_dir() . '/neuron_http_codes_site_' . uniqid();
+		mkdir( $site . '/layouts', 0777, true );
+		file_put_contents( $site . '/layouts/default.php', '<html><?php echo $content; ?></html>' );
+
+		$package = dirname( __DIR__, 3 ) . '/resources/views';
+		$previous = Registry::getInstance()->get( RegistryKeys::VIEWS_PATH );
+		Registry::getInstance()->set( RegistryKeys::VIEWS_PATH, [ $site, $package ] );
+
+		try
+		{
+			$request = $this->createMock( Request::class );
+			$request->method( 'getRouteParameters' )
+				->willReturn( [ 'route' => '/missing' ] );
+
+			$result = $this->controller->code404( $request );
+
+			$this->assertStringContainsString( '404', $result );
+			$this->assertFileDoesNotExist( $site . '/http_codes/404.php' );
+		}
+		finally
+		{
+			Registry::getInstance()->set( RegistryKeys::VIEWS_PATH, $previous );
+			@unlink( $site . '/layouts/default.php' );
+			@rmdir( $site . '/layouts' );
+			@rmdir( $site );
+		}
+	}
+
 	public function testCode500(): void
 	{
 		// Create a mock Request
