@@ -82,6 +82,18 @@ class PartialTest extends TestCase
 		{
 			rmdir( $this->TempDir . '/custom' );
 		}
+
+		foreach( [ 'site', 'package' ] as $Root )
+		{
+			if( is_dir( $this->TempDir . '/' . $Root . '/shared' ) )
+			{
+				rmdir( $this->TempDir . '/' . $Root . '/shared' );
+			}
+			if( is_dir( $this->TempDir . '/' . $Root ) )
+			{
+				rmdir( $this->TempDir . '/' . $Root );
+			}
+		}
 		
 		if( is_dir( $this->TempDir ) )
 		{
@@ -159,6 +171,45 @@ class PartialTest extends TestCase
 	/**
 	 * Test default path fallback when Views.Path not set
 	 */
+	public function testSitePartialWinsOverFallbackRoot()
+	{
+		mkdir( $this->TempDir . '/site' );
+		mkdir( $this->TempDir . '/site/shared' );
+		mkdir( $this->TempDir . '/package' );
+		mkdir( $this->TempDir . '/package/shared' );
+
+		$this->createPartial( 'header', 'SITE PARTIAL', $this->TempDir . '/site/shared' );
+		$this->createPartial( 'header', 'PACKAGE PARTIAL', $this->TempDir . '/package/shared' );
+
+		Registry::getInstance()->set( RegistryKeys::VIEWS_PATH, [
+			$this->TempDir . '/site',
+			$this->TempDir . '/package',
+		] );
+
+		$Result = $this->capturePartialOutput( 'header' );
+
+		$this->assertEquals( 'SITE PARTIAL', $Result );
+	}
+
+	public function testPartialFallsThroughToSecondRoot()
+	{
+		mkdir( $this->TempDir . '/site' );
+		mkdir( $this->TempDir . '/site/shared' );
+		mkdir( $this->TempDir . '/package' );
+		mkdir( $this->TempDir . '/package/shared' );
+
+		$this->createPartial( 'footer', 'PACKAGE FOOTER', $this->TempDir . '/package/shared' );
+
+		Registry::getInstance()->set( RegistryKeys::VIEWS_PATH, [
+			$this->TempDir . '/site',
+			$this->TempDir . '/package',
+		] );
+
+		$Result = $this->capturePartialOutput( 'footer' );
+
+		$this->assertEquals( 'PACKAGE FOOTER', $Result );
+	}
+
 	public function testDefaultPathFallback()
 	{
 		// Ensure Views.Path is null to test fallback

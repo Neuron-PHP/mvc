@@ -160,4 +160,80 @@ class HtmlTest extends TestCase
 		$this->assertStringContainsString( 'different value', $Result3 );
 		$this->assertNotEquals( $Result1, $Result3 );
 	}
+
+	public function testSiteViewWinsOverPackageView(): void
+	{
+		$site = vfsStream::newDirectory( 'site' )->at( $this->Root );
+		$package = vfsStream::newDirectory( 'package' )->at( $this->Root );
+
+		$siteBlog = vfsStream::newDirectory( 'blog' )->at( $site );
+		$packageBlog = vfsStream::newDirectory( 'blog' )->at( $package );
+		$siteLayouts = vfsStream::newDirectory( 'layouts' )->at( $site );
+
+		vfsStream::newFile( 'show.php' )->at( $siteBlog )->withContent( 'SITE BODY' );
+		vfsStream::newFile( 'show.php' )->at( $packageBlog )->withContent( 'PACKAGE BODY' );
+		vfsStream::newFile( 'default.php' )->at( $siteLayouts )->withContent( '<wrap><?php echo $content; ?></wrap>' );
+
+		Registry::getInstance()->set( RegistryKeys::VIEWS_PATH, [
+			vfsStream::url( 'views/site' ),
+			vfsStream::url( 'views/package' ),
+		] );
+
+		$Html = new Html();
+		$Html->setController( 'Blog' );
+		$Html->setPage( 'show' );
+		$Html->setLayout( 'default' );
+
+		$Result = $Html->render( [] );
+
+		$this->assertStringContainsString( 'SITE BODY', $Result );
+		$this->assertStringNotContainsString( 'PACKAGE BODY', $Result );
+	}
+
+	public function testMissingSiteViewFallsThroughToPackage(): void
+	{
+		$site = vfsStream::newDirectory( 'site-empty' )->at( $this->Root );
+		$package = vfsStream::newDirectory( 'package-blog' )->at( $this->Root );
+
+		vfsStream::newDirectory( 'layouts' )->at( $site );
+		vfsStream::newFile( 'default.php' )
+			->at( $site->getChild( 'layouts' ) )
+			->withContent( '<site><?php echo $content; ?></site>' );
+
+		$packageBlog = vfsStream::newDirectory( 'blog' )->at( $package );
+		vfsStream::newFile( 'show.php' )->at( $packageBlog )->withContent( 'PACKAGE BODY' );
+
+		Registry::getInstance()->set( RegistryKeys::VIEWS_PATH, [
+			vfsStream::url( 'views/site-empty' ),
+			vfsStream::url( 'views/package-blog' ),
+		] );
+
+		$Html = new Html();
+		$Html->setController( 'Blog' );
+		$Html->setPage( 'show' );
+		$Html->setLayout( 'default' );
+
+		$Result = $Html->render( [] );
+
+		$this->assertStringContainsString( 'PACKAGE BODY', $Result );
+		$this->assertStringContainsString( '<site>', $Result );
+	}
+
+	public function testNotFoundWhenNoRootHasTheView(): void
+	{
+		Registry::getInstance()->set( RegistryKeys::VIEWS_PATH, [
+			vfsStream::url( 'views/missing-a' ),
+			vfsStream::url( 'views/missing-b' ),
+		] );
+
+		$Html = new Html();
+		$Html->setController( 'Blog' );
+		$Html->setPage( 'missing' );
+		$Html->setLayout( 'default' );
+
+		$this->expectException( NotFound::class );
+		$this->expectExceptionMessage( 'View notfound:' );
+
+		$Html->render( [] );
+	}
 }

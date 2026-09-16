@@ -6,9 +6,7 @@ namespace Neuron\Mvc\Views;
 
 use Neuron\Core\Exceptions\NotFound;
 use Neuron\Core\NString;
-use Neuron\Core\Registry\RegistryKeys;
 use Neuron\Log\Log;
-use Neuron\Patterns\Registry;
 
 /**
  * Generate html output by combining
@@ -34,15 +32,6 @@ class Html extends Base implements IView
 			return $cachedContent;
 		}
 
-		$path = Registry::getInstance()
-									->get( RegistryKeys::VIEWS_PATH );
-
-		if( !$path )
-		{
-			$basePath = Registry::getInstance()->get( RegistryKeys::BASE_PATH );
-			$path = "$basePath/resources/views";
-		}
-
 		// Convert controller name to snake_case, preserving directory separators
 		$controllerParts = explode( '/', $this->getController() );
 		$snakeCaseParts = array_map(
@@ -56,20 +45,23 @@ class Html extends Base implements IView
 		Log::debug( "Page: " . $this->getPage() );
 		Log::debug( "Controller Name: " . $controllerName );
 
-		$view = "$path/$controllerName/{$this->getPage()}.php";
+		$locator = new ViewLocator( $this->fs );
+		$viewRelative = "$controllerName/{$this->getPage()}.php";
+		$view = $locator->locate( $viewRelative );
 
-		if( !$this->fs->fileExists( $view ) )
+		if( !$view )
 		{
-			throw new NotFound( "View notfound: $view" );
+			throw new NotFound( "View notfound: $viewRelative" );
 		}
 
 		extract( $data );
 
-		$layout = "$path/layouts/{$this->getLayout()}.php";
+		$layoutRelative = "layouts/{$this->getLayout()}.php";
+		$layout = $locator->locate( $layoutRelative );
 
-		if( !$this->fs->fileExists( $layout ) )
+		if( !$layout )
 		{
-			throw new NotFound( "View notfound: $layout" );
+			throw new NotFound( "View notfound: $layoutRelative" );
 		}
 
 		ob_start();
