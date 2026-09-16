@@ -667,15 +667,16 @@ class Application extends Base implements IMvcApplication
 			try
 			{
 				$routeDefinitions = $scanner->scanDirectory( $directory, $namespace );
-
-				foreach( $routeDefinitions as $def )
-				{
-					$this->registerAttributeRoute( $def );
-				}
 			}
 			catch( \Exception $e )
 			{
 				Log::error( "Failed to scan directory $directory: " . $e->getMessage() );
+				continue;
+			}
+
+			foreach( $routeDefinitions as $def )
+			{
+				$this->registerAttributeRoute( $def );
 			}
 		}
 	}
