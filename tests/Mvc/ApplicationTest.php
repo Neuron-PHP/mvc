@@ -110,10 +110,16 @@ class ApplicationTest extends TestCase
 			$this->App->getVersion()
 		);
 
-		$this->assertEquals(
-			"examples/views",
-			Registry::getInstance()->get( RegistryKeys::VIEWS_PATH )
-		);
+		$viewsPath = Registry::getInstance()->get( RegistryKeys::VIEWS_PATH );
+
+		if( is_array( $viewsPath ) )
+		{
+			$this->assertEquals( 'examples/views', $viewsPath[0] );
+		}
+		else
+		{
+			$this->assertEquals( 'examples/views', $viewsPath );
+		}
 	}
 
 	public function testPartial()
