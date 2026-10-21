@@ -1,3 +1,5 @@
+## 0.9.58
+
 ## 0.9.57 2026-10-20
 
 * The `cache:clear`, `cache:stats`, `data:dump`, `data:restore` and
