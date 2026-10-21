@@ -37,4 +37,15 @@ interface IMvcApplication extends IApplication
 	 * @return bool
 	 */
 	public function hasContainer(): bool;
+
+	/**
+	 * Scan a directory for controllers with route attributes and register
+	 * their routes. Programmatic equivalent of a `controller_paths` entry,
+	 * used by web components; routes already registered keep precedence.
+	 *
+	 * @param string $directory Absolute path
+	 * @param string $namespace PSR-4 namespace of the classes in it
+	 * @return int Number of routes registered
+	 */
+	public function addControllerPath( string $directory, string $namespace ): int;
 }

@@ -6,6 +6,7 @@ use Neuron\Cli\Console\Input;
 use Neuron\Cli\Console\Output;
 use Neuron\Mvc\Cli\Commands\Routes\ListCommand;
 use PHPUnit\Framework\TestCase;
+use Tests\Mvc\Components\Fixtures\RecordingProvider;
 
 /**
  * Test the routes:list command
@@ -177,5 +178,104 @@ PHP;
 		// Should NOT contain GET routes
 		$this->assertStringNotContainsString( 'test.index', $outputContent );
 		$this->assertStringNotContainsString( 'test.show', $outputContent );
+	}
+
+	public function testListCommandIncludesComponentRoutesWithSource(): void
+	{
+		$this->installComponent();
+
+		$outputContent = $this->runList( [ '--config=' . $this->testConfigPath, '--json' ] );
+		$routes = json_decode( $outputContent, true );
+
+		$this->assertIsArray( $routes );
+
+		$bySource = [];
+		foreach( $routes as $route )
+		{
+			$bySource[ $route['source'] ][] = $route['name'];
+		}
+
+		$this->assertSame( [ 'test.index', 'test.show', 'test.store' ], $bySource['app'] );
+		$this->assertSame( [ 'cmp.index' ], $bySource['Tests\\Mvc\\Components\\Fixtures'] );
+
+		$table = $this->runList( [ '--config=' . $this->testConfigPath ] );
+		$this->assertStringContainsString( 'Source', $table );
+		$this->assertStringContainsString( 'cmp.index', $table );
+	}
+
+	public function testListCommandOmitsSourceColumnWithoutComponents(): void
+	{
+		$table = $this->runList( [ '--config=' . $this->testConfigPath ] );
+
+		$this->assertStringNotContainsString( 'Source', $table );
+	}
+
+	public function testListCommandFiltersBySourceAndHonoursDisabled(): void
+	{
+		$this->installComponent();
+
+		$onlyComponent = $this->runList( [ '--config=' . $this->testConfigPath, '--source=Fixtures' ] );
+		$this->assertStringContainsString( 'cmp.index', $onlyComponent );
+		$this->assertStringNotContainsString( 'test.index', $onlyComponent );
+
+		file_put_contents( $this->testConfigPath . '/neuron.yaml', file_get_contents( $this->testConfigPath . '/neuron.yaml' )
+			. "\ncomponents:\n  disabled:\n    - " . RecordingProvider::class . "\n" );
+
+		$withoutComponent = $this->runList( [ '--config=' . $this->testConfigPath ] );
+		$this->assertStringNotContainsString( 'cmp.index', $withoutComponent );
+		$this->assertStringContainsString( 'test.index', $withoutComponent );
+	}
+
+	/**
+	 * Fake a vendor/ in the test project that declares RecordingProvider
+	 * with one controller directory.
+	 */
+	private function installComponent(): void
+	{
+		$pkg = $this->testConfigPath . '/vendor/acme/cmp';
+		mkdir( $this->testConfigPath . '/vendor/composer', 0755, true );
+		mkdir( $pkg . '/src/Controllers', 0755, true );
+
+		file_put_contents( $this->testConfigPath . '/vendor/composer/installed.json', json_encode( [
+			'packages' => [ [
+				'name'  => 'acme/cmp',
+				'extra' => [ 'neuron' => [ 'mvc-provider' => RecordingProvider::class ] ],
+			] ],
+		] ) );
+
+		file_put_contents( $pkg . '/src/Controllers/CmpController.php', <<<'PHP'
+<?php
+namespace TestCmp\Controllers;
+use Neuron\Routing\Attributes\Get;
+class CmpController
+{
+	#[Get('/cmp', name: 'cmp.index')]
+	public function index(): string { return ''; }
+}
+PHP
+		);
+
+		if( !class_exists( 'TestCmp\\Controllers\\CmpController' ) )
+		{
+			require_once $pkg . '/src/Controllers/CmpController.php';
+		}
+
+		RecordingProvider::reset();
+		RecordingProvider::$controllerPaths = [ [ 'path' => $pkg . '/src/Controllers', 'namespace' => 'TestCmp\\Controllers' ] ];
+	}
+
+	private function runList( array $args ): string
+	{
+		$command = new ListCommand();
+		$command->setInput( new Input( $args ) );
+		$command->setOutput( new Output() );
+
+		ob_start();
+		$exitCode = $command->execute();
+		$content = ob_get_clean();
+
+		$this->assertEquals( 0, $exitCode, $content );
+
+		return $content;
 	}
 }

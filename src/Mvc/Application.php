@@ -15,6 +15,7 @@ use Neuron\Core\System\IFileSystem;
 use Neuron\Core\System\RealFileSystem;
 use Neuron\Data\Settings\Source\ISettingSource;
 use Neuron\Log\Log;
+use Neuron\Mvc\Components\ComponentLoader;
 use Neuron\Mvc\Controllers\Factory;
 use Neuron\Mvc\Events\Http401;
 use Neuron\Mvc\Events\Http403;
@@ -554,6 +555,9 @@ class Application extends Base implements IMvcApplication
 
 		// Load routes from controller attributes
 		$this->loadAttributeRoutes();
+
+		// Then whatever installed web components bring
+		$this->loadComponents();
 	}
 
 	/**
@@ -650,35 +654,68 @@ class Application extends Base implements IMvcApplication
 			return;
 		}
 
-		$scanner = new RouteScanner();
 		$basePath = $this->getBasePath();
 
 		foreach( $controllerPaths as $pathConfig )
 		{
-			$directory = $basePath . '/' . $pathConfig['path'];
-			$namespace = $pathConfig['namespace'];
-
-			if( !is_dir( $directory ) )
-			{
-				Log::debug( "Controller directory not found: $directory" );
-				continue;
-			}
-
-			try
-			{
-				$routeDefinitions = $scanner->scanDirectory( $directory, $namespace );
-			}
-			catch( \Exception $e )
-			{
-				Log::error( "Failed to scan directory $directory: " . $e->getMessage() );
-				continue;
-			}
-
-			foreach( $routeDefinitions as $def )
-			{
-				$this->registerAttributeRoute( $def );
-			}
+			$this->addControllerPath( $basePath . '/' . $pathConfig['path'], $pathConfig['namespace'] );
 		}
+	}
+
+	/**
+	 * @inheritDoc
+	 */
+	public function addControllerPath( string $directory, string $namespace ): int
+	{
+		if( !is_dir( $directory ) )
+		{
+			Log::debug( "Controller directory not found: $directory" );
+			return 0;
+		}
+
+		try
+		{
+			$routeDefinitions = ( new RouteScanner() )->scanDirectory( $directory, $namespace );
+		}
+		catch( \Exception $e )
+		{
+			Log::error( "Failed to scan directory $directory: " . $e->getMessage() );
+			return 0;
+		}
+
+		foreach( $routeDefinitions as $def )
+		{
+			$this->registerAttributeRoute( $def );
+		}
+
+		return count( $routeDefinitions );
+	}
+
+	/**
+	 * Discover installed web components and let them add routes, views and
+	 * wiring. Runs after the site's own controller paths so a site route that
+	 * collides with a component's is reported against the component.
+	 *
+	 * `components.discovery: false` turns this off; `components.disabled`
+	 * lists provider classes to skip.
+	 *
+	 * @return void
+	 */
+	protected function loadComponents(): void
+	{
+		$discovery = $this->getSetting( 'components', 'discovery' );
+
+		if( in_array( $discovery, [ false, 0, '0', 'false', 'off', 'no' ], true ) )
+		{
+			Log::debug( 'Component discovery disabled by configuration' );
+			return;
+		}
+
+		$disabled = $this->getSetting( 'components', 'disabled' );
+		$disabled = is_array( $disabled ) ? $disabled : [];
+
+		$loader = new ComponentLoader( $this->fs );
+		$loader->load( $this, $loader->discover( $this->getBasePath() ), $disabled );
 	}
 
 	/**
