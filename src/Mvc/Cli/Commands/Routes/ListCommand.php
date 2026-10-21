@@ -4,8 +4,8 @@ namespace Neuron\Mvc\Cli\Commands\Routes;
 
 use Neuron\Cli\Commands\Command;
 use Neuron\Data\Settings\Source\Yaml;
+use Neuron\Mvc\Components\ComponentLoader;
 use Neuron\Routing\RouteScanner;
-use Neuron\Log\Log;
 
 /**
  * CLI command for listing MVC routes.
@@ -37,6 +37,7 @@ class ListCommand extends Command
 		$this->addOption( 'controller', null, true, 'Filter by controller name' );
 		$this->addOption( 'method', 'm', true, 'Filter by HTTP method (GET, POST, etc.)' );
 		$this->addOption( 'pattern', 'p', true, 'Search routes by pattern' );
+		$this->addOption( 'source', 's', true, 'Filter by source: "app" or a component namespace' );
 		$this->addOption( 'json', 'j', false, 'Output routes in JSON format' );
 	}
 	
@@ -161,46 +162,114 @@ class ListCommand extends Command
 				return [];
 			}
 
-			// Scan controllers using RouteScanner
-			$scanner = new RouteScanner();
-
 			foreach( $controllerPathsConfig as $pathConfig )
 			{
-				$directory = $basePath . '/' . $pathConfig['path'];
-				$namespace = $pathConfig['namespace'];
-
-				if( !is_dir( $directory ) )
-				{
-					$this->output->warning( "Controller directory not found: $directory" );
-					continue;
-				}
-
-				try
-				{
-					$routeDefinitions = $scanner->scanDirectory( $directory, $namespace );
-
-					foreach( $routeDefinitions as $def )
-					{
-						$routes[] = [
-							'name' => $def->name ?? '-',
-							'pattern' => $def->path,
-							'method' => $def->method,
-							'controller' => $def->controller,
-							'action' => $def->action,
-							'filters' => $def->filters,
-						];
-					}
-				}
-				catch( \Exception $e )
-				{
-					$this->output->warning( "Error scanning $directory: " . $e->getMessage() );
-				}
+				array_push( $routes, ...$this->scanPath( $basePath . '/' . $pathConfig['path'], $pathConfig['namespace'], 'app', true ) );
 			}
+
+			array_push( $routes, ...$this->componentRoutes( $basePath, file_exists( $neuronFile ) ? new Yaml( $neuronFile ) : null ) );
 		}
 		catch( \Exception $e )
 		{
 			$this->output->error( 'Error loading configuration: ' . $e->getMessage() );
 			return [];
+		}
+
+		return $routes;
+	}
+
+	/**
+	 * Routes declared by installed web components, in the order the
+	 * application would load them. Honours `components.discovery` and
+	 * `components.disabled` from neuron.yaml when present.
+	 *
+	 * @param string $basePath
+	 * @param Yaml|null $settings
+	 * @return array
+	 */
+	private function componentRoutes( string $basePath, ?Yaml $settings ): array
+	{
+		$discovery = $settings?->get( 'components', 'discovery' );
+
+		if( in_array( $discovery, [ false, 0, '0', 'false', 'off', 'no' ], true ) )
+		{
+			return [];
+		}
+
+		$disabled = $settings?->get( 'components', 'disabled' );
+		$disabled = is_array( $disabled ) ? array_map( fn( $c ) => ltrim( (string)$c, '\\' ), $disabled ) : [];
+
+		$routes = [];
+
+		foreach( ( new ComponentLoader() )->discover( $basePath ) as $provider )
+		{
+			if( in_array( $provider, $disabled, true ) )
+			{
+				continue;
+			}
+
+			// Show the component by its namespace (Neuron\LaborBoard), not "Provider"
+			$separator = strrpos( $provider, '\\' );
+			$source = $separator === false ? $provider : substr( $provider, 0, $separator );
+
+			try
+			{
+				foreach( $provider::controllerPaths() as $entry )
+				{
+					array_push( $routes, ...$this->scanPath( (string)( $entry['path'] ?? '' ), (string)( $entry['namespace'] ?? '' ), $source, false ) );
+				}
+			}
+			catch( \Throwable $e )
+			{
+				$this->output->warning( "Error loading component $provider: " . $e->getMessage() );
+			}
+		}
+
+		return $routes;
+	}
+
+	/**
+	 * Scan one controller directory into route rows.
+	 *
+	 * @param string $directory
+	 * @param string $namespace
+	 * @param string $source 'app' or the component that owns the directory
+	 * @param bool $warnMissing Report a missing directory (site paths are
+	 *        configured by hand; a component's are expected to exist quietly)
+	 * @return array
+	 */
+	private function scanPath( string $directory, string $namespace, string $source, bool $warnMissing ): array
+	{
+		if( !is_dir( $directory ) )
+		{
+			if( $warnMissing )
+			{
+				$this->output->warning( "Controller directory not found: $directory" );
+			}
+
+			return [];
+		}
+
+		$routes = [];
+
+		try
+		{
+			foreach( ( new RouteScanner() )->scanDirectory( $directory, $namespace ) as $def )
+			{
+				$routes[] = [
+					'name'       => $def->name ?? '-',
+					'pattern'    => $def->path,
+					'method'     => $def->method,
+					'controller' => $def->controller,
+					'action'     => $def->action,
+					'filters'    => $def->filters,
+					'source'     => $source,
+				];
+			}
+		}
+		catch( \Exception $e )
+		{
+			$this->output->warning( "Error scanning $directory: " . $e->getMessage() );
 		}
 
 		return $routes;
@@ -237,6 +306,14 @@ class ListCommand extends Command
 				return stripos( $route['pattern'], $pattern ) !== false;
 			});
 		}
+
+		// Filter by source
+		if( $source = $this->input->getOption( 'source' ) )
+		{
+			$routes = array_filter( $routes, function( $route ) use ( $source ) {
+				return stripos( $route['source'] ?? 'app', $source ) !== false;
+			});
+		}
 		
 		return array_values( $routes );
 	}
@@ -251,8 +328,17 @@ class ListCommand extends Command
 	{
 		$this->output->title( 'MVC Routes (Attribute-Based)' );
 
-		// Prepare table headers
+		// Prepare table headers; the Source column only earns its space once
+		// a component has contributed routes.
+		$sources = array_unique( array_map( fn( $r ) => $r['source'] ?? 'app', $routes ) );
+		$showSource = count( $sources ) > 1 || !in_array( 'app', $sources, true );
+
 		$headers = ['Name', 'Method', 'Pattern', 'Controller', 'Action', 'Filters'];
+
+		if( $showSource )
+		{
+			$headers[] = 'Source';
+		}
 
 		// Prepare table rows
 		$rows = [];
@@ -279,7 +365,7 @@ class ListCommand extends Command
 			$controllerParts = explode( '\\', $controller );
 			$shortController = end( $controllerParts );
 
-			$rows[] = [
+			$row = [
 				$routeName ?: '-',
 				$route['method'],
 				$route['pattern'],
@@ -287,6 +373,13 @@ class ListCommand extends Command
 				$route['action'],
 				$filtersStr
 			];
+
+			if( $showSource )
+			{
+				$row[] = $route['source'] ?? 'app';
+			}
+
+			$rows[] = $row;
 		}
 
 		// Display the table using Output's table method
