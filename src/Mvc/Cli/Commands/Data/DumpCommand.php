@@ -6,7 +6,8 @@ use Neuron\Cli\Commands\Command;
 use Neuron\Orm\Database\MigrationManager;
 use Neuron\Mvc\Database\DataExporter;
 use Neuron\Mvc\Database\SqlWhereValidator;
-use Neuron\Data\Settings\Source\Yaml;
+use Neuron\Data\Settings\Source\ISettingSource;
+use Neuron\Data\Settings\SettingManagerFactory;
 
 /**
  * CLI command for exporting database data in various formats
@@ -398,7 +399,7 @@ class DumpCommand extends Command
 	 * @param array $exportOptions Export options
 	 * @return int
 	 */
-	private function performDryRun( string $basePath, ?Yaml $settings, array $exportOptions ): int
+	private function performDryRun( string $basePath, ?ISettingSource $settings, array $exportOptions ): int
 	{
 		$this->output->info( "DRY RUN - No data will be exported" );
 		$this->output->newLine();
@@ -620,20 +621,19 @@ class DumpCommand extends Command
 	 * Load settings from config directory
 	 *
 	 * @param string $configPath
-	 * @return Yaml|null
+	 * @return ISettingSource|null
 	 */
-	private function loadSettings( string $configPath ): ?Yaml
+	private function loadSettings( string $configPath ): ?ISettingSource
 	{
-		$configFile = $configPath . '/neuron.yaml';
-
-		if( !file_exists( $configFile ) )
+		// Every file layer is optional; the environment is always the fallback.
+		if( !is_dir( $configPath ) )
 		{
 			return null;
 		}
 
 		try
 		{
-			return new Yaml( $configFile );
+			return SettingManagerFactory::create( null, $configPath );
 		}
 		catch( \Exception $e )
 		{

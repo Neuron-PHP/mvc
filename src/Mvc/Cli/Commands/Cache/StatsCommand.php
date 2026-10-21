@@ -5,7 +5,7 @@ namespace Neuron\Mvc\Cli\Commands\Cache;
 use Neuron\Cli\Commands\Command;
 use Neuron\Mvc\Cache\Storage\FileCacheStorage;
 use Neuron\Mvc\Cache\CacheConfig;
-use Neuron\Data\Settings\Source\Yaml;
+use Neuron\Data\Settings\SettingManagerFactory;
 
 /**
  * CLI command for displaying MVC cache statistics.
@@ -359,17 +359,16 @@ class StatsCommand extends Command
 	 */
 	private function loadCacheConfiguration( string $configPath ): ?CacheConfig
 	{
-		$configFile = $configPath . '/neuron.yaml';
-		
-		if( !file_exists( $configFile ) )
+		// Every file layer is optional; the environment is always the fallback.
+		if( !is_dir( $configPath ) )
 		{
-			$this->output->warning( 'Configuration file not found: ' . $configFile );
+			$this->output->warning( 'Configuration directory not found: ' . $configPath );
 			return null;
 		}
 		
 		try
 		{
-			$settings = new Yaml( $configFile );
+			$settings = SettingManagerFactory::create( null, $configPath );
 			
 			// Get cache settings
 			$enabled = $settings->get( 'cache', 'enabled' ) ?? false;

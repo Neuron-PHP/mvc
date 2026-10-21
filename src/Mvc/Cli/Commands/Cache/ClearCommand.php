@@ -6,7 +6,7 @@ use Neuron\Cli\Commands\Command;
 use Neuron\Mvc\Cache\Storage\CacheStorageFactory;
 use Neuron\Mvc\Cache\Storage\ICacheStorage;
 use Neuron\Mvc\Cache\CacheConfig;
-use Neuron\Data\Settings\Source\Yaml;
+use Neuron\Data\Settings\SettingManagerFactory;
 
 /**
  * CLI command for clearing the MVC view cache.
@@ -152,17 +152,16 @@ class ClearCommand extends Command
 	 */
 	private function loadCacheConfiguration( string $configPath ): ?CacheConfig
 	{
-		$configFile = $configPath . '/neuron.yaml';
-		
-		if( !file_exists( $configFile ) )
+		// Every file layer is optional; the environment is always the fallback.
+		if( !is_dir( $configPath ) )
 		{
-			$this->output->warning( 'Configuration file not found: ' . $configFile );
+			$this->output->warning( 'Configuration directory not found: ' . $configPath );
 			return null;
 		}
 		
 		try
 		{
-			$settings = new Yaml( $configFile );
+			$settings = SettingManagerFactory::create( null, $configPath );
 			
 			// Get cache settings
 			$enabled = $settings->get( 'cache', 'enabled' ) ?? false;
