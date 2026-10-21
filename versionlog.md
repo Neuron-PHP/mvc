@@ -1,4 +1,4 @@
-## 0.9.57
+## 0.9.57 2026-10-20
 
 * The `cache:clear`, `cache:stats`, `data:dump`, `data:restore` and
   `schema:dump` commands no longer require `config/neuron.yaml` to exist.
