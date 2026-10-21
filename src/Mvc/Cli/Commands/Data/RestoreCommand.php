@@ -5,7 +5,8 @@ namespace Neuron\Mvc\Cli\Commands\Data;
 use Neuron\Cli\Commands\Command;
 use Neuron\Orm\Database\MigrationManager;
 use Neuron\Mvc\Database\DataImporter;
-use Neuron\Data\Settings\Source\Yaml;
+use Neuron\Data\Settings\Source\ISettingSource;
+use Neuron\Data\Settings\SettingManagerFactory;
 
 /**
  * CLI command for restoring database data from various formats
@@ -374,7 +375,7 @@ class RestoreCommand extends Command
 	 * @param string|null $inputPath Input file path
 	 * @return int
 	 */
-	private function performDryRun( string $basePath, ?Yaml $settings, array $importOptions, ?string $inputPath ): int
+	private function performDryRun( string $basePath, ?ISettingSource $settings, array $importOptions, ?string $inputPath ): int
 	{
 		$this->output->info( "DRY RUN - No data will be restored" );
 		$this->output->newLine();
@@ -517,7 +518,7 @@ class RestoreCommand extends Command
 	 * @param string $backupPath Backup file path
 	 * @return bool Success status
 	 */
-	private function createBackup( string $basePath, ?Yaml $settings, string $backupPath ): bool
+	private function createBackup( string $basePath, ?ISettingSource $settings, string $backupPath ): bool
 	{
 		$this->output->info( "Creating backup before restore..." );
 
@@ -662,20 +663,19 @@ class RestoreCommand extends Command
 	 * Load settings from config directory
 	 *
 	 * @param string $configPath
-	 * @return Yaml|null
+	 * @return ISettingSource|null
 	 */
-	private function loadSettings( string $configPath ): ?Yaml
+	private function loadSettings( string $configPath ): ?ISettingSource
 	{
-		$configFile = $configPath . '/neuron.yaml';
-
-		if( !file_exists( $configFile ) )
+		// Every file layer is optional; the environment is always the fallback.
+		if( !is_dir( $configPath ) )
 		{
 			return null;
 		}
 
 		try
 		{
-			return new Yaml( $configFile );
+			return SettingManagerFactory::create( null, $configPath );
 		}
 		catch( \Exception $e )
 		{

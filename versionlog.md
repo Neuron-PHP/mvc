@@ -1,3 +1,12 @@
+## 0.9.57 2026-10-20
+
+* The `cache:clear`, `cache:stats`, `data:dump`, `data:restore` and
+  `schema:dump` commands no longer require `config/neuron.yaml` to exist.
+  Settings load through `SettingManagerFactory`, so environment-specific
+  files, encrypted secrets and environment variables all apply, and a
+  deployment configured purely through the environment works without the
+  file.
+
 ## 0.9.56 2026-09-16
 
 ## 0.9.55 2026-09-16
