@@ -62,9 +62,8 @@ class SQLiteSchemaExportTest extends TestCase
 			->willReturn( ['sql' => $expectedSql] );
 
 		// Create mock adapter
-		$mockAdapter = $this->getMockBuilder( AdapterInterface::class )
-			->onlyMethods( get_class_methods( AdapterInterface::class ) )
-			->addMethods( ['getConnection'] )
+		$mockAdapter = $this->getMockBuilder( TestAdapterWithExtras::class )
+			->onlyMethods( get_class_methods( TestAdapterWithExtras::class ) )
 			->getMock();
 
 		$mockAdapter->method( 'getConnection' )->willReturn( $mockPdo );
@@ -188,9 +187,8 @@ class SQLiteSchemaExportTest extends TestCase
 			->willReturn( false ); // No result for non-existent table
 
 		// Create mock adapter
-		$mockAdapter = $this->getMockBuilder( AdapterInterface::class )
-			->onlyMethods( get_class_methods( AdapterInterface::class ) )
-			->addMethods( ['getConnection'] )
+		$mockAdapter = $this->getMockBuilder( TestAdapterWithExtras::class )
+			->onlyMethods( get_class_methods( TestAdapterWithExtras::class ) )
 			->getMock();
 
 		$mockAdapter->method( 'getConnection' )->willReturn( $mockPdo );

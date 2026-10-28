@@ -271,10 +271,9 @@ class ViewContextTest extends TestCase
 	public function testTitleConcatenatesWithSiteName()
 	{
 		// Create a controller that has getName method
-		$mockController = $this->getMockBuilder( Base::class )
+		$mockController = $this->getMockBuilder( ControllerWithSiteName::class )
 			->disableOriginalConstructor()
-			->onlyMethods(['renderHtml'])
-			->addMethods(['getName'])
+			->onlyMethods( [ 'renderHtml', 'getName' ] )
 			->getMock();
 
 		$mockController->method( 'getName' )
@@ -508,5 +507,16 @@ class ViewContextTest extends TestCase
 		$this->assertArrayNotHasKey( 'Description', $capturedData );
 		// But custom data should be
 		$this->assertEquals( 'value', $capturedData['data'] );
+	}
+}
+
+/**
+ * Controller double that declares getName so the view context can read a site name.
+ */
+class ControllerWithSiteName extends Base
+{
+	public function getName(): string
+	{
+		return '';
 	}
 }

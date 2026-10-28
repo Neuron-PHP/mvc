@@ -7,6 +7,8 @@ use Neuron\Mvc\Database\DataImporter;
 use PHPUnit\Framework\TestCase;
 use Phinx\Config\Config;
 use Phinx\Db\Adapter\AdapterFactory;
+use PHPUnit\Framework\Attributes\RunInSeparateProcess;
+use PHPUnit\Framework\Attributes\PreserveGlobalState;
 
 /**
  * Comprehensive end-to-end integration tests for DataExporter/DataImporter
@@ -160,9 +162,10 @@ class DataExportImportIntegrationTest extends TestCase
 	/**
 	 * Test full export -> import roundtrip with CSV format
 	 *
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
 	 */
+	#[RunInSeparateProcess]
+	#[PreserveGlobalState( false )]
+
 	public function testFullRoundtripWithCsvFormat(): void
 	{
 		// Export to CSV directory

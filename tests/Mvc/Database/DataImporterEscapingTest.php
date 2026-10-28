@@ -69,9 +69,8 @@ class DataImporterEscapingTest extends TestCase
 				->willReturn( $pdoQuoted );
 
 			// Create mock adapter that returns our mock PDO
-			$mockAdapter = $this->getMockBuilder( AdapterInterface::class )
-				->onlyMethods( get_class_methods( AdapterInterface::class ) )
-				->addMethods( ['getConnection'] )
+			$mockAdapter = $this->getMockBuilder( TestAdapterWithExtras::class )
+				->onlyMethods( get_class_methods( TestAdapterWithExtras::class ) )
 				->getMock();
 			$mockAdapter->method( 'getConnection' )->willReturn( $mockPdo );
 			$mockAdapter->method( 'connect' );
@@ -135,9 +134,8 @@ class DataImporterEscapingTest extends TestCase
 			} );
 
 		// Create adapter with PDO support
-		$mockAdapter = $this->getMockBuilder( AdapterInterface::class )
-			->onlyMethods( get_class_methods( AdapterInterface::class ) )
-			->addMethods( ['hasTransaction', 'getConnection'] )
+		$mockAdapter = $this->getMockBuilder( TestAdapterWithExtras::class )
+			->onlyMethods( get_class_methods( TestAdapterWithExtras::class ) )
 			->getMock();
 		$mockAdapter->method( 'getConnection' )->willReturn( $mockPdo );
 		$mockAdapter->method( 'connect' );

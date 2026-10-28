@@ -7,27 +7,8 @@ use PHPUnit\Framework\TestCase;
 use Phinx\Config\Config;
 use Phinx\Db\Adapter\AdapterInterface;
 use Phinx\Db\Adapter\AdapterFactory;
-
-/**
- * Test helper class that extends AdapterInterface with additional methods
- * needed for testing (hasTransaction, getConnection).
- *
- * This avoids the brittle approach of using addMethods() in getMockBuilder().
- */
-abstract class TestAdapterWithExtras implements AdapterInterface
-{
-	/**
-	 * Check if adapter is in a transaction
-	 * @return bool
-	 */
-	abstract public function hasTransaction(): bool;
-
-	/**
-	 * Get the underlying PDO connection
-	 * @return \PDO
-	 */
-	abstract public function getConnection(): \PDO;
-}
+use PHPUnit\Framework\Attributes\RunInSeparateProcess;
+use PHPUnit\Framework\Attributes\PreserveGlobalState;
 
 /**
  * Comprehensive tests for DataImporter to improve code coverage
@@ -217,9 +198,10 @@ data:
 	/**
 	 * Test import from CSV directory
 	 *
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
 	 */
+	#[RunInSeparateProcess]
+	#[PreserveGlobalState( false )]
+
 	public function testImportFromCsvDirectory(): void
 	{
 		$mockAdapter = $this->createMockAdapter();

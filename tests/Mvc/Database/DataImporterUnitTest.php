@@ -359,9 +359,8 @@ class DataImporterUnitTest extends TestCase
 	public function testInvalidJsonThrowsException(): void
 	{
 		// Create mocks - create a partial mock that adds hasTransaction method
-		$mockAdapter = $this->getMockBuilder( AdapterInterface::class )
-			->onlyMethods( get_class_methods( AdapterInterface::class ) )
-			->addMethods( ['hasTransaction'] )
+		$mockAdapter = $this->getMockBuilder( TestAdapterWithExtras::class )
+			->onlyMethods( get_class_methods( TestAdapterWithExtras::class ) )
 			->getMock();
 		$mockConfig = $this->createMockConfig();
 
@@ -396,9 +395,8 @@ class DataImporterUnitTest extends TestCase
 	public function testInvalidFormatThrowsException(): void
 	{
 		// Create mocks - create a partial mock that adds hasTransaction method
-		$mockAdapter = $this->getMockBuilder( AdapterInterface::class )
-			->onlyMethods( get_class_methods( AdapterInterface::class ) )
-			->addMethods( ['hasTransaction'] )
+		$mockAdapter = $this->getMockBuilder( TestAdapterWithExtras::class )
+			->onlyMethods( get_class_methods( TestAdapterWithExtras::class ) )
 			->getMock();
 		$mockConfig = $this->createMockConfig();
 
@@ -433,9 +431,8 @@ class DataImporterUnitTest extends TestCase
 	public function testClearAllDataMethodExists(): void
 	{
 		// Create mocks with getConnection method
-		$mockAdapter = $this->getMockBuilder( AdapterInterface::class )
-			->onlyMethods( get_class_methods( AdapterInterface::class ) )
-			->addMethods( ['getConnection'] )
+		$mockAdapter = $this->getMockBuilder( TestAdapterWithExtras::class )
+			->onlyMethods( get_class_methods( TestAdapterWithExtras::class ) )
 			->getMock();
 		$mockConfig = $this->createMockConfig();
 
@@ -527,9 +524,8 @@ class DataImporterUnitTest extends TestCase
 	public function testProgressCallbackOption(): void
 	{
 		// Create mocks - add hasTransaction method
-		$mockAdapter = $this->getMockBuilder( AdapterInterface::class )
-			->onlyMethods( get_class_methods( AdapterInterface::class ) )
-			->addMethods( ['hasTransaction'] )
+		$mockAdapter = $this->getMockBuilder( TestAdapterWithExtras::class )
+			->onlyMethods( get_class_methods( TestAdapterWithExtras::class ) )
 			->getMock();
 		$mockConfig = $this->createMockConfig();
 

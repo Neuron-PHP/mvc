@@ -203,7 +203,7 @@ YAML;
 		$App = $this->createMock( Application::class );
 		$App->expects( $this->once() )
 			->method( 'run' )
-			->with( $this->isType( 'array' ) );
+			->with( $this->isArray() );
 		
 		// Dispatch
 		dispatch( $App );

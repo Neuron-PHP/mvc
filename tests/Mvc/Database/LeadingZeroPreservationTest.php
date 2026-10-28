@@ -59,9 +59,8 @@ class LeadingZeroPreservationTest extends TestCase
 		}
 		else
 		{
-			$mockAdapter = $this->getMockBuilder( AdapterInterface::class )
-				->onlyMethods( get_class_methods( AdapterInterface::class ) )
-				->addMethods( ['getConnection'] )
+			$mockAdapter = $this->getMockBuilder( TestAdapterWithExtras::class )
+				->onlyMethods( get_class_methods( TestAdapterWithExtras::class ) )
 				->getMock();
 			$mockAdapter->method( 'getConnection' )->willReturn( $mockPdo );
 			$mockAdapter->method( 'connect' );
@@ -119,9 +118,8 @@ class LeadingZeroPreservationTest extends TestCase
 		$executedSql = [];
 
 		// Create mock adapter
-		$mockAdapter = $this->getMockBuilder( AdapterInterface::class )
-			->onlyMethods( get_class_methods( AdapterInterface::class ) )
-			->addMethods( ['getConnection'] )
+		$mockAdapter = $this->getMockBuilder( TestAdapterWithExtras::class )
+			->onlyMethods( get_class_methods( TestAdapterWithExtras::class ) )
 			->getMock();
 
 		// Create mock PDO
@@ -185,9 +183,8 @@ class LeadingZeroPreservationTest extends TestCase
 		} );
 
 		// Create mock adapter
-		$mockAdapter = $this->getMockBuilder( AdapterInterface::class )
-			->onlyMethods( get_class_methods( AdapterInterface::class ) )
-			->addMethods( ['getConnection'] )
+		$mockAdapter = $this->getMockBuilder( TestAdapterWithExtras::class )
+			->onlyMethods( get_class_methods( TestAdapterWithExtras::class ) )
 			->getMock();
 
 		$mockAdapter->method( 'getConnection' )->willReturn( $mockPdo );
@@ -250,9 +247,8 @@ class LeadingZeroPreservationTest extends TestCase
 	 */
 	public function testRealWorldScenarios(): void
 	{
-		$mockAdapter = $this->getMockBuilder( AdapterInterface::class )
-			->onlyMethods( get_class_methods( AdapterInterface::class ) )
-			->addMethods( ['getConnection'] )
+		$mockAdapter = $this->getMockBuilder( TestAdapterWithExtras::class )
+			->onlyMethods( get_class_methods( TestAdapterWithExtras::class ) )
 			->getMock();
 
 		$mockPdo = $this->createMock( \PDO::class );
