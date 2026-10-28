@@ -3,6 +3,7 @@ namespace Mvc\Cache\Storage;
 
 use Neuron\Mvc\Cache\Exceptions\CacheException;
 use Neuron\Mvc\Cache\Storage\RedisCacheStorage;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -13,9 +14,8 @@ use PHPUnit\Framework\TestCase;
  *
  * To run only integration tests: ./vendor/bin/phpunit --group integration
  * To exclude integration tests: ./vendor/bin/phpunit --exclude-group integration
- *
- * @group integration
  */
+#[Group( 'integration' )]
 class RedisCacheStorageIntegrationTest extends TestCase
 {
 	private ?RedisCacheStorage $Storage = null;

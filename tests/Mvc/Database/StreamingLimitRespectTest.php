@@ -7,6 +7,8 @@ use PHPUnit\Framework\TestCase;
 use Phinx\Config\Config;
 use Phinx\Db\Adapter\AdapterFactory;
 use Phinx\Db\Adapter\AdapterInterface;
+use PHPUnit\Framework\Attributes\RunInSeparateProcess;
+use PHPUnit\Framework\Attributes\PreserveGlobalState;
 
 /**
  * Test that streaming export respects user's limit option even when triggered by large dataset
@@ -62,9 +64,8 @@ class StreamingLimitRespectTest extends TestCase
 
 		// Mock adapter
 		$fetchCount = 0;
-		$mockAdapter = $this->getMockBuilder( AdapterInterface::class )
-			->onlyMethods( get_class_methods( AdapterInterface::class ) )
-			->addMethods( ['getConnection'] )
+		$mockAdapter = $this->getMockBuilder( TestAdapterWithExtras::class )
+			->onlyMethods( get_class_methods( TestAdapterWithExtras::class ) )
 			->getMock();
 
 		$mockAdapter->method( 'connect' );
@@ -162,9 +163,10 @@ class StreamingLimitRespectTest extends TestCase
 
 	/**
 	 * Test that CSV streaming respects small limit even with large dataset
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
 	 */
+	#[RunInSeparateProcess]
+	#[PreserveGlobalState( false )]
+
 	public function testCsvStreamingRespectsSmallLimit(): void
 	{
 		// Create test data - 12000 rows to trigger streaming
@@ -180,9 +182,8 @@ class StreamingLimitRespectTest extends TestCase
 
 		// Mock adapter
 		$fetchCount = 0;
-		$mockAdapter = $this->getMockBuilder( AdapterInterface::class )
-			->onlyMethods( get_class_methods( AdapterInterface::class ) )
-			->addMethods( ['getConnection'] )
+		$mockAdapter = $this->getMockBuilder( TestAdapterWithExtras::class )
+			->onlyMethods( get_class_methods( TestAdapterWithExtras::class ) )
 			->getMock();
 
 		$mockAdapter->method( 'connect' );
@@ -271,9 +272,10 @@ class StreamingLimitRespectTest extends TestCase
 
 	/**
 	 * Test streaming with limit spanning multiple batches
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
 	 */
+	#[RunInSeparateProcess]
+	#[PreserveGlobalState( false )]
+
 	public function testStreamingWithLimitSpanningBatches(): void
 	{
 		// Test with limit of 2500 rows (spans 3 batches: 1000 + 1000 + 500)
@@ -289,9 +291,8 @@ class StreamingLimitRespectTest extends TestCase
 		$fetchCount = 0;
 		$batchLimits = [];
 
-		$mockAdapter = $this->getMockBuilder( AdapterInterface::class )
-			->onlyMethods( get_class_methods( AdapterInterface::class ) )
-			->addMethods( ['getConnection'] )
+		$mockAdapter = $this->getMockBuilder( TestAdapterWithExtras::class )
+			->onlyMethods( get_class_methods( TestAdapterWithExtras::class ) )
 			->getMock();
 
 		$mockAdapter->method( 'connect' );
@@ -390,9 +391,8 @@ class StreamingLimitRespectTest extends TestCase
 		$fetchCount = 0;
 		$totalRowsFetched = 0;
 
-		$mockAdapter = $this->getMockBuilder( AdapterInterface::class )
-			->onlyMethods( get_class_methods( AdapterInterface::class ) )
-			->addMethods( ['getConnection'] )
+		$mockAdapter = $this->getMockBuilder( TestAdapterWithExtras::class )
+			->onlyMethods( get_class_methods( TestAdapterWithExtras::class ) )
 			->getMock();
 
 		$mockAdapter->method( 'connect' );

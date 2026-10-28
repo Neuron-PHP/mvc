@@ -22,7 +22,7 @@ class SingletonRestorationTest extends TestCase
 		$initialInstance = $instanceProperty->getValue();
 
 		// Create a DataImporterUnitTest instance
-		$testCase = new DataImporterUnitTest();
+		$testCase = new DataImporterUnitTest( 'testDifferentFormatsAccepted' );
 
 		// Call setUp which will capture the current state
 		$testCase->setUp();

@@ -45,9 +45,8 @@ class WhereClauseParsingTest extends TestCase
 		$mockPdo = $this->createMock( \PDO::class );
 
 		// Create mock adapter
-		$mockAdapter = $this->getMockBuilder( AdapterInterface::class )
-			->onlyMethods( get_class_methods( AdapterInterface::class ) )
-			->addMethods( ['getConnection'] )
+		$mockAdapter = $this->getMockBuilder( TestAdapterWithExtras::class )
+			->onlyMethods( get_class_methods( TestAdapterWithExtras::class ) )
 			->getMock();
 
 		$mockAdapter->method( 'getConnection' )->willReturn( $mockPdo );
@@ -86,9 +85,8 @@ class WhereClauseParsingTest extends TestCase
 	public function testComplexMixedOperators(): void
 	{
 		$mockPdo = $this->createMock( \PDO::class );
-		$mockAdapter = $this->getMockBuilder( AdapterInterface::class )
-			->onlyMethods( get_class_methods( AdapterInterface::class ) )
-			->addMethods( ['getConnection'] )
+		$mockAdapter = $this->getMockBuilder( TestAdapterWithExtras::class )
+			->onlyMethods( get_class_methods( TestAdapterWithExtras::class ) )
 			->getMock();
 
 		$mockAdapter->method( 'getConnection' )->willReturn( $mockPdo );
@@ -125,9 +123,8 @@ class WhereClauseParsingTest extends TestCase
 	public function testDataExporterWithORMParsing(): void
 	{
 		$mockPdo = $this->createMock( \PDO::class );
-		$mockAdapter = $this->getMockBuilder( AdapterInterface::class )
-			->onlyMethods( get_class_methods( AdapterInterface::class ) )
-			->addMethods( ['getConnection'] )
+		$mockAdapter = $this->getMockBuilder( TestAdapterWithExtras::class )
+			->onlyMethods( get_class_methods( TestAdapterWithExtras::class ) )
 			->getMock();
 
 		$mockAdapter->method( 'getConnection' )->willReturn( $mockPdo );
@@ -164,9 +161,8 @@ class WhereClauseParsingTest extends TestCase
 	public function testAllAndOperators(): void
 	{
 		$mockPdo = $this->createMock( \PDO::class );
-		$mockAdapter = $this->getMockBuilder( AdapterInterface::class )
-			->onlyMethods( get_class_methods( AdapterInterface::class ) )
-			->addMethods( ['getConnection'] )
+		$mockAdapter = $this->getMockBuilder( TestAdapterWithExtras::class )
+			->onlyMethods( get_class_methods( TestAdapterWithExtras::class ) )
 			->getMock();
 
 		$mockAdapter->method( 'getConnection' )->willReturn( $mockPdo );
@@ -201,9 +197,8 @@ class WhereClauseParsingTest extends TestCase
 	public function testAllOrOperators(): void
 	{
 		$mockPdo = $this->createMock( \PDO::class );
-		$mockAdapter = $this->getMockBuilder( AdapterInterface::class )
-			->onlyMethods( get_class_methods( AdapterInterface::class ) )
-			->addMethods( ['getConnection'] )
+		$mockAdapter = $this->getMockBuilder( TestAdapterWithExtras::class )
+			->onlyMethods( get_class_methods( TestAdapterWithExtras::class ) )
 			->getMock();
 
 		$mockAdapter->method( 'getConnection' )->willReturn( $mockPdo );
@@ -238,9 +233,8 @@ class WhereClauseParsingTest extends TestCase
 	public function testSingleCondition(): void
 	{
 		$mockPdo = $this->createMock( \PDO::class );
-		$mockAdapter = $this->getMockBuilder( AdapterInterface::class )
-			->onlyMethods( get_class_methods( AdapterInterface::class ) )
-			->addMethods( ['getConnection'] )
+		$mockAdapter = $this->getMockBuilder( TestAdapterWithExtras::class )
+			->onlyMethods( get_class_methods( TestAdapterWithExtras::class ) )
 			->getMock();
 
 		$mockAdapter->method( 'getConnection' )->willReturn( $mockPdo );
@@ -278,9 +272,8 @@ class WhereClauseParsingTest extends TestCase
 	public function testSqlEscapedSingleQuotes(): void
 	{
 		$mockPdo = $this->createMock( \PDO::class );
-		$mockAdapter = $this->getMockBuilder( AdapterInterface::class )
-			->onlyMethods( get_class_methods( AdapterInterface::class ) )
-			->addMethods( ['getConnection'] )
+		$mockAdapter = $this->getMockBuilder( TestAdapterWithExtras::class )
+			->onlyMethods( get_class_methods( TestAdapterWithExtras::class ) )
 			->getMock();
 
 		$mockAdapter->method( 'getConnection' )->willReturn( $mockPdo );
@@ -323,9 +316,8 @@ class WhereClauseParsingTest extends TestCase
 	public function testSqlEscapedDoubleQuotes(): void
 	{
 		$mockPdo = $this->createMock( \PDO::class );
-		$mockAdapter = $this->getMockBuilder( AdapterInterface::class )
-			->onlyMethods( get_class_methods( AdapterInterface::class ) )
-			->addMethods( ['getConnection'] )
+		$mockAdapter = $this->getMockBuilder( TestAdapterWithExtras::class )
+			->onlyMethods( get_class_methods( TestAdapterWithExtras::class ) )
 			->getMock();
 
 		$mockAdapter->method( 'getConnection' )->willReturn( $mockPdo );
@@ -355,9 +347,8 @@ class WhereClauseParsingTest extends TestCase
 	public function testParenthesesThrowException(): void
 	{
 		$mockPdo = $this->createMock( \PDO::class );
-		$mockAdapter = $this->getMockBuilder( AdapterInterface::class )
-			->onlyMethods( get_class_methods( AdapterInterface::class ) )
-			->addMethods( ['getConnection'] )
+		$mockAdapter = $this->getMockBuilder( TestAdapterWithExtras::class )
+			->onlyMethods( get_class_methods( TestAdapterWithExtras::class ) )
 			->getMock();
 
 		$mockAdapter->method( 'getConnection' )->willReturn( $mockPdo );

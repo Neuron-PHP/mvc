@@ -101,9 +101,8 @@ class CsvStreamingWhereClauseTest extends TestCase
 			} );
 
 		// Create mock adapter
-		$mockAdapter = $this->getMockBuilder( AdapterInterface::class )
-			->onlyMethods( get_class_methods( AdapterInterface::class ) )
-			->addMethods( ['getConnection'] )
+		$mockAdapter = $this->getMockBuilder( TestAdapterWithExtras::class )
+			->onlyMethods( get_class_methods( TestAdapterWithExtras::class ) )
 			->getMock();
 
 		$mockAdapter->method( 'connect' );
@@ -203,9 +202,8 @@ class CsvStreamingWhereClauseTest extends TestCase
 		}
 
 		// Setup mock adapter
-		$mockAdapter = $this->getMockBuilder( AdapterInterface::class )
-			->onlyMethods( get_class_methods( AdapterInterface::class ) )
-			->addMethods( ['getConnection'] )
+		$mockAdapter = $this->getMockBuilder( TestAdapterWithExtras::class )
+			->onlyMethods( get_class_methods( TestAdapterWithExtras::class ) )
 			->getMock();
 
 		$mockAdapter->method( 'connect' );
@@ -325,9 +323,8 @@ class CsvStreamingWhereClauseTest extends TestCase
 			->willReturn( [] ); // Empty result to stop streaming
 
 		// Mock adapter
-		$mockAdapter = $this->getMockBuilder( AdapterInterface::class )
-			->onlyMethods( get_class_methods( AdapterInterface::class ) )
-			->addMethods( ['getConnection'] )
+		$mockAdapter = $this->getMockBuilder( TestAdapterWithExtras::class )
+			->onlyMethods( get_class_methods( TestAdapterWithExtras::class ) )
 			->getMock();
 
 		$mockAdapter->method( 'connect' );

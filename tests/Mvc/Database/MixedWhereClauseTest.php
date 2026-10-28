@@ -270,9 +270,8 @@ class MixedWhereClauseTest extends TestCase
 		$mockPdo = $this->createMock( \PDO::class );
 
 		// Use getMockBuilder to add the getConnection method
-		$mockAdapter = $this->getMockBuilder( AdapterInterface::class )
-			->onlyMethods( get_class_methods( AdapterInterface::class ) )
-			->addMethods( ['getConnection'] )
+		$mockAdapter = $this->getMockBuilder( TestAdapterWithExtras::class )
+			->onlyMethods( get_class_methods( TestAdapterWithExtras::class ) )
 			->getMock();
 
 		$mockAdapter->method( 'connect' );

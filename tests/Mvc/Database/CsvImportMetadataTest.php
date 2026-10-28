@@ -305,9 +305,8 @@ class CsvImportMetadataTest extends TestCase
 		} );
 
 		// Use getMockBuilder to add additional methods that might not be on interface
-		$mockAdapter = $this->getMockBuilder( AdapterInterface::class )
-			->onlyMethods( get_class_methods( AdapterInterface::class ) )
-			->addMethods( ['hasTransaction', 'getConnection'] )
+		$mockAdapter = $this->getMockBuilder( TestAdapterWithExtras::class )
+			->onlyMethods( get_class_methods( TestAdapterWithExtras::class ) )
 			->getMock();
 
 		$mockAdapter->method( 'connect' );

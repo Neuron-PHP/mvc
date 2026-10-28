@@ -69,9 +69,8 @@ class IdentifierQuotingSecurityTest extends TestCase
 		} );
 
 		// Create mock adapter that captures SQL
-		$mockAdapter = $this->getMockBuilder( AdapterInterface::class )
-			->onlyMethods( get_class_methods( AdapterInterface::class ) )
-			->addMethods( ['getConnection', 'hasTransaction'] )
+		$mockAdapter = $this->getMockBuilder( TestAdapterWithExtras::class )
+			->onlyMethods( get_class_methods( TestAdapterWithExtras::class ) )
 			->getMock();
 		$mockAdapter->method( 'getConnection' )->willReturn( $mockPdo );
 		$mockAdapter->method( 'connect' );
@@ -195,9 +194,8 @@ class IdentifierQuotingSecurityTest extends TestCase
 		} );
 
 		// Create mock adapter for PostgreSQL
-		$mockAdapter = $this->getMockBuilder( AdapterInterface::class )
-			->onlyMethods( get_class_methods( AdapterInterface::class ) )
-			->addMethods( ['getConnection', 'hasTransaction'] )
+		$mockAdapter = $this->getMockBuilder( TestAdapterWithExtras::class )
+			->onlyMethods( get_class_methods( TestAdapterWithExtras::class ) )
 			->getMock();
 
 		$mockAdapter->method( 'getConnection' )->willReturn( $mockPdo );
@@ -271,9 +269,8 @@ class IdentifierQuotingSecurityTest extends TestCase
 			return "'" . str_replace( "'", "''", $value ) . "'";
 		} );
 
-		$mockAdapter = $this->getMockBuilder( AdapterInterface::class )
-			->onlyMethods( get_class_methods( AdapterInterface::class ) )
-			->addMethods( ['getConnection', 'hasTransaction'] )
+		$mockAdapter = $this->getMockBuilder( TestAdapterWithExtras::class )
+			->onlyMethods( get_class_methods( TestAdapterWithExtras::class ) )
 			->getMock();
 
 		$mockAdapter->method( 'getConnection' )->willReturn( $mockPdo );

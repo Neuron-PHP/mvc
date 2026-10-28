@@ -48,17 +48,17 @@ class DataImporterClearTablesTest extends TestCase
 		// Expect clearAllData to be called (via getAllTables)
 		$mockAdapter->expects( $this->once() )
 			->method( 'fetchAll' )
-			->will( $this->returnCallback( function() use ( &$callOrder ) {
+			->willReturnCallback( function() use ( &$callOrder ) {
 				$callOrder[] = 'clearAllData';
 				return [];  // Return empty tables list
-			} ) );
+			} );
 
 		// Expect transaction to begin AFTER clearAllData
 		$mockAdapter->expects( $this->once() )
 			->method( 'beginTransaction' )
-			->will( $this->returnCallback( function() use ( &$callOrder ) {
+			->willReturnCallback( function() use ( &$callOrder ) {
 				$callOrder[] = 'beginTransaction';
-			} ) );
+			} );
 
 		// Mock execute for foreign key operations
 		$mockAdapter->method( 'execute' )->willReturn( 1 );
