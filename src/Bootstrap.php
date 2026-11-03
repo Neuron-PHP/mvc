@@ -8,6 +8,7 @@ use Neuron\Core\System\RealFileSystem;
 use Neuron\Data\Filters\Get;
 use Neuron\Data\Filters\Server;
 use Neuron\Data\Objects\Version;
+use Neuron\Data\Settings\EnvironmentDetector;
 use Neuron\Data\Settings\SettingManager;
 use Neuron\Data\Settings\SettingManagerFactory;
 use Neuron\Patterns\Registry;
@@ -31,8 +32,10 @@ function boot( string $configPath ) : Application
 
 	try
 	{
-		// Determine environment from APP_ENV (defaults to 'production')
-		$environment = getenv( 'APP_ENV' ) ?: 'production';
+		// Same detection as the CLI: APP_ENV (or NEURON_ENV, APPLICATION_ENV,
+		// ENVIRONMENT), defaulting to development. Production must set it
+		// explicitly, so a machine without it never loads production config.
+		$environment = EnvironmentDetector::detect();
 
 		// Use SettingManagerFactory for comprehensive configuration loading
 		// This automatically loads:
@@ -40,7 +43,8 @@ function boot( string $configPath ) : Application
 		// 2. environments/{env}.yaml (environment-specific config if exists)
 		// 3. secrets.yml.enc (encrypted secrets if exists)
 		// 4. environments/{env}.secrets.yml.enc (environment secrets if exists)
-		// 5. Environment variables (highest priority)
+		// 5. Environment variables (fallback for settings the files leave
+		//    unset or empty)
 		$settings = SettingManagerFactory::create( $environment, $configPath );
 
 		$basePath = $settings->get( 'system', 'base_path' );
