@@ -97,6 +97,61 @@ YAML;
 	}
 	
 	/**
+	 * Writes neuron.yaml, environments/production.yaml and .version.json to
+	 * the virtual filesystem, each naming the environment it came from.
+	 */
+	private function writeEnvironmentConfigs(): string
+	{
+		$BasePath = vfsStream::url( 'test' );
+		putenv( "SYSTEM_BASE_PATH=$BasePath" );
+
+		vfsStream::newFile( 'neuron.yaml' )->at( $this->Root )->setContent( "site:\n  name: base\n" );
+		$Environments = vfsStream::newDirectory( 'environments' )->at( $this->Root );
+		vfsStream::newFile( 'production.yaml' )->at( $Environments )->setContent( "site:\n  name: production\n" );
+		vfsStream::newFile( '.version.json' )->at( $this->Root )
+			->setContent( json_encode( [ 'major' => 1, 'minor' => 0, 'patch' => 0 ] ) );
+
+		return $BasePath;
+	}
+
+	/**
+	 * Without APP_ENV the web bootstrap must not load production config. It
+	 * uses the same default as the CLI (development).
+	 */
+	public function testBootWithoutAppEnvDoesNotLoadProductionConfig()
+	{
+		foreach( [ 'APP_ENV', 'NEURON_ENV', 'APPLICATION_ENV', 'ENVIRONMENT' ] as $Name )
+		{
+			putenv( $Name );
+			unset( $_SERVER[ $Name ] );
+		}
+
+		$BasePath = $this->writeEnvironmentConfigs();
+
+		boot( $BasePath );
+
+		$this->assertEquals( 'base', Registry::getInstance()->get( RegistryKeys::SETTINGS )->get( 'site', 'name' ) );
+	}
+
+	public function testBootWithAppEnvProductionLoadsProductionConfig()
+	{
+		putenv( 'APP_ENV=production' );
+
+		try
+		{
+			$BasePath = $this->writeEnvironmentConfigs();
+
+			boot( $BasePath );
+
+			$this->assertEquals( 'production', Registry::getInstance()->get( RegistryKeys::SETTINGS )->get( 'site', 'name' ) );
+		}
+		finally
+		{
+			putenv( 'APP_ENV' );
+		}
+	}
+
+	/**
 	 * Test Boot function with missing config file (falls back to environment)
 	 */
 	public function testBootWithMissingConfig()
